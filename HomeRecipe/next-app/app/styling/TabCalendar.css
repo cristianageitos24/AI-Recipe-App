@@ -101,62 +101,94 @@
   line-height: normal;
 }
 
+/* FullCalendar theme variables */
 :root {
   --fc-today-bg-color: #ffdcd5;
+  --fc-page-bg-color: #f7f9f7;
+  --fc-neutral-bg-color: #f7f9f7;
+  --fc-list-event-hover-bg-color: #eee;
+  --fc-border-color: rgba(0, 0, 0, 0.1);
+}
 
-  /*
-  .fc {
-  }
-  
-  */
-  .fc table {
-    font-size: clamp(10px, 4vw, 12px);
-    font-family: "Work Sans";
-  }
+/* FullCalendar: light content area so calendar grid is never black */
+.fc {
+  background: #f7f9f7;
+  font-family: "Work Sans", sans-serif;
+}
 
-  .fc .fc-toolbar-title {
-    color: #000;
-    text-align: center;
-    font-family: "Work Sans";
-    font-size: clamp(16px, 4vw, 20px);
-    font-style: normal;
-    font-weight: 500;
-    line-height: normal;
-  }
+.fc .fc-view-harness,
+.fc .fc-scroller,
+.fc .fc-daygrid-body,
+.fc .fc-daygrid-body-unbalanced,
+.fc .fc-daygrid-day-frame,
+.fc .fc-daygrid-day,
+.fc .fc-col-header-cell,
+.fc .fc-scrollgrid-section-body table,
+.fc-theme-standard td,
+.fc-theme-standard th {
+  background: #f7f9f7;
+}
 
-  .fc .fc-button-primary:hover {
-    background-color: #ababab;
-    transition: 0.2s ease;
-  }
+.fc .fc-daygrid-day-number {
+  color: #171717;
+}
 
-  .fc .fc-button {
-    text-align: center;
-    font-family: "Work Sans";
-    font-size: clamp(10px, 4vw, 14px);
-    font-style: normal;
-    font-weight: 500;
-    line-height: normal;
+.fc .fc-col-header-cell-cushion {
+  color: #171717;
+}
 
-    height: 35px;
+.fc table {
+  font-size: clamp(10px, 4vw, 12px);
+  font-family: "Work Sans", sans-serif;
+}
 
-    background-color: black;
-    border: none;
-  }
+.fc .fc-toolbar-title {
+  color: #000;
+  text-align: center;
+  font-family: "Work Sans", sans-serif;
+  font-size: clamp(16px, 4vw, 20px);
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+}
 
-  .fc .fc-toolbar.fc-header-toolbar {
-    margin-bottom: 7px;
-  }
+.fc .fc-toolbar {
+  background: #f7f9f7;
+}
 
-  .fc-event .fc-event-main {
-    position: relative;
-    z-index: auto;
-  }
-  .fc .fc-daygrid-body {
-    z-index: auto;
-  }
-  .fc .fc-daygrid-event {
-    z-index: auto;
-  }
+.fc .fc-button-primary:hover {
+  background-color: #333;
+  transition: 0.2s ease;
+}
+
+.fc .fc-button {
+  text-align: center;
+  font-family: "Work Sans", sans-serif;
+  font-size: clamp(10px, 4vw, 14px);
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+  height: 35px;
+  background-color: #000;
+  border: none;
+  color: #fff;
+}
+
+.fc .fc-toolbar.fc-header-toolbar {
+  margin-bottom: 7px;
+}
+
+.fc-event .fc-event-main {
+  position: relative;
+  z-index: auto;
+}
+
+.fc .fc-daygrid-body {
+  z-index: auto;
+}
+
+.fc .fc-daygrid-event {
+  z-index: auto;
 }
 
 @media screen and (max-width: 575px) {

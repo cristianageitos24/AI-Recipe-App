@@ -6,28 +6,29 @@
 
 .left-side-panel {
   width: auto;
-
   padding: 20px;
   padding-right: 0px;
-
   position: relative;
-
   max-height: 100%;
   overflow: hidden;
+  background-color: #1a1a1a;
 }
 
 .top-title {
   display: flex;
   align-items: center;
-
   margin-bottom: 30px;
+  text-decoration: none;
+}
+
+.top-title:focus {
+  outline: none;
 }
 
 .icon-text-main {
   display: flex;
   justify-content: center;
   align-items: center;
-
   cursor: pointer;
 }
 
@@ -42,9 +43,8 @@
 
 .top-title .icon-text-main p {
   margin-left: 10px;
-
-  color: #000;
-  font-family: EB Garamond;
+  color: #fff;
+  font-family: EB Garamond, serif;
   font-size: 18px;
   font-style: normal;
   font-weight: 400;
@@ -53,73 +53,94 @@
 
 .side-tabs {
   list-style: none;
-  padding: 0px;
+  padding: 0;
+  margin: 0;
 }
 
 .side-tabs li {
   display: flex;
   align-items: center;
-
   margin-bottom: 10px;
-
   height: 45px;
   width: 100%;
-  border-radius: 15px 0px 0px 15px;
+  border-radius: 15px 0 0 15px;
+  padding-left: 0;
+}
 
+.side-tabs li a {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
   padding-left: 20px;
+  text-decoration: none;
 }
 
 .side-tabs li:hover {
-  background-color: #dedede;
-
+  background-color: #2d2d2d;
   cursor: pointer;
   transition: 0.3s;
 }
 
 .side-tabs li:active {
-  background-color: #ababab;
+  background-color: #252525;
 }
 
 .side-tabs li p {
   padding-left: 10px;
-  text-decoration: none;
-
-  color: #000;
-  font-family: Work Sans;
+  margin: 0;
+  color: #fff;
+  font-family: "Work Sans", sans-serif;
   font-size: 12px;
   font-style: normal;
   font-weight: 400;
   line-height: normal;
 }
 
+.side-tabs li img,
 .side-tabs li svg {
   width: 15px;
   height: 15px;
-  fill: white;
+  flex-shrink: 0;
 }
 
-.side-tabs li:hover svg path {
-  width: 15px;
-  height: 15px;
-  fill: black;
+.side-tabs li img {
+  filter: brightness(0) invert(1);
+}
+
+.side-tabs li svg path {
+  fill: #fff;
+}
+
+.side-tabs li:hover img {
+  filter: brightness(0) invert(1);
 }
 
 .side-tabs li:hover p {
-  color: black;
+  color: #fff;
 }
 
-.active {
-  background-color: #000;
+.side-tabs .active {
+  background-color: rgba(220, 33, 0, 0.2);
+  border-left: 3px solid #dc2100;
+  padding-left: 0;
+  box-sizing: border-box;
 }
 
-.active svg path {
-  width: 15px;
-  height: 15px;
-  fill: white;
+.side-tabs .active a {
+  padding-left: 17px;
+}
+
+.side-tabs .active img {
+  filter: brightness(0) invert(1);
+}
+
+.side-tabs .active svg path {
+  fill: #fff;
 }
 
 .side-tabs .active p {
-  color: white;
+  color: #fff;
 }
 
 .bottom-nav-content {
@@ -129,13 +150,15 @@
 }
 
 .loggedin-username-label {
-  color: #000;
-  font-family: Work Sans;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ababab;
+  font-family: "Work Sans", sans-serif;
   font-size: 14px;
   font-style: normal;
   font-weight: 400;
   line-height: normal;
-
   width: 100%;
   margin-bottom: 10px;
 }
@@ -195,26 +218,35 @@
   margin-right: 5px;
 }
 
+/*=========== MAIN CONTENT COLUMN ===========*/
+
+.dashboard-main {
+  background: #f7f9f7;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 /*=========== RIGHT SIDE CONTENT ===========*/
 
 .right-side-panel {
   background: #f7f9f7;
   box-shadow: -5px 0px 20px 0px rgba(0, 0, 0, 0.1);
 
-  width: auto;
-  height: auto;
+  width: 100%;
+  min-height: 100%;
+  flex: 1;
 
   z-index: 1;
 
   padding: 40px;
 
-  max-height: 100%;
-  overflow-y: auto; /* Adds scroll if content exceeds height */
-  width: auto; /* Optionally set width to occupy full container width */
+  overflow-y: auto;
+  box-sizing: border-box;
 
   position: relative;
 
-  padding-right: 0;
+  padding-right: 40px;
 }
 
 .right-side-panel::before {

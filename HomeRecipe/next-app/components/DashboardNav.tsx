@@ -1,42 +1,50 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
+
+const navItems = [
+  { href: "/dashboard/home", label: "Home", icon: "/images/dashboard/homeicon.svg" },
+  { href: "/dashboard/cookbook", label: "Cookbooks", icon: "/images/dashboard/cookbook-icon.svg" },
+  { href: "/dashboard/calendar", label: "Meal Calendar", icon: "/images/dashboard/calendaricon.svg" },
+];
 
 export function DashboardNav() {
   const pathname = usePathname();
 
-  const navItems = [
-    { href: "/dashboard/home", label: "Home" },
-    { href: "/dashboard/cookbook", label: "Cookbooks" },
-    { href: "/dashboard/calendar", label: "Meal Calendar" },
-  ];
-
   return (
-    <aside className="flex w-56 flex-col border-r border-gray-200 bg-gray-50 p-4">
-      <Link href="/dashboard/home" className="mb-6 flex items-center gap-2 font-semibold">
-        HomeRecipe
+    <aside className="left-side-panel">
+      <Link href="/dashboard/home" className="top-title">
+        <div className="icon-text-main">
+          <Image
+            src="/images/homerecipelogo1.png"
+            alt="HomeRecipe"
+            width={32}
+            height={40}
+            className="web-icon"
+          />
+          <p>HomeRecipe</p>
+        </div>
       </Link>
-      <nav className="flex flex-1 flex-col gap-1">
-        {navItems.map(({ href, label }) => (
-          <Link
-            key={href}
-            href={href}
-            className={`rounded px-3 py-2 text-sm ${
-              pathname === href || pathname.startsWith(href + "/")
-                ? "bg-gray-200 font-medium"
-                : "hover:bg-gray-100"
-            }`}
-          >
-            {label}
-          </Link>
-        ))}
-      </nav>
-      <div className="border-t border-gray-200 pt-4">
-        <div className="flex items-center gap-2">
+      <ul className="side-tabs">
+        {navItems.map(({ href, label, icon }) => {
+          const isActive = pathname === href || pathname.startsWith(href + "/");
+          return (
+            <li key={href} className={isActive ? "active" : ""}>
+              <Link href={href}>
+                <img src={icon} alt="" width={15} height={15} />
+                <p>{label}</p>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="bottom-nav-content">
+        <div className="loggedin-username-label">
           <UserButton afterSignOutUrl="/" />
-          <span className="text-sm text-gray-600">Account</span>
+          <span className="signedin-label">Account</span>
         </div>
       </div>
     </aside>

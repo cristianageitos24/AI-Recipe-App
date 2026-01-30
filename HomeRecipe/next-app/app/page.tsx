@@ -1,6 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
+import "@/app/styling/LoginSignForm.css";
 
 export default async function HomePage() {
   const { userId } = await auth();
@@ -8,22 +10,31 @@ export default async function HomePage() {
     redirect("/dashboard");
   }
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
-      <h1 className="text-2xl font-bold">HomeRecipe</h1>
-      <p className="text-gray-600">Simple and tasty recipes.</p>
-      <div className="flex gap-4">
-        <Link
-          href="/login"
-          className="rounded bg-black px-4 py-2 text-white hover:bg-gray-800"
-        >
-          Log In
-        </Link>
-        <Link
-          href="/signup"
-          className="rounded border border-black px-4 py-2 hover:bg-gray-100"
-        >
-          Sign Up
-        </Link>
+    <div className="auth-page">
+      <div className="auth-card">
+        <Image
+          src="/images/homerecipelogo1.png"
+          alt="HomeRecipe"
+          width={40}
+          height={50}
+          className="auth-logo"
+        />
+        <h1 className="auth-title">HomeRecipe</h1>
+        <p className="auth-subtitle">Simple and tasty recipes.</p>
+        <div className="landing-ctas">
+          <Link
+            href="/login"
+            className="landing-btn-primary"
+          >
+            Log In
+          </Link>
+          <Link
+            href="/signup"
+            className="landing-btn-secondary"
+          >
+            Sign Up
+          </Link>
+        </div>
       </div>
     </div>
   );

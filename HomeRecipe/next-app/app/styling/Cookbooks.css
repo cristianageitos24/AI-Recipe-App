@@ -36,18 +36,18 @@
   grid-template-rows: auto;
   width: 100%;
 }
-/*      ADD NEW COOKBOOK        */
+/*      ADD NEW COOKBOOK (brand-aligned: black/orange)     */
 .add-new-folder-btn {
   cursor: pointer;
 
   flex-shrink: 0;
 
   border-radius: 10px;
-  border: 2px dashed #aabcc6;
+  border: 2px dashed #4a4a4a;
   background: none;
 
-  color: #aabcc6;
-  font-family: Work Sans;
+  color: #4a4a4a;
+  font-family: "Work Sans", sans-serif;
   font-size: 14px;
   font-style: normal;
   font-weight: 500;
@@ -62,17 +62,17 @@
 .add-new-folder-btn:hover {
   transition: 0.2s ease-in;
 
-  border: 2px dashed #829cac;
-  background-color: #eef1f3;
+  border: 2px dashed #000;
+  background-color: #eee;
 
-  color: #829cac;
+  color: #000;
 }
 
 .add-new-folder-btn.new-folder-btn-active {
-  border: 2px dashed #797979;
-  background: #e8e9e8;
+  border: 2px dashed #dc2100;
+  background: rgba(220, 33, 0, 0.06);
 
-  color: #797979;
+  color: #dc2100;
 }
 
 /*      MODAL STLYING       */

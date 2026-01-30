@@ -1,3 +1,112 @@
+/* Auth page wrapper (login/signup) */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #f7f9f7;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.auth-page .auth-logo {
+  width: 40px;
+  height: 50px;
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+}
+
+.auth-page .auth-title {
+  color: #000;
+  font-family: "EB Garamond", serif;
+  font-size: 24px;
+  font-weight: 400;
+  margin: 0;
+}
+
+.auth-page .auth-subtitle {
+  color: #4a4a4a;
+  font-family: "Work Sans", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0 0 0.5rem 0;
+  text-align: center;
+}
+
+.auth-page .auth-link-wrap {
+  margin-top: 0.5rem;
+  font-family: "Work Sans", sans-serif;
+  font-size: 14px;
+  color: #4a4a4a;
+}
+
+.auth-page .auth-link-wrap a {
+  color: #dc2100;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.auth-page .auth-link-wrap a:hover {
+  color: #a01800;
+}
+
+/* Landing page CTAs (match sign-in screen) */
+.landing-ctas {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.landing-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 24px;
+  border-radius: 50px;
+  border: 1px solid #000;
+  background: #000;
+  color: #fff;
+  font-family: "Work Sans", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.landing-btn-primary:hover {
+  background: #fff;
+  color: #000;
+}
+
+.landing-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 24px;
+  border-radius: 50px;
+  border: 1px solid #000;
+  background: transparent;
+  color: #000;
+  font-family: "Work Sans", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.landing-btn-secondary:hover {
+  background: #eee;
+}
+
 .login-sign-form-section {
   width: 100%;
 }
