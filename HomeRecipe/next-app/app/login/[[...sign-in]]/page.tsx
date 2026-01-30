@@ -1,6 +1,7 @@
 import { SignIn } from "@clerk/nextjs";
 import Link from "next/link";
 import Image from "next/image";
+import AuthCarousel from "@/components/AuthCarousel";
 import "@/app/styling/LoginSignForm.css";
 
 const clerkAppearance = {
@@ -29,25 +30,30 @@ const clerkAppearance = {
 export default function LoginPage() {
   return (
     <div className="auth-page">
-      <div className="auth-card">
-        <Image
-          src="/images/homerecipelogo1.png"
-          alt="HomeRecipe"
-          width={40}
-          height={50}
-          className="auth-logo"
-        />
-        <h1 className="auth-title">HomeRecipe</h1>
-        <p className="auth-subtitle">Sign in and let&apos;s start cooking!</p>
-        <SignIn
-          forceRedirectUrl="/dashboard"
-          signUpUrl="/signup"
-          appearance={clerkAppearance}
-        />
-        <p className="auth-link-wrap">
-          Don&apos;t have an account?{" "}
-          <Link href="/signup">Sign up</Link>
-        </p>
+      <div className="auth-left">
+        <div className="auth-card">
+          <Image
+            src="/images/homerecipelogo1.png"
+            alt="HomeRecipe"
+            width={40}
+            height={50}
+            className="auth-logo"
+          />
+          <h1 className="auth-title">HomeRecipe</h1>
+          <p className="auth-subtitle">Sign in and let&apos;s start cooking!</p>
+          <SignIn
+            forceRedirectUrl="/dashboard"
+            signUpUrl="/signup"
+            appearance={clerkAppearance}
+          />
+          <p className="auth-link-wrap">
+            Don&apos;t have an account?{" "}
+            <Link href="/signup">Sign up</Link>
+          </p>
+        </div>
+      </div>
+      <div className="auth-right">
+        <AuthCarousel />
       </div>
     </div>
   );
