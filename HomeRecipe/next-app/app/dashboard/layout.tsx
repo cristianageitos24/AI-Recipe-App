@@ -1,20 +1,23 @@
-import { createClient } from "@/utils/supabase/server";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { DashboardNav } from "@/components/DashboardNav";
+import { ensureProfile } from "@/app/actions/profiles";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
+  const { userId } = await auth();
+  if (!userId) {
     redirect("/login");
   }
+
+  await ensureProfile();
+
   return (
     <div className="flex min-h-screen">
-      <DashboardNav user={user} />
+      <DashboardNav />
       <main className="flex-1 overflow-auto">{children}</main>
     </div>
   );

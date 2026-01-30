@@ -1,5 +1,13 @@
 # Supabase setup
 
-1. In Supabase Dashboard: **SQL Editor** → New query.
-2. Paste and run the contents of `migrations/001_initial_schema.sql`.
-3. This creates: `profiles`, `recipes`, `user_recipes`, `folders`, `folder_recipes`, `favorites`, `meal_dates`, `meal_date_recipes`, RLS policies, and a trigger to create a profile on signup.
+This app uses **Clerk** for authentication and **Supabase** for the database. Clerk session tokens are passed to Supabase for RLS (Row Level Security).
+
+## Setup
+
+1. **Enable Clerk as third-party auth in Supabase:**
+   - In Clerk Dashboard → [Supabase integration](https://dashboard.clerk.com/setup/supabase) → Activate and copy your Clerk domain.
+   - In Supabase Dashboard → **Authentication** → **Sign In / Up** → **Add provider** → **Clerk** → Paste the Clerk domain.
+
+2. **Run the schema migrations in Supabase SQL Editor:**
+   - Run `migrations/001_initial_schema.sql` (creates base tables).
+   - Run `migrations/002_clerk_schema.sql` (adapts schema for Clerk user IDs).

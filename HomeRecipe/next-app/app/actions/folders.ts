@@ -1,17 +1,18 @@
 "use server";
 
+import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@/utils/supabase/server";
 import type { RecipePayload } from "@/lib/types";
 
 export async function getFolders() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized", data: { folders: [], results: {} } };
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized", data: { folders: [], results: {} } };
 
+  const supabase = await createClient();
   const { data: foldersData, error: foldersError } = await supabase
     .from("folders")
     .select("id, folder_name")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .order("folder_name");
 
   if (foldersError) return { error: foldersError.message, data: { folders: [], results: {} } };
@@ -38,13 +39,13 @@ export async function getFolders() {
 }
 
 export async function createFolder(folderName: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized" };
 
+  const supabase = await createClient();
   const { error } = await supabase
     .from("folders")
-    .insert({ user_id: user.id, folder_name: folderName });
+    .insert({ user_id: userId, folder_name: folderName });
 
   if (error) {
     if (error.code === "23505") return { error: "Folder name already exists" };
@@ -54,14 +55,14 @@ export async function createFolder(folderName: string) {
 }
 
 export async function renameFolder(oldName: string, newName: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized" };
 
+  const supabase = await createClient();
   const { error } = await supabase
     .from("folders")
     .update({ folder_name: newName })
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("folder_name", oldName);
 
   if (error) return { error: error.message };
@@ -69,14 +70,14 @@ export async function renameFolder(oldName: string, newName: string) {
 }
 
 export async function deleteFolder(folderName: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized" };
 
+  const supabase = await createClient();
   const { data: folder } = await supabase
     .from("folders")
     .select("id")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("folder_name", folderName)
     .single();
   if (!folder) return { error: "Folder not found" };
@@ -87,14 +88,14 @@ export async function deleteFolder(folderName: string) {
 }
 
 export async function getFolderRecipes(folderName: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized", data: [] };
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized", data: [] };
 
+  const supabase = await createClient();
   const { data: folder } = await supabase
     .from("folders")
     .select("id")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("folder_name", folderName)
     .single();
   if (!folder) return { error: "Folder not found", data: [] };
@@ -115,9 +116,10 @@ export async function addRecipeToFolder(
   folderName: string,
   payload: RecipePayload | string
 ) {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized" };
+
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
 
   let recipeUuid: string;
   if (typeof payload === "string") {
@@ -138,7 +140,7 @@ export async function addRecipeToFolder(
   const { data: folder } = await supabase
     .from("folders")
     .select("id")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("folder_name", folderName)
     .single();
   if (!folder) return { error: "Folder not found" };

@@ -1,20 +1,21 @@
 "use server";
 
+import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@/utils/supabase/server";
 import type { RecipePayload } from "@/lib/types";
 
 export async function getFavorites() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized", data: [] };
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized", data: [] };
 
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("favorites")
     .select(`
       recipe_id,
       recipes (*)
     `)
-    .eq("user_id", user.id);
+    .eq("user_id", userId);
 
   if (error) return { error: error.message, data: [] };
   const recipes = (data ?? [])
@@ -24,9 +25,10 @@ export async function getFavorites() {
 }
 
 export async function addFavorite(payload: RecipePayload) {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized" };
+
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
 
   const { getOrCreateRecipe } = await import("@/app/actions/recipes");
   const result = await getOrCreateRecipe(payload);
@@ -34,7 +36,7 @@ export async function addFavorite(payload: RecipePayload) {
 
   const { error } = await supabase
     .from("favorites")
-    .insert({ user_id: user.id, recipe_id: result.data.id })
+    .insert({ user_id: userId, recipe_id: result.data.id })
     .select()
     .single();
 
@@ -46,9 +48,10 @@ export async function addFavorite(payload: RecipePayload) {
 }
 
 export async function removeFavorite(recipeId: string) {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized" };
+
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
 
   // recipeId from frontend is the string recipe_id; we need recipes.id (uuid)
   const { data: recipe } = await supabase
@@ -61,7 +64,7 @@ export async function removeFavorite(recipeId: string) {
   const { error } = await supabase
     .from("favorites")
     .delete()
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("recipe_id", recipe.id);
 
   if (error) return { error: error.message };

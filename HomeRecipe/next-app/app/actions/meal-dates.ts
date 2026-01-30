@@ -1,12 +1,13 @@
 "use server";
 
+import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@/utils/supabase/server";
 
 export async function getMealDates() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized", data: [] };
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized", data: [] };
 
+  const supabase = await createClient();
   const { data: mealDates, error } = await supabase
     .from("meal_dates")
     .select(`
@@ -15,7 +16,7 @@ export async function getMealDates() {
       date,
       meal_date_recipes (recipe_id, recipes (*))
     `)
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .order("date");
 
   if (error) return { error: error.message, data: [] };
@@ -40,9 +41,10 @@ export async function createOrUpdateMealDate(params: {
   recipeID: string;
   eventID: string;
 }) {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized" };
+
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
 
   const { data: recipe } = await supabase
     .from("recipes")
@@ -54,7 +56,7 @@ export async function createOrUpdateMealDate(params: {
   const { data: existing } = await supabase
     .from("meal_dates")
     .select("id")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("event_id", params.eventID)
     .single();
 
@@ -69,7 +71,7 @@ export async function createOrUpdateMealDate(params: {
     const { data: inserted, error } = await supabase
       .from("meal_dates")
       .insert({
-        user_id: user.id,
+        user_id: userId,
         event_id: params.eventID,
         date: params.date,
       })
@@ -82,14 +84,14 @@ export async function createOrUpdateMealDate(params: {
 }
 
 export async function deleteMealDate(eventID: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized" };
 
+  const supabase = await createClient();
   const { data: row } = await supabase
     .from("meal_dates")
     .select("id")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("event_id", eventID)
     .single();
   if (!row) return { error: "Meal date not found" };

@@ -2,12 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "@/app/actions/auth";
-import type { User } from "@supabase/supabase-js";
+import { UserButton } from "@clerk/nextjs";
 
-export function DashboardNav({ user }: { user: User }) {
+export function DashboardNav() {
   const pathname = usePathname();
-  const email = user?.email ?? "";
 
   const navItems = [
     { href: "/dashboard/home", label: "Home" },
@@ -36,16 +34,10 @@ export function DashboardNav({ user }: { user: User }) {
         ))}
       </nav>
       <div className="border-t border-gray-200 pt-4">
-        <p className="truncate text-xs text-gray-500">Signed in as</p>
-        <p className="truncate text-sm font-medium">{email}</p>
-        <form action={signOut} className="mt-2">
-          <button
-            type="submit"
-            className="text-sm text-gray-600 underline hover:text-black"
-          >
-            Logout
-          </button>
-        </form>
+        <div className="flex items-center gap-2">
+          <UserButton afterSignOutUrl="/" />
+          <span className="text-sm text-gray-600">Account</span>
+        </div>
       </div>
     </aside>
   );

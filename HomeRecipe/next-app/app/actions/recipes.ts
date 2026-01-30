@@ -1,12 +1,14 @@
 "use server";
 
+import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@/utils/supabase/server";
 import type { RecipePayload } from "@/lib/types";
 
 export async function getOrCreateRecipe(payload: RecipePayload) {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized", data: null };
+
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized", data: null };
 
   const { data: existing } = await supabase
     .from("recipes")
