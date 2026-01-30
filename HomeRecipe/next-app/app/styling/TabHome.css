@@ -1,6 +1,88 @@
 .recipe-search-content {
   margin-right: 40px;
 }
+
+/* Home sections below search */
+.home-section {
+  margin-top: 32px;
+  margin-right: 40px;
+}
+
+.home-section-title {
+  font-family: "Work Sans", sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #000;
+  margin: 0 0 16px 0;
+}
+
+.home-section-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+}
+
+.home-section-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.home-section-scroll::-webkit-scrollbar-thumb {
+  background: #d0d0d0;
+  border-radius: 4px;
+}
+
+.home-card {
+  flex-shrink: 0;
+  width: 400px;
+}
+
+.home-cookbooks-row {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.home-cookbook-card {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 16px 20px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  text-decoration: none;
+  color: #000;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-width: 160px;
+}
+
+.home-cookbook-card:hover {
+  border-color: #ff4d6d;
+  box-shadow: 0 2px 8px rgba(255, 77, 109, 0.15);
+}
+
+.home-cookbook-name {
+  font-family: "Work Sans", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.home-cookbook-count {
+  font-family: "Work Sans", sans-serif;
+  font-size: 13px;
+  color: #666;
+}
+
+.home-section-loading,
+.home-section-empty {
+  font-family: "Work Sans", sans-serif;
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
 .search-container {
   display: flex;
   justify-content: center;

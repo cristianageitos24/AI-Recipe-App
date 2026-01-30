@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { HeartButton } from "@/components/HeartButton";
 import { SaveToFolderButton } from "@/components/SaveToFolderButton";
 import { processRecipeData, type ProcessedRecipe } from "@/lib/processRecipeData";
 import { getFolders } from "@/app/actions/folders";
+import { getFavorites } from "@/app/actions/favorites";
+import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/TabHome.css";
 
 function capitalizeFirstLetter(string: string): string {
@@ -15,13 +18,33 @@ function capitalizeFirstLetter(string: string): string {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
+function recipeRowToProcessed(r: RecipeRow): ProcessedRecipe {
+  return {
+    recipeID: r.recipe_id,
+    recipeLabel: r.recipe_label,
+    calories: r.calories,
+    cuisineType: r.cuisine_type ?? "",
+    mealType: r.meal_type ?? "",
+    timeMin: r.time_in_minutes,
+    ingredients: r.ingredient_lines ?? "",
+    imageURL: r.image_url ?? "",
+    websiteURL: r.website_url ?? "",
+  };
+}
+
 type EdamamHit = { recipe: unknown };
+
+type FolderWithCount = { folderName: string; count: number };
 
 export default function DashboardHomePage() {
   const [text, setText] = useState("");
   const [displayTxt, setDisplayTxt] = useState("");
   const [data, setData] = useState<{ hits?: EdamamHit[] } | null>(null);
   const [folderOptions, setFolderOptions] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<RecipeRow[]>([]);
+  const [foldersWithCounts, setFoldersWithCounts] = useState<FolderWithCount[]>([]);
+  const [recommendedHits, setRecommendedHits] = useState<EdamamHit[]>([]);
+  const [recommendedLoading, setRecommendedLoading] = useState(false);
 
   const appID = process.env.NEXT_PUBLIC_EDAMAM_APP_ID;
   const appKEY = process.env.NEXT_PUBLIC_EDAMAM_APP_KEY;
@@ -33,8 +56,51 @@ export default function DashboardHomePage() {
   useEffect(() => {
     getFolders().then((res) => {
       if (res.data?.folders) setFolderOptions(res.data.folders);
+      if (res.data?.folders && res.data?.results) {
+        const folders = res.data.folders as string[];
+        const results = res.data.results as Record<string, unknown[]>;
+        setFoldersWithCounts(
+          folders.map((name) => ({ folderName: name, count: (results[name] ?? []).length }))
+        );
+      }
     });
   }, []);
+
+  useEffect(() => {
+    getFavorites().then((res) => {
+      if (res.data) setFavorites(res.data);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isEdamamEnabled) return;
+    setRecommendedLoading(true);
+    Promise.all([getFavorites(), getFolders()])
+      .then(([favRes, foldRes]) => {
+        const savedIds = new Set<string>();
+        (favRes.data ?? []).forEach((r: RecipeRow) => savedIds.add(r.recipe_id));
+        const results = (foldRes.data?.results ?? {}) as Record<string, RecipeRow[]>;
+        (foldRes.data?.folders ?? []).forEach((name: string) => {
+          (results[name] ?? []).forEach((r: RecipeRow) => savedIds.add(r.recipe_id));
+        });
+        return fetch(
+          `https://api.edamam.com/api/recipes/v2?to=20&type=public&q=popular+recipes&app_id=${appID}&app_key=${appKEY}`
+        )
+          .then((response) => (response.ok ? response.json() : { hits: [] }))
+          .then((json) => {
+            let hits = json.hits ?? [];
+            if (savedIds.size > 0) {
+              hits = hits.filter((hit: EdamamHit) => {
+                const info = processRecipeData(hit.recipe as Parameters<typeof processRecipeData>[0]);
+                return !savedIds.has(info.recipeID);
+              });
+            }
+            setRecommendedHits(hits.slice(0, 12));
+          });
+      })
+      .catch(() => setRecommendedHits([]))
+      .finally(() => setRecommendedLoading(false));
+  }, [isEdamamEnabled, appID, appKEY]);
 
   function handleKeyPress(e: React.KeyboardEvent) {
     if (e.key === "Enter") fetchData();
@@ -169,6 +235,84 @@ export default function DashboardHomePage() {
               ))}
             </div>
           </div>
+        )}
+        {favorites.length > 0 && (
+          <section className="home-section">
+            <h2 className="home-section-title">Favorites</h2>
+            <div className="home-section-scroll">
+              {favorites.map((recipe) => {
+                const info = recipeRowToProcessed(recipe);
+                return (
+                  <motion.div key={recipe.id} className="home-card results-content" whileHover={{ scale: 1.02 }}>
+                    <img className="result-pic" src={recipe.image_url ?? ""} alt={recipe.recipe_label} />
+                    <div className="results-labels">
+                      <h1>{recipe.recipe_label}</h1>
+                      <div className="label-details">
+                        <h3>{capitalizeFirstLetter(recipe.cuisine_type ?? "")}</h3>
+                        <h3>{capitalizeFirstLetter(recipe.meal_type ?? "")}</h3>
+                      </div>
+                      <div className="label-details">
+                        <h3>{recipe.calories} calories</h3>
+                        <h3 className={recipe.time_in_minutes <= 10 ? "green-light" : recipe.time_in_minutes <= 30 ? "yellow-light" : "red-light"}>
+                          {recipe.time_in_minutes < 1 ? "1" : recipe.time_in_minutes} min
+                        </h3>
+                      </div>
+                    </div>
+                    <div className="result-buttons">
+                      <button
+                        type="button"
+                        className="open-recipe-link-btn"
+                        onClick={() => window.open(recipe.website_url ?? "", "_blank")}
+                      >
+                        Show Recipe
+                      </button>
+                      <div className="save-folder-btns">
+                        <div className="heart-btn-search-results-card">
+                          <HeartButton recipeData={info} heartStyle={{ top: "50%" }} isHearted />
+                        </div>
+                        <SaveToFolderButton folders={[...new Set(folderOptions)]} recipeData={info} />
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+        {foldersWithCounts.length > 0 && (
+          <section className="home-section">
+            <h2 className="home-section-title">Your Cookbooks</h2>
+            <div className="home-section-scroll home-cookbooks-row">
+              {foldersWithCounts.map((f) => (
+                <Link
+                  key={f.folderName}
+                  href={`/dashboard/cookbook/${encodeURIComponent(f.folderName)}`}
+                  className="home-cookbook-card"
+                >
+                  <span className="home-cookbook-name">{f.folderName}</span>
+                  <span className="home-cookbook-count">{f.count} recipe{f.count !== 1 ? "s" : ""}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+        {isEdamamEnabled && (
+          <section className="home-section">
+            <h2 className="home-section-title">Recommended for you</h2>
+            {recommendedLoading ? (
+              <p className="home-section-loading">Loading recommendations...</p>
+            ) : recommendedHits.length > 0 ? (
+              <div className="home-section-scroll">
+                {recommendedHits.map((item, index) => (
+                  <motion.div key={index} whileHover={{ scale: 1.02 }}>
+                    <RecipeCard recipeData={item.recipe} />
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <p className="home-section-empty">Search for recipes above to get personalized recommendations.</p>
+            )}
+          </section>
         )}
       </div>
     </div>
