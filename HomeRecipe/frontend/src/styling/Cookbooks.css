@@ -1,0 +1,242 @@
+.tabcookbook-cookbooks-section {
+  padding: 75px 40px 40px 0px;
+}
+
+.tabcookbook-cookbooks-section .cookbook-subtitle {
+  margin: 0;
+  margin-bottom: 15px;
+
+  color: #000;
+  font-family: EB Garamond;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+  text-transform: capitalize;
+}
+
+.cookbook-folders {
+  width: auto;
+  height: auto;
+
+  display: flex;
+  justify-content: left;
+  align-items: flex-start;
+  flex-wrap: wrap;
+
+  gap: 5px;
+}
+
+/*  COOKBOOKS STYLING   */
+
+.cookbook-folders-content-container {
+  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-rows: auto;
+  width: 100%;
+}
+/*      ADD NEW COOKBOOK        */
+.add-new-folder-btn {
+  cursor: pointer;
+
+  flex-shrink: 0;
+
+  border-radius: 10px;
+  border: 2px dashed #aabcc6;
+  background: none;
+
+  color: #aabcc6;
+  font-family: Work Sans;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+  text-transform: capitalize;
+
+  transition: 0.2s ease-in;
+
+  padding: 15px 25px;
+}
+
+.add-new-folder-btn:hover {
+  transition: 0.2s ease-in;
+
+  border: 2px dashed #829cac;
+  background-color: #eef1f3;
+
+  color: #829cac;
+}
+
+.add-new-folder-btn.new-folder-btn-active {
+  border: 2px dashed #797979;
+  background: #e8e9e8;
+
+  color: #797979;
+}
+
+/*      MODAL STLYING       */
+.new-folder-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.35); /* Semi-transparent background */
+
+  z-index: 100;
+}
+
+.new-folder-info-modal-content {
+  position: absolute;
+
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+
+  width: 300px;
+  left: 15%;
+  right: 0;
+  top: 13%;
+  margin: auto;
+}
+
+/*      MODAL CONTENT STYLE     */
+.new-folder-title {
+  margin: 0;
+  margin-bottom: 30px;
+
+  font-family: "Work Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-size: clamp(14px, 4vw, 20px);
+
+  color: #000000;
+}
+
+.new-folder-input {
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+
+  box-sizing: border-box;
+
+  background: #ffffff;
+  border: 1px solid #ababab;
+  border-radius: 10px;
+
+  font-family: "Work Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 16px;
+  display: flex;
+  align-items: center;
+
+  color: #000000;
+
+  padding: 10px;
+
+  margin-left: -1px;
+}
+
+.new-folder-input:focus {
+  outline: 5px auto #ff4d6d;
+}
+
+.modal-folder-action-btns {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 5px;
+
+  margin-top: 30px;
+}
+
+.modal-folder-action-btns button {
+  padding: 8px 15px;
+
+  cursor: pointer;
+
+  font-family: "Work Sans";
+  font-style: normal;
+  font-size: 12px;
+  line-height: 14px;
+
+  display: flex;
+  align-items: center;
+  text-align: center;
+
+  border-radius: 10px;
+  outline: none;
+  border: none;
+  background: none;
+}
+
+.new-folder-cancel-btn:hover {
+  transition: 0.2s ease-in;
+  background: #ebebeb;
+}
+
+.new-folder-create-btn:active {
+  background: #000;
+  color: #fff;
+}
+
+/*       CANCEL BUTTON     */
+.new-folder-cancel-btn {
+  color: #000000;
+  transition: 0.1s ease-in-out;
+}
+
+.new-folder-cancel-btn:hover {
+  background: #e6e6e6;
+  transition: 0.1s ease-in-out;
+}
+
+.new-folder-cancel-btn:active {
+  background: #ababab;
+  transition: 0.1s ease-in-out;
+}
+
+/*       CREATE BUTTON     */
+.new-folder-create-btn {
+  color: #ff4d6d;
+  font-weight: 600;
+
+  transition: 0.1s ease-in-out;
+}
+
+.new-folder-create-btn:hover {
+  background: #fae0e4;
+
+  color: #000000;
+
+  transition: 0.1s ease-in-out;
+}
+
+.new-folder-create-btn:active {
+  background: #000;
+
+  color: #fff;
+
+  transition: 0.1s ease-in-out;
+}
+
+@media screen and (max-width: 400px) {
+  .new-folder-input {
+    width: 250px;
+  }
+}
+
+@media screen and (max-width: 575px) {
+  .tabcookbook-cookbooks-section {
+    padding-right: 0;
+  }
+}
+@media screen and (max-width: 980px) {
+  .tabcookbook-cookbooks-section {
+    margin-right: 0;
+  }
+}

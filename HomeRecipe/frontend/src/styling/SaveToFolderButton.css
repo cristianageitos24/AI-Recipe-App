@@ -1,0 +1,97 @@
+.result-saveto-cookbook-container {
+  position: relative;
+}
+
+.result-saveto-cookbook-card-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  border: none;
+  padding: 10px 7px;
+
+  background: none;
+  border-radius: 5px;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+
+  position: relative;
+}
+
+.result-saveto-cookbook-card-btn svg {
+  width: 20px;
+  margin-left: 2px;
+}
+
+.result-saveto-cookbook-card-btn svg path {
+  fill: #adb8c1;
+}
+
+.result-saveto-cookbook-card-btn:hover {
+  background: #ebebeb;
+  border-radius: 5px;
+  transition: 0.2s ease;
+}
+
+.result-saveto-cookbook-card-btn.dropdown-active {
+  background: #ebebeb;
+  border-radius: 5px 5px 0px 0px;
+}
+
+/*      FOLDER IS CLICKED       */
+.saveto-dropdown-options-close {
+  display: none;
+}
+
+.saveto-dropdown-options-open {
+  position: absolute;
+  top: 36px;
+  left: 0;
+
+  padding: 5px 0px;
+  border-radius: 0px;
+  border: 2px solid #ebebeb;
+
+  background: #fff;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.saveto-dropdown-option-folder {
+  color: #000;
+  text-align: center;
+  font-family: Work Sans;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+
+  padding: 5px 20px;
+  border-radius: 5px;
+
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+
+  width: 100%;
+  margin: 0;
+  cursor: pointer;
+  white-space: nowrap;
+
+  background: white;
+  border: none;
+  border-radius: 0;
+}
+
+.saveto-dropdown-option-folder:hover {
+  background: #dedede;
+}
+
+.saveto-dropdown-option-folder:active {
+  background: #ababab;
+}

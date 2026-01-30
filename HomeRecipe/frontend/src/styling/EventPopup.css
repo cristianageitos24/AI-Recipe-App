@@ -1,0 +1,250 @@
+.event-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.35); /* Semi-transparent background */
+  z-index: 100;
+}
+.calendar-event-popup {
+  padding: 20px;
+
+  background: #ffffff;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
+
+  position: absolute;
+  width: 450px;
+  left: 15%;
+  right: 0;
+  top: 13%;
+  margin: auto;
+}
+
+/*       HEADER CONTENT     */
+.event-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+/*       TITLE CONTENT     */
+.event-popup-title {
+  font-family: "Work Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-size: clamp(14px, 4vw, 20px);
+
+  color: #000000;
+
+  margin: 0;
+}
+
+.event-popup-labels {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+
+  height: 30px;
+}
+
+/*       CHOICES CONTENT     */
+.delete-event-bttn {
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  text-align: center;
+
+  padding: 7px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  outline: none;
+
+  transition: 0.1s ease-in-out;
+
+  width: 25px;
+  height: 25px;
+}
+
+.delete-event-bttn:hover {
+  background: #ffe6d8;
+  transition: 0.1s ease-in-out;
+}
+
+.delete-event-bttn:active {
+  background: #dc2100;
+  transition: 0.1s ease-in-out;
+}
+
+/*       CHOICES CONTENT     */
+.event-popup-choices {
+  height: 100%;
+  width: 30%;
+
+  background: #ffffff;
+  border: 1px solid #ababab;
+  border-radius: 10px 0px 0px 10px;
+
+  font-family: "Work Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 16px;
+  display: flex;
+  align-items: center;
+
+  color: #ababab;
+
+  padding: 5px;
+
+  text-align: center;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.event-popup-choices:focus {
+  outline: none;
+}
+
+/*       SEARCH CONTENT     */
+.event-pop-up-search {
+  width: 100%;
+  height: 100%;
+}
+
+/*       INPUT CONTENT     */
+.event-popup-input {
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+
+  box-sizing: border-box;
+
+  background: #ffffff;
+  border: 1px solid #ababab;
+  border-radius: 0px 10px 10px 0px;
+
+  font-family: "Work Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 16px;
+  display: flex;
+  align-items: center;
+
+  color: #000000;
+
+  padding: 5px 10px 5px 20px;
+
+  margin-left: -1px;
+}
+
+.event-popup-input:focus {
+  outline: none;
+}
+.event-popup-input::placeholder {
+  color: #808080;
+}
+
+/*       BUTTONS CONTENT     */
+.event-popup-bttns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 5px;
+  align-items: center;
+
+  margin-top: 30px;
+}
+
+.event-popup-bttns button {
+  cursor: pointer;
+
+  font-family: "Work Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 14px;
+
+  display: flex;
+  align-items: center;
+  text-align: center;
+
+  border-radius: 10px;
+  outline: none;
+  border: none;
+  background: none;
+
+  padding: 8px 15px;
+}
+
+/*       CANCEL BUTTON     */
+.event-popup-bttns .cancel {
+  color: #000000;
+  transition: 0.1s ease-in-out;
+}
+
+.event-popup-bttns .cancel:hover {
+  background: #e6e6e6;
+  transition: 0.1s ease-in-out;
+}
+
+.event-popup-bttns .cancel:active {
+  background: #ababab;
+  transition: 0.1s ease-in-out;
+}
+
+/*       CONFIRM BUTTON     */
+.event-popup-bttns .confirm {
+  color: #ff4d6d;
+  font-weight: 600;
+
+  transition: 0.1s ease-in-out;
+}
+
+.event-popup-bttns .confirm:hover {
+  background: #fae0e4;
+
+  color: #000000;
+
+  transition: 0.1s ease-in-out;
+}
+
+.event-popup-bttns .confirm:active {
+  background: #000;
+
+  color: #fff;
+
+  transition: 0.1s ease-in-out;
+}
+
+@media screen and (max-width: 575px) {
+  .calendar-event-popup {
+    left: 0;
+  }
+}
+@media screen and (max-width: 500px) {
+  .calendar-event-popup {
+    width: 400px;
+  }
+}
+@media screen and (max-width: 450px) {
+  .calendar-event-popup {
+    width: 350px;
+  }
+}
+@media screen and (max-width: 400px) {
+  .calendar-event-popup {
+    width: 300px;
+  }
+}
+@media screen and (max-width: 350px) {
+  .calendar-event-popup {
+    width: 250px;
+  }
+}

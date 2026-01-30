@@ -1,0 +1,166 @@
+.calendar-app {
+  padding-right: 40px;
+  height: 65%;
+}
+
+.recipe-event-div {
+  border: None;
+  border-radius: 5px;
+}
+
+.tabcalendar-event-title-container {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 5px;
+
+  padding: 4px;
+  border-radius: 5px;
+  border: 2px solid #000;
+
+  background-color: #000;
+
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.tabcalendar-event-title-container.active {
+  border: 2px solid #dc2100;
+}
+
+.active-event-blob-div {
+  position: absolute;
+  inset: 0;
+
+  background: none;
+  border-radius: 5px;
+  height: 100%;
+  width: 100%;
+
+  box-shadow: 0 0 0 0 rgba(220, 33, 0, 0);
+  transform: scale(1);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(220, 33, 0, 0.7);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(220, 33, 0, 0);
+  }
+
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(220, 33, 0, 0);
+  }
+}
+
+.tabcalendar-event-title-container:hover {
+  background: hsla(9, 100%, 43%, 1);
+
+  background: linear-gradient(
+    0deg,
+    hsla(9, 100%, 43%, 1) 0%,
+    hsla(0, 0%, 0%, 1) 100%
+  );
+
+  background: -moz-linear-gradient(
+    0deg,
+    hsla(9, 100%, 43%, 1) 0%,
+    hsla(0, 0%, 0%, 1) 100%
+  );
+
+  background: -webkit-linear-gradient(
+    0deg,
+    hsla(9, 100%, 43%, 1) 0%,
+    hsla(0, 0%, 0%, 1) 100%
+  );
+
+  filter: progid: DXImageTransform.Microsoft.gradient( startColorstr="#DC2100", endColorstr="#000000", GradientType=1 );
+}
+
+.tabcalendar-event-title-container img {
+  height: clamp(10px, 4vw, 30px);
+  border-radius: 3px;
+}
+
+.tabcalendar-event-title-container p {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  text-align: center;
+  font-family: "Work Sans";
+  font-size: clamp(10px, 4vw, 12px);
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+}
+
+:root {
+  --fc-today-bg-color: #ffdcd5;
+
+  /*
+  .fc {
+  }
+  
+  */
+  .fc table {
+    font-size: clamp(10px, 4vw, 12px);
+    font-family: "Work Sans";
+  }
+
+  .fc .fc-toolbar-title {
+    color: #000;
+    text-align: center;
+    font-family: "Work Sans";
+    font-size: clamp(16px, 4vw, 20px);
+    font-style: normal;
+    font-weight: 500;
+    line-height: normal;
+  }
+
+  .fc .fc-button-primary:hover {
+    background-color: #ababab;
+    transition: 0.2s ease;
+  }
+
+  .fc .fc-button {
+    text-align: center;
+    font-family: "Work Sans";
+    font-size: clamp(10px, 4vw, 14px);
+    font-style: normal;
+    font-weight: 500;
+    line-height: normal;
+
+    height: 35px;
+
+    background-color: black;
+    border: none;
+  }
+
+  .fc .fc-toolbar.fc-header-toolbar {
+    margin-bottom: 7px;
+  }
+
+  .fc-event .fc-event-main {
+    position: relative;
+    z-index: auto;
+  }
+  .fc .fc-daygrid-body {
+    z-index: auto;
+  }
+  .fc .fc-daygrid-event {
+    z-index: auto;
+  }
+}
+
+@media screen and (max-width: 575px) {
+  .calendar-app {
+    padding: 0px 0px 0px 0px;
+  }
+}

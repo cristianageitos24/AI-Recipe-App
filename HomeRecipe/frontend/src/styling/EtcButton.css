@@ -1,0 +1,83 @@
+/*  DOTS IS CLICKED   */
+.etc-content {
+  position: relative;
+}
+
+.etc-button {
+  margin: 0;
+  outline: none;
+  border: none;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  padding: 5px;
+  background: none;
+
+  cursor: pointer;
+}
+
+.etc-button:hover {
+  background-color: #beccd4;
+  border-radius: 5px;
+  transition: background-color ease-in 0.1s;
+}
+
+.etc-button svg {
+  width: 4px;
+  height: 19px;
+}
+.etc-content .etc-options {
+  position: absolute;
+  z-index: 100;
+  top: 100%;
+  left: -850%;
+
+  list-style-type: none;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+
+  margin: 0;
+  cursor: auto;
+  padding: 4px;
+
+  background: #ffffff;
+  border-radius: 6px;
+}
+
+.etc-content .etc-options li {
+  color: #000;
+  text-align: center;
+  font-family: Work Sans;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+
+  margin: 0;
+  cursor: pointer;
+  white-space: nowrap;
+
+  background: #fff;
+  border: none;
+
+  border-radius: 5px;
+  padding: 5px 40px 5px 10px;
+  width: -webkit-fill-available;
+}
+
+.etc-content .etc-options li:hover {
+  background: #d2dce1;
+}
+
+.etc-content .etc-options li:active {
+  background: #ababab;
+}

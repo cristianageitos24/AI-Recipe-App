@@ -1,0 +1,314 @@
+/*      RECIPE CARDS BEFORE        */
+
+.tabcookbook-show-liked-recipes .cards-container {
+  overflow-x: auto; /* Enable horizontal scrolling */
+  white-space: nowrap; /* Prevent list items from wrapping */
+
+  margin-right: 10px;
+  height: 100%;
+}
+.tabcookbook-show-liked-recipes .scrollable-wrapper {
+  width: fit-content; /* Ensures the wrapper fits its content */
+}
+
+.recipe-cards-horizontal-list {
+  display: inline-flex; /* Display list items in a row */
+  gap: 10px;
+  padding: 5px;
+}
+
+/*      RECIPE CARDS ACTUAL CONTENT        */
+
+/*      IMAGE CONTENT        */
+
+.recipe-card-canvas {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+
+  transition: 0.2s ease;
+}
+
+.recipe-card-canvas:hover {
+  transition: 0.2s ease;
+  transform: translateY(-4px);
+}
+
+.recipe-card-image-box {
+  width: 268px;
+  height: 223px;
+  flex-shrink: 0;
+
+  border-radius: 20px;
+
+  position: relative;
+}
+
+.recipe-card-image-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Fits the image inside the container without stretching, cropping as needed */
+  object-position: center; /* Centers the image within the container */
+
+  border-radius: 20px;
+}
+
+.recipe-card-image-box .options-btn-bkg {
+  width: 70px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 50px;
+  background: rgba(247, 249, 247, 0.9);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  position: absolute;
+  top: 15px;
+  right: 15px;
+
+  padding: 0px 2px;
+  gap: 6px;
+}
+
+/*  FOLDER IS CLICKED   */
+.save-to-folder-content {
+  position: relative;
+}
+
+.save-to-folder-button {
+  position: relative;
+
+  outline: none;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  padding: 5px 3px;
+
+  background: none;
+  border: none;
+  border-radius: 5px 13px 13px 5px;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.save-to-folder-button svg {
+  width: 20px;
+  margin-left: 2px;
+}
+
+.save-to-folder-button svg path {
+  fill: #adb8c1;
+}
+
+.save-to-folder-button:hover {
+  background: #ebebeb;
+  border-radius: 5px 13px 13px 5px;
+  transition: background-color ease-in 0.1s;
+}
+
+.save-to-folder-button svg {
+  width: 20px;
+}
+
+.save-to-folder-content .save-to-folder-options {
+  position: absolute;
+  z-index: 100;
+  top: 100%;
+  right: -16%;
+
+  width: 100px;
+  max-height: 200px;
+
+  margin: 0;
+  cursor: auto;
+
+  background: #ffffff;
+  border-radius: 6px;
+
+  padding: 5px;
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-content: flex-start;
+  align-items: flex-start;
+
+  overflow-y: auto;
+}
+
+.save-to-folder-content .save-to-folder-options p {
+  color: #000;
+  text-align: justify;
+  font-family: Work Sans;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+
+  margin: 0;
+  padding: 5px 10px;
+  cursor: pointer;
+
+  background: #fff;
+  border: none;
+  border-radius: 5px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.save-to-folder-content .save-to-folder-options p:hover {
+  background: #d2dce1;
+}
+
+.save-to-folder-content .save-to-folder-options p:active {
+  background: #ababab;
+}
+
+/*      LABEL CONTENT        */
+
+.recipe-card-information-box {
+  width: 221px;
+  height: 75px;
+  width: auto;
+  height: auto;
+  flex-shrink: 0;
+
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0px 4px 20px 0px rgba(0, 0, 0, 0.25);
+
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  justify-content: center;
+
+  padding: 10px 20px 10px 20px;
+  margin-top: -36px;
+  z-index: 1;
+}
+
+.recipe-card-information-box .recipe-card-labels {
+  display: flex;
+  justify-content: left;
+  align-items: center;
+
+  flex-direction: column;
+
+  position: relative;
+}
+
+.recipe-card-information-box .recipe-card-labels .recipe-title {
+  margin: 0;
+  margin-right: auto;
+
+  color: #000;
+  text-align: center;
+  font-family: EB Garamond;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+}
+
+.recipe-card-labels .small-labels {
+  margin-top: 6px;
+  margin-right: auto;
+
+  display: flex;
+  justify-content: left;
+  align-items: center;
+
+  gap: 30px;
+}
+
+.recipe-card-labels .small-labels p {
+  margin: 0;
+
+  color: #989898;
+  text-align: center;
+  font-family: Work Sans;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 300;
+  line-height: normal;
+}
+
+.recipe-card-labels .small-labels span {
+  color: #404342;
+  text-align: center;
+  font-family: Work Sans;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+}
+
+/*      BUTTON CONTENT        */
+
+.recipe-card-information-box .recipe-card-openlink-btn {
+  margin-left: 10px;
+
+  border: none;
+  border-radius: 50px;
+  background: #000;
+
+  width: 33px;
+  height: 21px;
+
+  cursor: pointer;
+}
+
+.recipe-card-information-box .recipe-card-openlink-btn .openlink-icon {
+  width: 11px;
+  height: 11px;
+
+  margin-top: 2px;
+}
+
+.recipe-card-information-box .recipe-card-openlink-btn .openlink-icon path {
+  fill: white;
+}
+
+.recipe-card-openlink-btn:hover {
+  background: #dedede;
+
+  transition: 0.2s ease-in;
+}
+
+.recipe-card-openlink-btn:hover .openlink-icon path {
+  fill: #000;
+
+  transition: 0.2s ease-in;
+}
+
+/*      DRAGGED CONTENT STYLING        */
+.drag-preview-content {
+  position: absolute;
+  pointer-events: none;
+  z-index: -1;
+
+  color: #000;
+  text-align: center;
+  font-family: EB Garamond;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+
+  margin: 0;
+
+  left: -10px;
+  top: -10px;
+  padding: 10px 10px;
+
+  box-sizing: border-box;
+  border-radius: 10px;
+
+  background-color: #fff;
+}

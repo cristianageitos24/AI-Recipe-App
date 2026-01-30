@@ -1,0 +1,110 @@
+.image-bttn-container {
+  position: relative;
+  margin: 0;
+
+  height: 224px;
+  width: 100%;
+
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 20px;
+}
+
+.image-bttn-container:hover {
+  border: 1px solid black;
+  border-radius: 20px;
+}
+
+.image-bttn-container .image-blur {
+  position: absolute;
+  z-index: 1;
+  background-color: black;
+
+  height: 100%;
+  width: 100%;
+
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 29%, #000000 100%);
+  border-radius: 0px 0px 20px 20px;
+}
+
+.image-bttn-container .image {
+  position: absolute;
+  margin: 0;
+
+  height: 100%;
+  width: 100%;
+
+  border-radius: 10px;
+  object-fit: cover;
+  background-position: center;
+
+  filter: drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.25));
+  border-radius: 20px;
+}
+
+.image-bttn-container .recipe-label {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1;
+  margin: 0;
+
+  font-family: "Work Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-size: 16px;
+
+  display: flex;
+  align-items: center;
+  text-transform: capitalize;
+
+  color: #ffffff;
+
+  padding-right: 20px;
+}
+
+.image-bttn-container .etc-bttn {
+  position: absolute;
+  top: 25px;
+  right: 25px;
+  z-index: 1;
+  margin: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+  padding: 10px;
+
+  height: 30px;
+  width: 30px;
+
+  background: rgba(217, 217, 217, 0.5);
+  border: none;
+  transition: background-color 0.2s ease-in-out;
+
+  cursor: pointer;
+}
+
+.image-bttn-container .etc-bttn:hover {
+  background-color: #d9d9d9;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.recipe-full-view-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.35); /* Semi-transparent background */
+
+  z-index: 100;
+
+  cursor: pointer;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
