@@ -244,7 +244,11 @@ export default function DashboardHomePage() {
                 const info = recipeRowToProcessed(recipe);
                 return (
                   <motion.div key={recipe.id} className="home-card results-content" whileHover={{ scale: 1.02 }}>
-                    <img className="result-pic" src={recipe.image_url ?? ""} alt={recipe.recipe_label} />
+                    {recipe.image_url ? (
+                      <img className="result-pic" src={recipe.image_url} alt={recipe.recipe_label} />
+                    ) : (
+                      <span className="result-pic result-pic-placeholder" aria-hidden />
+                    )}
                     <div className="results-labels">
                       <h1>{recipe.recipe_label}</h1>
                       <div className="label-details">

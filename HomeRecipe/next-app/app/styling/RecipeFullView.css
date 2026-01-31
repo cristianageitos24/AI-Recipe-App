@@ -40,19 +40,25 @@
   border-radius: 10px 10px 0px 0px;
 }
 
-.more-information-image-box .more-info-image {
+.more-information-image-box .more-info-image,
+.more-information-image-box .more-info-image-placeholder {
   position: absolute;
   margin: 0;
 
   height: 100%;
   width: 100%;
 
-  border-radius: 10px;
+  border-radius: 10px 10px 0px 0px;
+}
+
+.more-information-image-box .more-info-image {
   object-fit: cover;
   background-position: center;
-
   filter: drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.25));
-  border-radius: 10px 10px 0px 0px;
+}
+
+.more-information-image-box .more-info-image-placeholder {
+  background: #d2dce1;
 }
 
 .more-information-image-box .more-info-recipe-label {
@@ -139,6 +145,11 @@
   font-size: 14px;
 
   color: #000000;
+}
+
+.full-information .recipe-steps-list {
+  list-style-type: decimal;
+  padding-left: 24px;
 }
 
 .recipe-fullview-openlink-btn {

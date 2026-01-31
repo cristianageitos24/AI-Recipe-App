@@ -1,5 +1,8 @@
 // Normalize Edamam API recipe to app shape (matches frontend ProcessRecipeData)
 
+import { v4 as uuidv4 } from "uuid";
+import type { RecipePayload } from "./types";
+
 export type ProcessedRecipe = {
   recipeID: string;
   calories: number;
@@ -8,6 +11,7 @@ export type ProcessedRecipe = {
   mealType: string;
   timeMin: number;
   ingredients: string;
+  steps?: string | null;
   imageURL: string;
   websiteURL: string;
 };
@@ -79,7 +83,7 @@ export function processRecipeData(recipeData: EdamamRecipe | null): ProcessedRec
 }
 
 /** Convert ProcessedRecipe to RecipePayload for server actions */
-export function toRecipePayload(r: ProcessedRecipe) {
+export function toRecipePayload(r: ProcessedRecipe): RecipePayload {
   return {
     recipeID: r.recipeID,
     recipe_label: r.recipeLabel,
@@ -88,7 +92,51 @@ export function toRecipePayload(r: ProcessedRecipe) {
     meal_type: r.mealType || null,
     time_in_minutes: r.timeMin,
     ingredient_lines: r.ingredients || null,
+    steps: r.steps ?? null,
     website_url: r.websiteURL || null,
     image_url: r.imageURL || null,
+  };
+}
+
+/** Normalize newline-separated text to ***-joined lines */
+function linesToStorage(text: string): string {
+  const lines = text
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return lines.join("***");
+}
+
+/** Build RecipePayload from manual entry form (no Edamam). */
+export function buildManualRecipePayload(params: {
+  recipeLabel: string;
+  ingredientsText: string;
+  stepsText?: string;
+  timeInMinutes: number;
+  calories?: number;
+  cuisineType?: string;
+  mealType?: string;
+  imageUrl?: string;
+  websiteUrl?: string;
+}): RecipePayload {
+  const recipeID = `manual-${uuidv4()}`;
+  const ingredient_lines = linesToStorage(params.ingredientsText);
+  const steps = params.stepsText?.trim() ? linesToStorage(params.stepsText) : null;
+  const time = Number(params.timeInMinutes);
+  const time_in_minutes = Number.isFinite(time) && time >= 0 ? time : 0;
+  const cal = params.calories != null ? Number(params.calories) : 0;
+  const calories = Number.isFinite(cal) && cal >= 0 ? cal : 0;
+
+  return {
+    recipeID,
+    recipe_label: params.recipeLabel.trim(),
+    calories,
+    cuisine_type: params.cuisineType?.trim() || null,
+    meal_type: params.mealType?.trim() || null,
+    time_in_minutes,
+    ingredient_lines: ingredient_lines || null,
+    steps,
+    website_url: params.websiteUrl?.trim() || null,
+    image_url: params.imageUrl?.trim() || null,
   };
 }

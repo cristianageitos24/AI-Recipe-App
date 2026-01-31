@@ -12,16 +12,23 @@ function capitalizeFirstLetter(string: string): string {
 
 export function RecipeFullView({ recipeData }: { recipeData: RecipeRow }) {
   const ingredientLines = (recipeData.ingredient_lines ?? "").split("***").map((s) => s.trim());
+  const stepsLines = (recipeData.steps ?? "").trim()
+    ? (recipeData.steps ?? "").split("***").map((s) => s.trim()).filter(Boolean)
+    : [];
 
   return (
     <div className="more-information-container" onClick={(e) => e.stopPropagation()}>
       <div className="more-information-image-box">
         <div className="more-info-image-blur" />
-        <img
-          className="more-info-image"
-          src={recipeData.image_url ?? ""}
-          alt={recipeData.recipe_label}
-        />
+        {recipeData.image_url ? (
+          <img
+            className="more-info-image"
+            src={recipeData.image_url}
+            alt={recipeData.recipe_label}
+          />
+        ) : (
+          <div className="more-info-image more-info-image-placeholder" aria-hidden />
+        )}
         <h1 className="more-info-recipe-label">{recipeData.recipe_label}</h1>
       </div>
       <div className="full-information">
@@ -43,6 +50,18 @@ export function RecipeFullView({ recipeData }: { recipeData: RecipeRow }) {
             </li>
           ))}
         </ul>
+        {stepsLines.length > 0 && (
+          <>
+            <h1 className="ingredients-subtitle">Instructions</h1>
+            <ol className="ingredients-content recipe-steps-list">
+              {stepsLines.map((step, index) => (
+                <li key={index} className="bullet-points">
+                  {step}
+                </li>
+              ))}
+            </ol>
+          </>
+        )}
         <button
           type="button"
           className="recipe-fullview-openlink-btn"

@@ -30,6 +30,7 @@ export async function getOrCreateRecipe(payload: RecipePayload) {
       meal_type: payload.meal_type,
       time_in_minutes: payload.time_in_minutes,
       ingredient_lines: payload.ingredient_lines,
+      steps: payload.steps ?? null,
       website_url: payload.website_url,
       image_url: payload.image_url,
     })

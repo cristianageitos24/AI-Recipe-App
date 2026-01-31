@@ -54,6 +54,13 @@
   border-radius: 20px;
 }
 
+.recipe-card-image-box .recipe-card-image-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+  background: #d2dce1;
+}
+
 .recipe-card-image-box .options-btn-bkg {
   width: 70px;
   height: 30px;

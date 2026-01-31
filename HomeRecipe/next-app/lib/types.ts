@@ -9,6 +9,7 @@ export type RecipeRow = {
   meal_type: string | null;
   time_in_minutes: number;
   ingredient_lines: string | null;
+  steps: string | null;
   website_url: string | null;
   image_url: string | null;
   created_at?: string;
@@ -22,6 +23,7 @@ export type RecipePayload = {
   meal_type: string | null;
   time_in_minutes: number;
   ingredient_lines: string | null;
+  steps: string | null;
   website_url: string | null;
   image_url: string | null;
 };

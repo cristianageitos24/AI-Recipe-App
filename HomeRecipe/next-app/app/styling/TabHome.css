@@ -226,6 +226,15 @@
   background-position: center;
 }
 
+.results-content .result-pic-placeholder {
+  display: block;
+  min-width: 80px;
+  height: 100%;
+  flex-shrink: 0;
+  border-radius: 15px;
+  background: #d2dce1;
+}
+
 .results-labels {
   margin-left: 15px;
   width: auto;

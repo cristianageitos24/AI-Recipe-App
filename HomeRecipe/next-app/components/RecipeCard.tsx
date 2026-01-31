@@ -109,7 +109,11 @@ export function RecipeCard({ recipeData }: RecipeCardProps) {
       }
     >
       <div className="recipe-card-image-box">
-        <img src={recipeData.image_url ?? ""} alt={recipeData.recipe_label} />
+        {recipeData.image_url ? (
+          <img src={recipeData.image_url} alt={recipeData.recipe_label} />
+        ) : (
+          <div className="recipe-card-image-placeholder" aria-hidden />
+        )}
         <div className="options-btn-bkg">
           <div className="heart-btn-stage" style={{ top: "2%" }}>
             <div

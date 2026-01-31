@@ -1,6 +1,7 @@
 /*  DOTS IS CLICKED   */
 .etc-content {
   position: relative;
+  flex-shrink: 0;
 }
 
 .etc-button {

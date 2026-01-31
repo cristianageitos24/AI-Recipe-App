@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { addRecipeToFolder, deleteFolder, getFolderRecipes, getFolders, renameFolder } from "@/app/actions/folders";
 import { getFavorites } from "@/app/actions/favorites";
 import { CookbookPageRecipeCard } from "@/components/CookbookPageRecipeCard";
-import { processRecipeData, toRecipePayload } from "@/lib/processRecipeData";
+import { buildManualRecipePayload, processRecipeData, toRecipePayload } from "@/lib/processRecipeData";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/CookbookFolderPage.css";
 
@@ -27,6 +27,18 @@ export default function CookbookFolderPage() {
   const [addRecipeSearchQuery, setAddRecipeSearchQuery] = useState("");
   const [addRecipeSearchResults, setAddRecipeSearchResults] = useState<EdamamHit[]>([]);
   const [addRecipeSearching, setAddRecipeSearching] = useState(false);
+  const [addRecipeMode, setAddRecipeMode] = useState<"search" | "manual">("search");
+  const [manualRecipeLabel, setManualRecipeLabel] = useState("");
+  const [manualIngredients, setManualIngredients] = useState("");
+  const [manualSteps, setManualSteps] = useState("");
+  const [manualTimeInMinutes, setManualTimeInMinutes] = useState("");
+  const [manualCalories, setManualCalories] = useState("");
+  const [manualCuisineType, setManualCuisineType] = useState("");
+  const [manualMealType, setManualMealType] = useState("");
+  const [manualImageUrl, setManualImageUrl] = useState("");
+  const [manualWebsiteUrl, setManualWebsiteUrl] = useState("");
+  const [manualSubmitting, setManualSubmitting] = useState(false);
+  const [manualError, setManualError] = useState("");
 
   const appID = process.env.NEXT_PUBLIC_EDAMAM_APP_ID;
   const appKEY = process.env.NEXT_PUBLIC_EDAMAM_APP_KEY;
@@ -108,6 +120,17 @@ export default function CookbookFolderPage() {
     setAddRecipeTab("your-recipes");
     setAddRecipeSearchQuery("");
     setAddRecipeSearchResults([]);
+    setAddRecipeMode("search");
+    setManualRecipeLabel("");
+    setManualIngredients("");
+    setManualSteps("");
+    setManualTimeInMinutes("");
+    setManualCalories("");
+    setManualCuisineType("");
+    setManualMealType("");
+    setManualImageUrl("");
+    setManualWebsiteUrl("");
+    setManualError("");
   }
 
   async function handleAddRecipeFromList(recipe: RecipeRow) {
@@ -145,6 +168,45 @@ export default function CookbookFolderPage() {
     if (!res.error) {
       refreshFolderRecipes();
       closeAddRecipeModal();
+    }
+  }
+
+  function getManualFormValid(): boolean {
+    const label = manualRecipeLabel.trim();
+    const ingredients = manualIngredients.trim().split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+    const time = Number(manualTimeInMinutes);
+    return label.length > 0 && ingredients.length > 0 && Number.isFinite(time) && time > 0;
+  }
+
+  async function handleSubmitManualRecipe(e: React.FormEvent) {
+    e.preventDefault();
+    setManualError("");
+    if (!getManualFormValid()) {
+      setManualError("Recipe name, at least one ingredient, and a positive cook time are required.");
+      return;
+    }
+    setManualSubmitting(true);
+    try {
+      const payload = buildManualRecipePayload({
+        recipeLabel: manualRecipeLabel,
+        ingredientsText: manualIngredients,
+        stepsText: manualSteps || undefined,
+        timeInMinutes: Number(manualTimeInMinutes) || 0,
+        calories: manualCalories ? Number(manualCalories) : undefined,
+        cuisineType: manualCuisineType || undefined,
+        mealType: manualMealType || undefined,
+        imageUrl: manualImageUrl || undefined,
+        websiteUrl: manualWebsiteUrl || undefined,
+      });
+      const res = await addRecipeToFolder(copyFolderName, payload);
+      if (res.error) {
+        setManualError(res.error);
+        return;
+      }
+      refreshFolderRecipes();
+      closeAddRecipeModal();
+    } finally {
+      setManualSubmitting(false);
     }
   }
 
@@ -263,11 +325,15 @@ export default function CookbookFolderPage() {
                           className="add-recipe-list-item"
                           onClick={() => handleAddRecipeFromList(recipe)}
                         >
-                          <img
-                            src={recipe.image_url ?? ""}
-                            alt=""
-                            className="add-recipe-list-item-img"
-                          />
+                          {recipe.image_url ? (
+                            <img
+                              src={recipe.image_url}
+                              alt=""
+                              className="add-recipe-list-item-img"
+                            />
+                          ) : (
+                            <span className="add-recipe-list-item-img add-recipe-list-item-img-placeholder" aria-hidden />
+                          )}
                           <span className="add-recipe-list-item-label">{recipe.recipe_label}</span>
                         </button>
                       </li>
@@ -277,50 +343,159 @@ export default function CookbookFolderPage() {
               </div>
             ) : (
               <div className="add-recipe-search-container">
-                {!isEdamamEnabled ? (
-                  <p className="add-recipe-empty-msg">
-                    Add Edamam API keys to enable recipe search (see Home page).
-                  </p>
+                <div className="add-recipe-mode-toggle">
+                  <button
+                    type="button"
+                    className={`add-recipe-mode-toggle-btn ${addRecipeMode === "search" ? "active" : ""}`}
+                    onClick={() => setAddRecipeMode("search")}
+                  >
+                    Search online
+                  </button>
+                  <button
+                    type="button"
+                    className={`add-recipe-mode-toggle-btn ${addRecipeMode === "manual" ? "active" : ""}`}
+                    onClick={() => setAddRecipeMode("manual")}
+                  >
+                    Add manually
+                  </button>
+                </div>
+                {addRecipeMode === "search" ? (
+                  !isEdamamEnabled ? (
+                    <p className="add-recipe-empty-msg">
+                      Add Edamam API keys to enable recipe search (see Home page).
+                    </p>
+                  ) : (
+                    <>
+                      <div className="add-recipe-search-row">
+                        <input
+                          type="text"
+                          className="add-recipe-search-input"
+                          placeholder="Search recipes..."
+                          value={addRecipeSearchQuery}
+                          onChange={(e) => setAddRecipeSearchQuery(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && handleAddRecipeSearch()}
+                        />
+                        <button
+                          type="button"
+                          className="add-recipe-search-btn"
+                          onClick={handleAddRecipeSearch}
+                          disabled={addRecipeSearching}
+                        >
+                          {addRecipeSearching ? "Searching..." : "Search"}
+                        </button>
+                      </div>
+                      <div className="add-recipe-search-results">
+                        {addRecipeSearchResults.length === 0 && !addRecipeSearching && addRecipeSearchQuery.trim() !== "" && (
+                          <p className="add-recipe-empty-msg">No results. Try another query.</p>
+                        )}
+                        {addRecipeSearchResults.map((hit, index) => {
+                          const info = processRecipeData(hit.recipe as Parameters<typeof processRecipeData>[0]);
+                          return (
+                            <button
+                              key={index}
+                              type="button"
+                              className="add-recipe-list-item add-recipe-search-result-item"
+                              onClick={() => handleAddRecipeFromSearch(hit)}
+                            >
+                              <img src={info.imageURL} alt="" className="add-recipe-list-item-img" />
+                              <span className="add-recipe-list-item-label">{info.recipeLabel}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )
                 ) : (
-                  <>
-                    <div className="add-recipe-search-row">
-                      <input
-                        type="text"
-                        className="add-recipe-search-input"
-                        placeholder="Search recipes..."
-                        value={addRecipeSearchQuery}
-                        onChange={(e) => setAddRecipeSearchQuery(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleAddRecipeSearch()}
-                      />
-                      <button
-                        type="button"
-                        className="add-recipe-search-btn"
-                        onClick={handleAddRecipeSearch}
-                        disabled={addRecipeSearching}
-                      >
-                        {addRecipeSearching ? "Searching..." : "Search"}
-                      </button>
-                    </div>
-                    <div className="add-recipe-search-results">
-                      {addRecipeSearchResults.length === 0 && !addRecipeSearching && addRecipeSearchQuery.trim() !== "" && (
-                        <p className="add-recipe-empty-msg">No results. Try another query.</p>
-                      )}
-                      {addRecipeSearchResults.map((hit, index) => {
-                        const info = processRecipeData(hit.recipe as Parameters<typeof processRecipeData>[0]);
-                        return (
-                          <button
-                            key={index}
-                            type="button"
-                            className="add-recipe-list-item add-recipe-search-result-item"
-                            onClick={() => handleAddRecipeFromSearch(hit)}
-                          >
-                            <img src={info.imageURL} alt="" className="add-recipe-list-item-img" />
-                            <span className="add-recipe-list-item-label">{info.recipeLabel}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </>
+                  <form className="add-recipe-manual-form" onSubmit={handleSubmitManualRecipe}>
+                    {manualError && <p className="add-recipe-manual-error">{manualError}</p>}
+                    <label className="add-recipe-manual-label">
+                      Recipe name <span className="add-recipe-manual-required">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="add-recipe-manual-input"
+                      placeholder="e.g. Chocolate Cake"
+                      value={manualRecipeLabel}
+                      onChange={(e) => setManualRecipeLabel(e.target.value)}
+                    />
+                    <label className="add-recipe-manual-label">
+                      Ingredients <span className="add-recipe-manual-required">*</span> (one per line)
+                    </label>
+                    <textarea
+                      className="add-recipe-manual-textarea"
+                      placeholder={"1 cup flour\n2 eggs\n..."}
+                      value={manualIngredients}
+                      onChange={(e) => setManualIngredients(e.target.value)}
+                      rows={4}
+                    />
+                    <label className="add-recipe-manual-label">Steps (optional, one per line)</label>
+                    <textarea
+                      className="add-recipe-manual-textarea"
+                      placeholder={"Preheat oven to 350°F\nMix dry ingredients\n..."}
+                      value={manualSteps}
+                      onChange={(e) => setManualSteps(e.target.value)}
+                      rows={4}
+                    />
+                    <label className="add-recipe-manual-label">
+                      Cook time (minutes) <span className="add-recipe-manual-required">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      className="add-recipe-manual-input"
+                      placeholder="e.g. 30"
+                      value={manualTimeInMinutes}
+                      onChange={(e) => setManualTimeInMinutes(e.target.value)}
+                    />
+                    <label className="add-recipe-manual-label">Calories (optional)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      className="add-recipe-manual-input"
+                      placeholder="e.g. 250"
+                      value={manualCalories}
+                      onChange={(e) => setManualCalories(e.target.value)}
+                    />
+                    <label className="add-recipe-manual-label">Cuisine type (optional)</label>
+                    <input
+                      type="text"
+                      className="add-recipe-manual-input"
+                      placeholder="e.g. American"
+                      value={manualCuisineType}
+                      onChange={(e) => setManualCuisineType(e.target.value)}
+                    />
+                    <label className="add-recipe-manual-label">Meal type (optional)</label>
+                    <input
+                      type="text"
+                      className="add-recipe-manual-input"
+                      placeholder="e.g. lunch"
+                      value={manualMealType}
+                      onChange={(e) => setManualMealType(e.target.value)}
+                    />
+                    <label className="add-recipe-manual-label">Image URL (optional)</label>
+                    <input
+                      type="url"
+                      className="add-recipe-manual-input"
+                      placeholder="https://..."
+                      value={manualImageUrl}
+                      onChange={(e) => setManualImageUrl(e.target.value)}
+                    />
+                    <label className="add-recipe-manual-label">Website URL (optional)</label>
+                    <input
+                      type="url"
+                      className="add-recipe-manual-input"
+                      placeholder="https://..."
+                      value={manualWebsiteUrl}
+                      onChange={(e) => setManualWebsiteUrl(e.target.value)}
+                    />
+                    <button
+                      type="submit"
+                      className="add-recipe-manual-submit"
+                      disabled={!getManualFormValid() || manualSubmitting}
+                    >
+                      {manualSubmitting ? "Adding..." : "Add recipe"}
+                    </button>
+                  </form>
                 )}
               </div>
             )}
