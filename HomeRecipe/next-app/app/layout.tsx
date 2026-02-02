@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Work_Sans } from "next/font/google";
+import { NavigationLoadingOverlay } from "@/components/NavigationLoadingOverlay";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -40,6 +41,7 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} ${workSans.variable} antialiased`}
         >
           {children}
+          <NavigationLoadingOverlay />
         </body>
       </html>
     </ClerkProvider>

@@ -1,0 +1,56 @@
+/* Full-screen loading overlay */
+.loading-screen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  background: var(--background, #ffffff);
+  color: var(--foreground, #171717);
+}
+
+.loading-screen-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* Wrapper for the bowl SVG – applies pulse animation */
+.loading-screen-bowl-wrap {
+  animation: loadingPulse 2s ease-in-out infinite;
+}
+
+@keyframes loadingPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 0.92;
+  }
+}
+
+.loading-screen-bowl-wrap img {
+  display: block;
+  width: clamp(140px, 20vw, 220px);
+  height: auto;
+  object-fit: contain;
+}
+
+.loading-screen-logo {
+  width: 40px;
+  height: 50px;
+  object-fit: contain;
+}
+
+.loading-screen-text {
+  font-size: 0.9375rem;
+  color: var(--foreground, #171717);
+  opacity: 0.85;
+}

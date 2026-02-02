@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
+
+const UserButton = dynamic(
+  () => import("@clerk/nextjs").then((mod) => ({ default: mod.UserButton })),
+  { ssr: false }
+);
 
 const navItems = [
   { href: "/dashboard/home", label: "Home", icon: "/images/dashboard/homeicon.svg" },
