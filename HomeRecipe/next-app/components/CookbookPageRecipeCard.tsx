@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { RecipeFullView } from "./RecipeFullView";
 import type { RecipeRow } from "@/lib/types";
+import { formatRecipeTitleTwoWordsPerLine } from "@/lib/formatRecipeTitle";
 import "@/app/styling/CookbookPageRecipeCard.css";
 
 export function CookbookPageRecipeCard({ recipeData }: { recipeData: RecipeRow }) {
@@ -30,9 +31,11 @@ export function CookbookPageRecipeCard({ recipeData }: { recipeData: RecipeRow }
         {recipeData.image_url ? (
           <img className="image" src={recipeData.image_url} alt={recipeData.recipe_label} />
         ) : (
-          <div className="image image-placeholder" aria-hidden />
+          <img className="image image-placeholder" src="/images/recipe-placeholder.png" alt="" aria-hidden />
         )}
-        <h1 className="recipe-label">{recipeData.recipe_label}</h1>
+        <h1 className="recipe-label recipe-title-two-words">
+          {formatRecipeTitleTwoWordsPerLine(recipeData.recipe_label)}
+        </h1>
       </div>
       {isMoreInformationOpen && (
         <div

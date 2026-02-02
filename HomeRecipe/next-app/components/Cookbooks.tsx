@@ -16,7 +16,11 @@ function getFolderAndLengths(data: { folders?: string[]; results?: Record<string
   }));
 }
 
-export function Cookbooks() {
+type CookbooksProps = {
+  initialFoldersData?: { folders: string[]; results: Record<string, unknown[]> } | null;
+};
+
+export function Cookbooks({ initialFoldersData }: CookbooksProps = {}) {
   const [showModal, setShowModal] = useState(false);
   const [folderName, setFolderName] = useState("");
   const [folders, setFolders] = useState<FolderWithLength[]>([]);
@@ -27,8 +31,12 @@ export function Cookbooks() {
   }, []);
 
   useEffect(() => {
-    fetchFolders();
-  }, [fetchFolders]);
+    if (initialFoldersData !== undefined) {
+      if (initialFoldersData != null) setFolders(getFolderAndLengths(initialFoldersData));
+    } else {
+      fetchFolders();
+    }
+  }, [initialFoldersData, fetchFolders]);
 
   function handleCancel() {
     setShowModal(false);

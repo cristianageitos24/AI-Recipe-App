@@ -5,6 +5,7 @@ import { useDrag } from "react-dnd";
 import { getFolders, addRecipeToFolder } from "@/app/actions/folders";
 import { removeFavorite as removeFav } from "@/app/actions/favorites";
 import type { RecipeRow } from "@/lib/types";
+import { formatRecipeTitleTwoWordsPerLine } from "@/lib/formatRecipeTitle";
 import "@/app/styling/RecipeCard.css";
 import "@/app/styling/EtcButton.css";
 import "@/app/styling/HeartButton.css";
@@ -105,7 +106,7 @@ export function RecipeCard({ recipeData }: RecipeCardProps) {
         {recipeData.image_url ? (
           <img src={recipeData.image_url} alt={recipeData.recipe_label} />
         ) : (
-          <div className="recipe-card-image-placeholder" aria-hidden />
+          <img src="/images/recipe-placeholder.png" alt="" className="recipe-card-image-placeholder" aria-hidden />
         )}
         <div className="options-btn-bkg">
           <div className="heart-btn-stage" style={{ top: "2%" }}>
@@ -149,7 +150,9 @@ export function RecipeCard({ recipeData }: RecipeCardProps) {
             {recipeData.recipe_label}
           </h1>
           <HoverLabel text={recipeData.recipe_label}>
-            <h1 className="recipe-title">{recipeData.recipe_label}</h1>
+            <h1 className="recipe-title recipe-title-two-words">
+              {formatRecipeTitleTwoWordsPerLine(recipeData.recipe_label)}
+            </h1>
           </HoverLabel>
           <div className="small-labels">
             <p>{capitalizeFirstLetter(cuisineType)}</p>

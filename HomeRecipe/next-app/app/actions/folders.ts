@@ -18,15 +18,29 @@ export async function getFolders() {
   if (foldersError) return { error: foldersError.message, data: { folders: [], results: {} } };
 
   const folders = foldersData ?? [];
-  const results: Record<string, unknown[]> = {};
+  if (folders.length === 0) {
+    return {
+      error: null,
+      data: { folders: [], results: {} },
+    };
+  }
 
-  for (const folder of folders) {
-    const { data: recipes } = await supabase
-      .from("folder_recipes")
-      .select("recipes (*)")
-      .eq("folder_id", folder.id);
-    const list = (recipes ?? []).map((row: { recipes: unknown }) => row.recipes).filter(Boolean);
-    results[folder.folder_name] = list;
+  const folderIds = folders.map((f: { id: string }) => f.id);
+  const { data: folderRecipesRows, error: frError } = await supabase
+    .from("folder_recipes")
+    .select("folder_id, recipes (*)")
+    .in("folder_id", folderIds);
+
+  if (frError) return { error: frError.message, data: { folders: [], results: {} } };
+
+  const idToName = new Map(folders.map((f: { id: string; folder_name: string }) => [f.id, f.folder_name]));
+  const results: Record<string, unknown[]> = {};
+  for (const name of idToName.values()) results[name as string] = [];
+
+  for (const row of folderRecipesRows ?? []) {
+    const r = row as { folder_id: string; recipes: unknown };
+    const name = idToName.get(r.folder_id);
+    if (name != null && r.recipes != null) results[name].push(r.recipes);
   }
 
   return {
