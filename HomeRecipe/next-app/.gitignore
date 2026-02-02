@@ -20,6 +20,9 @@
 # production
 /build
 
+# Open Recipes data (large downloaded file)
+recipeitems*.json.gz
+
 # misc
 .DS_Store
 *.pem

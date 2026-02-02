@@ -1,0 +1,14 @@
+---
+description: Use Clerk MCP for auth, sign-in/sign-up, and Clerk APIs in the Next.js app
+alwaysApply: true
+---
+
+# Use Clerk MCP When Working on Auth
+
+When working on authentication, sign-in/sign-up, middleware, protected routes, or any Clerk API in this Next.js app (especially under `HomeRecipe/next-app`):
+
+- **Discover snippets**: Call **list_clerk_sdk_snippets** (optionally with `tag`, e.g. `auth`, `organizations`) to find relevant Clerk SDK snippets before implementing or changing auth flows.
+- **Get official patterns**: Call **clerk_sdk_snippet** with the relevant slug (e.g. `nextjs-app-router`, `use-user`, `use-auth`, `user-button`, `protect-component`) to get official patterns instead of guessing.
+- **Reference docs**: Prefer Clerk MCP resources (e.g. Next.js App Router quickstart) when answering setup or API questions about Clerk.
+
+Relevant areas: `middleware.ts`, `app/layout.tsx`, `app/login/**`, `app/signup/**`, `app/dashboard/**`, and server actions that use `auth()` or `currentUser()` from `@clerk/nextjs/server`.

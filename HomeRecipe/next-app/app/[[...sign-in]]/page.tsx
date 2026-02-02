@@ -1,4 +1,6 @@
-import { SignUp } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+import { SignIn } from "@clerk/nextjs";
 import Link from "next/link";
 import Image from "next/image";
 import AuthCarousel from "@/components/AuthCarousel";
@@ -27,7 +29,12 @@ const clerkAppearance = {
   },
 };
 
-export default function SignUpPage() {
+export default async function SignInPage() {
+  const { userId } = await auth();
+  if (userId) {
+    redirect("/dashboard");
+  }
+
   return (
     <div className="auth-page">
       <div className="auth-left">
@@ -40,15 +47,15 @@ export default function SignUpPage() {
             className="auth-logo"
           />
           <h1 className="auth-title">HomeRecipe</h1>
-          <p className="auth-subtitle">Let&apos;s get started!</p>
-          <SignUp
+          <p className="auth-subtitle">Sign in and let&apos;s start cooking!</p>
+          <SignIn
             forceRedirectUrl="/dashboard"
-            signInUrl="/"
+            signUpUrl="/signup"
             appearance={clerkAppearance}
           />
           <p className="auth-link-wrap">
-            Already have an account?{" "}
-            <Link href="/">Log In</Link>
+            Don&apos;t have an account?{" "}
+            <Link href="/signup">Sign up</Link>
           </p>
         </div>
       </div>

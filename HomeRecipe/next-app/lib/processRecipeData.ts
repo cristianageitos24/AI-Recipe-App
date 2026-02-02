@@ -1,7 +1,7 @@
 // Normalize Edamam API recipe to app shape (matches frontend ProcessRecipeData)
 
 import { v4 as uuidv4 } from "uuid";
-import type { RecipePayload } from "./types";
+import type { RecipePayload, RecipeRow } from "./types";
 
 export type ProcessedRecipe = {
   recipeID: string;
@@ -80,6 +80,21 @@ export function processRecipeData(recipeData: EdamamRecipe | null): ProcessedRec
   if (recipeData.ingredientLines != null) data.ingredients = recipeData.ingredientLines.join("***");
   if (recipeData.url != null) data.websiteURL = recipeData.url;
   return data;
+}
+
+/** Convert RecipeRow (from Supabase) to ProcessedRecipe for components */
+export function recipeRowToProcessed(r: RecipeRow): ProcessedRecipe {
+  return {
+    recipeID: r.recipe_id,
+    recipeLabel: r.recipe_label,
+    calories: r.calories,
+    cuisineType: r.cuisine_type ?? "",
+    mealType: r.meal_type ?? "",
+    timeMin: r.time_in_minutes,
+    ingredients: r.ingredient_lines ?? "",
+    imageURL: r.image_url ?? "",
+    websiteURL: r.website_url ?? "",
+  };
 }
 
 /** Convert ProcessedRecipe to RecipePayload for server actions */

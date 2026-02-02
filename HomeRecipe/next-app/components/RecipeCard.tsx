@@ -11,14 +11,6 @@ import "@/app/styling/HeartButton.css";
 
 type RecipeCardProps = { recipeData: RecipeRow };
 
-function truncateString(inputString: string): string {
-  const words = inputString.split(" ");
-  const maxWords = 3;
-  if (words.length <= maxWords) return inputString;
-  const truncatedString = words.slice(0, maxWords).join(" ");
-  return truncatedString.endsWith(",") ? truncatedString.slice(0, -1) + "..." : truncatedString + "...";
-}
-
 function capitalizeFirstLetter(string: string): string {
   if (string.includes("/")) {
     string = string.replace(/\/(.)/g, (_, char: string) => `/${char.toUpperCase()}`);
@@ -30,12 +22,13 @@ function HoverLabel({ text, children }: { text: string; children: React.ReactNod
   const [showLabel, setShowLabel] = useState(false);
   return (
     <div
+      className="recipe-title-wrap"
       onMouseEnter={() => setShowLabel(true)}
       onMouseLeave={() => setShowLabel(false)}
-      style={{ position: "relative", display: "inline-block", marginRight: "auto" }}
+      style={{ position: "relative" }}
     >
       {children}
-      {showLabel && truncateString(text).includes("...") && (
+      {showLabel && (
         <div
           style={{
             position: "absolute",
@@ -153,10 +146,10 @@ export function RecipeCard({ recipeData }: RecipeCardProps) {
       <div className="recipe-card-information-box">
         <div className="recipe-card-labels">
           <h1 ref={previewRef} className="drag-preview-content">
-            {truncateString(recipeData.recipe_label)}
+            {recipeData.recipe_label}
           </h1>
           <HoverLabel text={recipeData.recipe_label}>
-            <h1 className="recipe-title">{truncateString(recipeData.recipe_label)}</h1>
+            <h1 className="recipe-title">{recipeData.recipe_label}</h1>
           </HoverLabel>
           <div className="small-labels">
             <p>{capitalizeFirstLetter(cuisineType)}</p>

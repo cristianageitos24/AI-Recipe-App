@@ -1,0 +1,16 @@
+---
+description: Use Supabase MCP for database schema, migrations, RLS, and Supabase docs
+alwaysApply: true
+---
+
+# Use Supabase MCP When Working on Database and Backend
+
+When working on database schema, migrations, RLS, server actions that use Supabase, or Supabase docs/APIs (client, server, auth integration):
+
+- **Schema and migrations**: Use **apply_migration** for all DDL (new tables, columns, policies). Do not use `execute_sql` for DDL.
+- **Ad-hoc read-only queries**: Use **execute_sql** only for SELECT or debug queries; never for DDL or untrusted command execution.
+- **Discovery**: Use **list_tables** (and optionally **list_migrations**) when unsure of the current schema.
+- **Types**: Use **generate_typescript_types** when adding or changing tables so TypeScript types stay in sync with the database.
+- **Docs**: Use **search_docs** (with a valid GraphQL query) when checking Supabase documentation (RLS, auth, Edge Functions, etc.).
+
+**Context**: This project uses Clerk for auth; Supabase RLS uses `auth.jwt()->>'sub'` (Clerk user ID). The server client is created via `HomeRecipe/next-app/utils/supabase/server.ts` with the Clerk JWT.

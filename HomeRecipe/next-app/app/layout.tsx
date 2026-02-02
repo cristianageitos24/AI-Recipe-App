@@ -31,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider
-      signInUrl="/login"
+      signInUrl="/"
       signUpUrl="/signup"
       afterSignOutUrl="/"
     >

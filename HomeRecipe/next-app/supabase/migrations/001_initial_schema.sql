@@ -25,13 +25,6 @@ CREATE TABLE public.recipes (
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- User-recipes junction (recipe "saved" by user)
-CREATE TABLE public.user_recipes (
-  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  recipe_id UUID NOT NULL REFERENCES public.recipes(id) ON DELETE CASCADE,
-  PRIMARY KEY (user_id, recipe_id)
-);
-
 -- Folders
 CREATE TABLE public.folders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -75,12 +68,10 @@ CREATE INDEX idx_folders_user_id ON public.folders(user_id);
 CREATE INDEX idx_favorites_user_id ON public.favorites(user_id);
 CREATE INDEX idx_meal_dates_user_id ON public.meal_dates(user_id);
 CREATE INDEX idx_meal_dates_date ON public.meal_dates(date);
-CREATE INDEX idx_user_recipes_user_id ON public.user_recipes(user_id);
 
 -- RLS: enable on all tables
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.recipes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_recipes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.folders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.folder_recipes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
@@ -100,10 +91,6 @@ CREATE POLICY "Authenticated can read recipes" ON public.recipes
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Authenticated can insert recipes" ON public.recipes
   FOR INSERT TO authenticated WITH CHECK (true);
-
--- User-recipes: own data only
-CREATE POLICY "Users manage own user_recipes" ON public.user_recipes
-  FOR ALL USING (auth.uid() = user_id);
 
 -- Folders: own data only
 CREATE POLICY "Users manage own folders" ON public.folders
