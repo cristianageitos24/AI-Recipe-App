@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { HeartButton } from "@/components/HeartButton";
 import { SaveToFolderButton } from "@/components/SaveToFolderButton";
+import { FavoriteCard } from "@/components/FavoriteCard";
 import { recipeRowToProcessed } from "@/lib/processRecipeData";
 import { getFolders } from "@/app/actions/folders";
 import { getFavorites } from "@/app/actions/favorites";
@@ -16,6 +17,7 @@ import {
   getSuggestedRecipes,
 } from "@/app/actions/search";
 import type { RecipeRow } from "@/lib/types";
+import { formatRecipeTitleTwoWordsPerLine } from "@/lib/formatRecipeTitle";
 import "@/app/styling/TabHome.css";
 
 function capitalizeFirstLetter(string: string): string {
@@ -41,7 +43,7 @@ function ResultPic({
     setImageError(false);
   }, [imageUrl]);
   if (!imageUrl || imageError) {
-    return <span className="result-pic result-pic-placeholder" aria-hidden />;
+    return <img className="result-pic result-pic-placeholder" src="/images/recipe-placeholder.png" alt="" aria-hidden />;
   }
   return (
     <img
@@ -85,8 +87,49 @@ export default function DashboardHomePage() {
   const suggestionRequestIdRef = useRef(0);
   const searchInProgressRef = useRef(false);
   const [searchSlowMessage, setSearchSlowMessage] = useState(false);
+  const [recommendationsScroll, setRecommendationsScroll] = useState({
+    canScrollLeft: false,
+    canScrollRight: false,
+  });
+  const recommendationsScrollRef = useRef<HTMLDivElement>(null);
 
   const debouncedText = useDebounce(text, 450);
+
+  const updateRecommendationsScrollState = useCallback(() => {
+    const el = recommendationsScrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    const canScrollLeft = scrollLeft > 0;
+    const canScrollRight = scrollLeft < scrollWidth - clientWidth - 1;
+    setRecommendationsScroll((prev) =>
+      prev.canScrollLeft !== canScrollLeft || prev.canScrollRight !== canScrollRight
+        ? { canScrollLeft, canScrollRight }
+        : prev
+    );
+  }, []);
+
+  const scrollRecommendations = useCallback((direction: "left" | "right") => {
+    const el = recommendationsScrollRef.current;
+    if (!el) return;
+    const firstChild = el.querySelector(".home-recommendation-card") as HTMLElement | null;
+    const gap = 12;
+    const cardWidth = firstChild ? firstChild.offsetWidth + gap : 280;
+    const scrollAmount = cardWidth * 2;
+    el.scrollBy({ left: direction === "left" ? -scrollAmount : scrollAmount, behavior: "smooth" });
+  }, []);
+
+  useEffect(() => {
+    updateRecommendationsScrollState();
+    const el = recommendationsScrollRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", updateRecommendationsScrollState);
+    const ro = new ResizeObserver(updateRecommendationsScrollState);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", updateRecommendationsScrollState);
+      ro.disconnect();
+    };
+  }, [suggestedRecipes.length, updateRecommendationsScrollState]);
 
   useEffect(() => {
     getFolders().then((res) => {
@@ -254,8 +297,8 @@ export default function DashboardHomePage() {
     return (
       <div className="results-content">
         <ResultPic imageUrl={recipe.image_url} alt={recipe.recipe_label} />
-        <div className="results-labels">
-          <h1>{recipe.recipe_label}</h1>
+<div className="results-labels">
+                      <h1 className="recipe-title-two-words">{formatRecipeTitleTwoWordsPerLine(recipe.recipe_label)}</h1>
           <div className="label-details">
             <h3>{capitalizeFirstLetter(recipe.cuisine_type ?? "")}</h3>
             <h3>{capitalizeFirstLetter(recipe.meal_type ?? "")}</h3>
@@ -462,64 +505,19 @@ export default function DashboardHomePage() {
           <section className="home-section">
             <h2 className="home-section-title">Favorites</h2>
             <div className="home-section-scroll">
-              {favorites.map((recipe) => {
-                const info = recipeRowToProcessed(recipe);
-                return (
-                  <motion.div
-                    key={recipe.id}
-                    className="home-card results-content"
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <ResultPic imageUrl={recipe.image_url} alt={recipe.recipe_label} />
-                    <div className="results-labels">
-                      <h1>{recipe.recipe_label}</h1>
-                      <div className="label-details">
-                        <h3>{capitalizeFirstLetter(recipe.cuisine_type ?? "")}</h3>
-                        <h3>{capitalizeFirstLetter(recipe.meal_type ?? "")}</h3>
-                      </div>
-                      <div className="label-details">
-                        <h3>{recipe.calories} calories</h3>
-                        <h3
-                          className={
-                            recipe.time_in_minutes <= 10
-                              ? "green-light"
-                              : recipe.time_in_minutes <= 30
-                                ? "yellow-light"
-                                : "red-light"
-                          }
-                        >
-                          {recipe.time_in_minutes < 1
-                            ? "1"
-                            : recipe.time_in_minutes}{" "}
-                          min
-                        </h3>
-                      </div>
-                    </div>
-                    <div className="result-buttons">
-                      <button
-                        type="button"
-                        className="open-recipe-link-btn"
-                        onClick={() => window.open(recipe.website_url ?? "", "_blank")}
-                      >
-                        Show Recipe
-                      </button>
-                      <div className="save-folder-btns">
-                        <div className="heart-btn-search-results-card">
-                          <HeartButton
-                            recipeData={info}
-                            heartStyle={{ top: "50%" }}
-                            isHearted
-                          />
-                        </div>
-                        <SaveToFolderButton
-                          folders={[...new Set(folderOptions)]}
-                          recipeData={info}
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
+              {favorites.map((recipe) => (
+                <motion.div
+                  key={recipe.id}
+                  className="home-card"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <FavoriteCard
+                    recipe={recipe}
+                    folders={[...new Set(folderOptions)]}
+                    isHearted
+                  />
+                </motion.div>
+              ))}
             </div>
           </section>
         )}
@@ -549,12 +547,37 @@ export default function DashboardHomePage() {
           {suggestedLoading ? (
             <p className="home-section-loading">Loading recommendations...</p>
           ) : suggestedRecipes.length > 0 ? (
-            <div className="home-section-scroll">
-              {suggestedRecipes.map((recipe) => (
-                <motion.div key={recipe.id} whileHover={{ scale: 1.02 }}>
-                  <RecipeCard recipe={recipe} />
-                </motion.div>
-              ))}
+            <div className="home-recommendations-wrapper">
+              {recommendationsScroll.canScrollLeft && (
+                <button
+                  type="button"
+                  className="home-recommendations-arrow home-recommendations-arrow-left"
+                  onClick={() => scrollRecommendations("left")}
+                  aria-label="Scroll left"
+                >
+                  <img src="/images/dashboard/arrow.svg" alt="" style={{ transform: "scaleX(-1)" }} />
+                </button>
+              )}
+              <div
+                ref={recommendationsScrollRef}
+                className="home-section-scroll home-recommendations-scroll"
+              >
+                {suggestedRecipes.map((recipe) => (
+                  <motion.div key={recipe.id} className="home-recommendation-card" whileHover={{ scale: 1.02 }}>
+                    <RecipeCard recipe={recipe} />
+                  </motion.div>
+                ))}
+              </div>
+              {recommendationsScroll.canScrollRight && (
+                <button
+                  type="button"
+                  className="home-recommendations-arrow home-recommendations-arrow-right"
+                  onClick={() => scrollRecommendations("right")}
+                  aria-label="Scroll right"
+                >
+                  <img src="/images/dashboard/arrow.svg" alt="" />
+                </button>
+              )}
             </div>
           ) : (
             <p className="home-section-empty">

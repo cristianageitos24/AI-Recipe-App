@@ -332,7 +332,7 @@ export default function CookbookFolderPage() {
                               className="add-recipe-list-item-img"
                             />
                           ) : (
-                            <span className="add-recipe-list-item-img add-recipe-list-item-img-placeholder" aria-hidden />
+                            <img src="/images/recipe-placeholder.png" alt="" className="add-recipe-list-item-img add-recipe-list-item-img-placeholder" aria-hidden />
                           )}
                           <span className="add-recipe-list-item-label">{recipe.recipe_label}</span>
                         </button>
@@ -397,7 +397,7 @@ export default function CookbookFolderPage() {
                               className="add-recipe-list-item add-recipe-search-result-item"
                               onClick={() => handleAddRecipeFromSearch(hit)}
                             >
-                              <img src={info.imageURL} alt="" className="add-recipe-list-item-img" />
+                              <img src={info.imageURL || "/images/recipe-placeholder.png"} alt="" className="add-recipe-list-item-img" />
                               <span className="add-recipe-list-item-label">{info.recipeLabel}</span>
                             </button>
                           );

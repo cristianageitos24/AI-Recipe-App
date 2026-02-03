@@ -27,7 +27,7 @@ export function RecipeFullView({ recipeData }: { recipeData: RecipeRow }) {
             alt={recipeData.recipe_label}
           />
         ) : (
-          <div className="more-info-image more-info-image-placeholder" aria-hidden />
+          <img className="more-info-image more-info-image-placeholder" src="/images/recipe-placeholder.png" alt="" aria-hidden />
         )}
         <h1 className="more-info-recipe-label">{recipeData.recipe_label}</h1>
       </div>

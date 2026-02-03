@@ -1,0 +1,215 @@
+/* Shared favorite card – used on Home Favorites and Cookbook Liked Recipes */
+
+.favorite-card {
+  display: flex;
+  justify-content: left;
+  align-items: center;
+
+  padding: 8px;
+  padding-right: 10px;
+
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0px 4px 5px 0px rgba(0, 0, 0, 0.1);
+
+  height: 150px;
+  min-width: 0;
+  flex-shrink: 0;
+  width: 400px;
+
+  transition: 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0);
+}
+
+.favorite-card:hover {
+  border: 1px solid #000;
+  transition: 0.3s ease;
+}
+
+.favorite-card .favorite-card-pic,
+.favorite-card .favorite-card-pic-placeholder {
+  width: 134px;
+  height: 134px;
+  flex-shrink: 0;
+  border-radius: 16px;
+  object-fit: cover;
+  object-position: center;
+}
+
+.favorite-card .favorite-card-pic-placeholder {
+  display: block;
+  background: linear-gradient(135deg, #e8ecf0 0%, #d2dce1 100%);
+}
+
+.favorite-card .favorite-card-labels {
+  margin-left: 15px;
+  width: auto;
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  height: 90%;
+}
+
+.favorite-card .favorite-card-labels h1 {
+  color: #000;
+  font-family: EB Garamond, serif;
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.3;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+
+  margin: 0;
+}
+
+.favorite-card .favorite-card-labels h1.recipe-title-two-words {
+  white-space: pre-line;
+}
+
+.favorite-card .favorite-card-labels h3 {
+  font-family: Work Sans;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 300;
+  line-height: normal;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex-shrink: 0;
+
+  margin: 0;
+}
+
+.favorite-card .favorite-card-labels .label-details {
+  display: flex;
+  justify-content: left;
+  align-items: center;
+  grid-gap: 10px;
+}
+
+.favorite-card .label-details .green-light {
+  border-radius: 7px;
+  background: #e8f2e8;
+  padding: 7px 10px;
+  font-weight: 500;
+  color: #519451;
+}
+
+.favorite-card .label-details .yellow-light {
+  border-radius: 7px;
+  background: #fdf6e4;
+  padding: 7px 10px;
+  font-weight: 500;
+  color: #d9a112;
+}
+
+.favorite-card .label-details .red-light {
+  border-radius: 7px;
+  background: #f7dbd7;
+  padding: 7px 10px;
+  font-weight: 500;
+  color: #ba3523;
+}
+
+.favorite-card .favorite-card-buttons {
+  margin-left: auto;
+  margin-top: 6px;
+}
+
+.favorite-card .open-recipe-link-btn {
+  color: #fff;
+  text-align: center;
+  font-family: Work Sans;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+
+  display: flex;
+  padding: 10px 0px 10px 0px;
+  min-width: 120px;
+  justify-content: center;
+  align-items: center;
+
+  border-radius: 50px;
+  border: 1px solid #000;
+  background: #000;
+
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.favorite-card .open-recipe-link-btn:hover {
+  background-color: #dedede;
+  color: black;
+  border: 1px solid #dedede;
+  transition: 0.3s;
+}
+
+.favorite-card .save-folder-btns {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.favorite-card .heart-btn-search-results-card {
+  background: none;
+  border-radius: 5px;
+  padding: 3px;
+  transition: 0.2s ease;
+}
+
+.favorite-card .heart-btn-search-results-card:hover {
+  background: #ebebeb;
+  transition: 0.2s ease;
+}
+
+@media screen and (max-width: 575px) {
+  .favorite-card {
+    height: 120px;
+  }
+
+  .favorite-card .favorite-card-pic,
+  .favorite-card .favorite-card-pic-placeholder {
+    width: 104px;
+    height: 104px;
+  }
+
+  .favorite-card .favorite-card-labels {
+    margin-left: 10px;
+  }
+
+  .favorite-card .favorite-card-labels h1 {
+    font-size: 16px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .favorite-card .favorite-card-labels .label-details {
+    margin-top: 10px;
+  }
+
+  .favorite-card .favorite-card-labels h3 {
+    font-size: 8px;
+  }
+
+  .favorite-card .open-recipe-link-btn {
+    font-size: 10px;
+    min-width: 90px;
+    padding: 5px 0px;
+  }
+}

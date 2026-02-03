@@ -34,10 +34,14 @@ export function SaveToFolderButton({ folders: initialFolders, recipeData }: Save
   const [folders, setFolders] = useState<string[]>(initialFolders);
 
   useEffect(() => {
-    getFolders().then((res) => {
-      if (res.data?.folders) setFolders(res.data.folders);
-    });
-  }, []);
+    if (initialFolders.length > 0) {
+      setFolders(initialFolders);
+    } else {
+      getFolders().then((res) => {
+        if (res.data?.folders) setFolders(res.data.folders);
+      });
+    }
+  }, [initialFolders.length, initialFolders]);
 
   async function handleCookbookClick(cookbookName: string) {
     await addRecipeToFolder(cookbookName, toRecipePayload(recipeData));

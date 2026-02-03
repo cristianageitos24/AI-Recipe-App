@@ -49,6 +49,15 @@
   background: #d2dce1;
 }
 
+.image-bttn-container .recipe-label.recipe-title-two-words {
+  white-space: pre-line;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .image-bttn-container .recipe-label {
   position: absolute;
   bottom: 20px;

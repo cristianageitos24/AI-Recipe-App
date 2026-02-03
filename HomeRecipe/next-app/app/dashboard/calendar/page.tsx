@@ -306,7 +306,7 @@ export default function CalendarPage() {
               }`}
             >
               <img
-                src={eventInfo.event._def.extendedProps.imageURL}
+                src={eventInfo.event._def.extendedProps.imageURL || "/images/recipe-placeholder.png"}
                 alt=""
                 style={eventInfo.event._def.title === "(New event)" ? { width: 0 } : {}}
               />
@@ -369,7 +369,7 @@ export default function CalendarPage() {
                                 className="event-popup-edamam-item"
                                 onClick={() => handleSelectEdamamRecipe(hit)}
                               >
-                                <img src={info.imageURL} alt="" className="event-popup-edamam-item-img" />
+                                <img src={info.imageURL || "/images/recipe-placeholder.png"} alt="" className="event-popup-edamam-item-img" />
                                 <span>{info.recipeLabel}</span>
                               </button>
                             </li>
@@ -462,7 +462,7 @@ export default function CalendarPage() {
                             className="event-popup-edamam-item"
                             onClick={() => handleSelectEdamamRecipe(hit)}
                           >
-                            <img src={info.imageURL} alt="" className="event-popup-edamam-item-img" />
+                            <img src={info.imageURL || "/images/recipe-placeholder.png"} alt="" className="event-popup-edamam-item-img" />
                             <span>{info.recipeLabel}</span>
                           </button>
                         </li>
