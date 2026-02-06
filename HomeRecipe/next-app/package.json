@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:all": "concurrently \"npm run dev\" \"npm run worker:video\" --names \"DEV,WORKER\" --prefix-colors \"blue,green\"",
+    "dev:all": "node scripts/start-dev-and-workers.js",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -38,7 +38,6 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "concurrently": "^9.2.1",
     "dotenv": "^16.4.5",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
@@ -46,5 +45,8 @@
     "tailwindcss": "^4",
     "tsx": "^4.19.0",
     "typescript": "5.9.3"
+  },
+  "optionalDependencies": {
+    "lightningcss-win32-x64-msvc": "^1.30.2"
   }
 }
