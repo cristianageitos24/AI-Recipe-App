@@ -1,6 +1,6 @@
 # Running the Dev Server and Workers Separately
 
-The dev server (Next.js on port 3000) and background workers (e.g. video processing) run in **separate processes**. This avoids Turbopack errors and Windows resource issues that occurred when both were started together in one process.
+The dev server (Next.js on port 3000) and background workers (e.g. video processing) run in **separate processes**. The dev server uses **Webpack** (not Turbopack) for Windows compatibility and stability. Separating workers avoids resource issues that occurred when both were started together in one process.
 
 ---
 

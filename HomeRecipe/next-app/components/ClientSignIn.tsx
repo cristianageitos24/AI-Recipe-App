@@ -28,6 +28,7 @@ const clerkAppearance = {
 export function ClientSignIn() {
   return (
     <SignIn
+      routing="hash"
       forceRedirectUrl="/dashboard"
       signUpUrl="/signup"
       appearance={clerkAppearance}

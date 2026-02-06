@@ -14,7 +14,7 @@ cd "c:\Users\ChristianAgeitos\Documents\Almika Codes\Cursor\AI - Recipe App\Home
 npm run dev
 ```
 
-This starts **Next.js only** at **http://localhost:3000**. Port 3000 is used only by the dev server.
+This starts **Next.js only** at **http://localhost:3000** using **Webpack** (Turbopack disabled for Windows compatibility). Port 3000 is used only by the dev server.
 
 ## 3. Open the app
 

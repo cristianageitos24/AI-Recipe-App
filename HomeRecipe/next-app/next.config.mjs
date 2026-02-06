@@ -1,6 +1,22 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
+  webpack: (config, { isServer }) => {
+    // Prefer next-app/node_modules so tailwindcss and deps resolve here when Webpack is used (e.g. PostCSS pipeline).
+    config.resolve.modules = [path.join(__dirname, "node_modules"), ...(config.resolve.modules || [])];
+    
+    // Ensure @/* path alias works - preserve existing aliases that Next.js sets up from tsconfig.json
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@": path.resolve(__dirname),
+    };
+    
+    return config;
+  },
 };
 
 export default nextConfig;

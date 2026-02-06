@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev-webpack.js",
     "dev:all": "node scripts/start-dev-and-workers.js",
     "build": "next build",
     "start": "next start",
