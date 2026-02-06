@@ -20,7 +20,11 @@ import {
   withTimeout,
 } from "../lib/video-processing";
 
-dotenv.config({ path: resolve(__dirname, "../.env.local") });
+// Load .env.local from script dir (next-app) or cwd (when run via npm from next-app)
+const envLocal = resolve(__dirname, "../.env.local");
+const envCwd = resolve(process.cwd(), ".env.local");
+dotenv.config({ path: envLocal });
+if (envCwd !== envLocal) dotenv.config({ path: envCwd });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -39,7 +43,11 @@ const MAX_DURATION_SECONDS = parseInt(
   10
 );
 const PROCESSING_TIMEOUT_MS = parseInt(
-  process.env.VIDEO_PROCESSING_TIMEOUT_MS || "180000",
+  process.env.VIDEO_PROCESSING_TIMEOUT_MS || "600000",
+  10
+);
+const MAX_FRAMES = parseInt(
+  process.env.VIDEO_MAX_FRAMES || "300",
   10
 );
 const POLL_INTERVAL_MS = parseInt(
@@ -254,8 +262,13 @@ async function processJob(job: VideoJob): Promise<void> {
       );
     }
 
-    // Process video with timeout
-    const processingPromise = processVideo(videoPath, ocrProvider!, 60);
+    // Process video with timeout (1 frame/sec, capped at MAX_FRAMES)
+    const maxFrames = Math.min(
+      Math.ceil(duration),
+      MAX_FRAMES
+    );
+    log("DEBUG", "Processing frames", { jobId: job.id, duration, maxFrames });
+    const processingPromise = processVideo(videoPath, ocrProvider!, maxFrames);
     const ocrText = await withTimeout(
       processingPromise,
       PROCESSING_TIMEOUT_MS,
@@ -299,6 +312,7 @@ async function main() {
   log("INFO", "Worker starting", {
     workerId: WORKER_ID,
     maxDuration: MAX_DURATION_SECONDS,
+    maxFrames: MAX_FRAMES,
     timeout: PROCESSING_TIMEOUT_MS,
     pollInterval: POLL_INTERVAL_MS,
   });

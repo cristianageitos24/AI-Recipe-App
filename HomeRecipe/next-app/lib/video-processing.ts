@@ -1,10 +1,11 @@
 import { exec } from "child_process";
 import { promisify } from "util";
 import { existsSync } from "fs";
-import { join } from "path";
+import { join, parse } from "path";
 import { tmpdir } from "os";
 import { unlink } from "fs/promises";
 import ffmpeg from "fluent-ffmpeg";
+import sharp from "sharp";
 import { createWorker } from "tesseract.js";
 
 // Try to use bundled ffmpeg/ffprobe if available, otherwise use system binaries
@@ -44,9 +45,8 @@ class TesseractCLIProvider implements OCRProvider {
 
   async ocrFrame(imagePath: string): Promise<string> {
     try {
-      // Use PSM 6 (uniform block of text) or 7 (single line) or 11 (sparse text)
-      // Try PSM 6 first, fallback to 7 if needed
-      const command = `"${this.tesseractPath}" "${imagePath}" stdout -l eng --psm 6`;
+      // PSM 11: sparse text - finds text in no particular order (better for video overlays)
+      const command = `"${this.tesseractPath}" "${imagePath}" stdout -l eng --psm 11`;
       const { stdout, stderr } = await execAsync(command, {
         maxBuffer: 10 * 1024 * 1024, // 10MB buffer
       });
@@ -74,6 +74,7 @@ class TesseractJSProvider implements OCRProvider {
       this.worker = await createWorker("eng", 1, {
         logger: () => {}, // Suppress logs
       });
+      await this.worker.setParameters({ tessedit_pageseg_mode: "11" }); // Sparse text
     }
   }
 
@@ -139,6 +140,22 @@ export async function getVideoDuration(videoPath: string): Promise<number> {
 }
 
 /**
+ * Preprocess a frame image for better OCR (grayscale + contrast normalization)
+ */
+async function preprocessFrameForOCR(imagePath: string): Promise<string> {
+  const { dir, name } = parse(imagePath);
+  const outPath = join(dir, `${name}-ocr.png`);
+
+  await sharp(imagePath)
+    .grayscale()
+    .normalize() // Contrast enhancement
+    .png()
+    .toFile(outPath);
+
+  return outPath;
+}
+
+/**
  * Extract frames from video
  * @param videoPath Path to video file
  * @param outputDir Directory to save frames
@@ -156,8 +173,10 @@ export async function extractFrames(
 
     ffmpeg(videoPath)
       .outputOptions([
-        "-vf", "fps=1", // 1 frame per second
-        "-frames:v", maxFrames.toString(), // Limit frames
+        "-vf",
+        "fps=1,scale=iw*2:ih*2", // 1 fps, 2x resolution for better OCR
+        "-frames:v",
+        maxFrames.toString(), // Limit frames
       ])
       .output(join(outputDir, "frame-%03d.png"))
       .on("end", () => {
@@ -198,6 +217,15 @@ function shouldFilterLine(line: string): boolean {
     /^(tap|click|swipe)/i,
     /^@\w+/, // @mentions
     /^#\w+/, // Hashtags
+    /save for when you need it/i,
+    /^tiktok$/i,
+    /@\s*foodieshares/i,
+    /foodieshare/i, // common typo
+    /^cancel$/i,
+    /^on timer$/i,
+    /^broil\s*start/i,
+    /^\d+\s*[:\/]\s*\d+$/, // time overlays like "3:45"
+    /^\d+\s*%\s*$/, // "1%", "2%" etc
   ];
 
   // Check for junk patterns
@@ -209,6 +237,19 @@ function shouldFilterLine(line: string): boolean {
   const symbolCount = (line.match(/[^a-zA-Z0-9\s]/g) || []).length;
   const totalChars = line.replace(/\s/g, "").length;
   if (totalChars > 0 && symbolCount / totalChars > 0.5) {
+    return true;
+  }
+
+  // Filter lines where longest word is < 3 chars (e.g. "a e", "x .")
+  const words = line.split(/\s+/).filter((w) => w.length > 0);
+  const maxWordLen = words.length > 0 ? Math.max(...words.map((w) => w.length)) : 0;
+  if (maxWordLen < 3) {
+    return true;
+  }
+
+  // Filter lines with > 70% non-alpha (garbage ratio)
+  const alphaCount = (line.match(/[a-zA-Z]/g) || []).length;
+  if (totalChars > 0 && alphaCount / totalChars < 0.3) {
     return true;
   }
 
@@ -262,12 +303,13 @@ export async function processVideo(
     const framePaths = await extractFrames(videoPath, tempDir, maxFrames);
     console.log(`[Processing] Extracted ${framePaths.length} frames`);
 
-    // Run OCR on each frame
+    // Run OCR on each frame (with preprocessing for better accuracy)
     const allText: string[] = [];
     for (let i = 0; i < framePaths.length; i++) {
       const framePath = framePaths[i];
       try {
-        const text = await ocrProvider.ocrFrame(framePath);
+        const preprocessedPath = await preprocessFrameForOCR(framePath);
+        const text = await ocrProvider.ocrFrame(preprocessedPath);
         if (text) {
           allText.push(text);
         }

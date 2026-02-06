@@ -56,6 +56,7 @@ npm install
 This will install:
 - `fluent-ffmpeg` - Node.js wrapper for ffmpeg
 - `tesseract.js` - OCR library (fallback if CLI not available)
+- `sharp` - Image preprocessing for OCR (grayscale, contrast)
 - `@types/fluent-ffmpeg` - TypeScript types
 
 ## Database Setup
@@ -104,8 +105,9 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # Required for worker
 Optional worker configuration:
 
 ```env
-VIDEO_MAX_DURATION_SECONDS=120          # Max video duration (default: 120)
-VIDEO_PROCESSING_TIMEOUT_MS=180000      # Per-job timeout (default: 180000)
+VIDEO_MAX_DURATION_SECONDS=120          # Max video duration in seconds (default: 120)
+VIDEO_MAX_FRAMES=300                    # Max frames to OCR per video (default: 300). 1 fps, so 300 = 5 min.
+VIDEO_PROCESSING_TIMEOUT_MS=600000      # Per-job timeout in ms (default: 600000 = 10 min). Increase for longer videos.
 WORKER_ID=my-worker                      # Worker identifier (default: hostname-pid)
 WORKER_POLL_INTERVAL_MS=5000            # Polling interval (default: 5000)
 WORKER_LOCK_TIMEOUT_MINUTES=10          # Lock expiration (default: 10)
