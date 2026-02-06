@@ -20,6 +20,8 @@ import {
   withTimeout,
 } from "../lib/video-processing";
 import { extractAudioToWav, transcribeWithWhisper } from "../lib/transcription";
+import { extractRecipeFromVideo } from "../lib/recipe-reasoning";
+import type { ExtractedRecipe } from "../lib/types";
 
 // Load .env.local from script dir (next-app) or cwd (when run via npm from next-app)
 const envLocal = resolve(__dirname, "../.env.local");
@@ -205,15 +207,21 @@ async function updateJobTranscript(jobId: string, transcriptText: string | null)
 }
 
 /**
- * Mark job as completed
+ * Mark job as completed (with optional extracted recipe from AI reasoning)
  */
 async function markJobCompleted(
   jobId: string,
   ocrText: string,
   processingMs: number,
-  transcriptText: string | null
+  transcriptText: string | null,
+  extractedRecipe: ExtractedRecipe | null
 ) {
-  log("INFO", "Job completed", { jobId, processingMs, textLength: ocrText.length });
+  log("INFO", "Job completed", {
+    jobId,
+    processingMs,
+    textLength: ocrText.length,
+    hasExtractedRecipe: extractedRecipe != null,
+  });
 
   const { error } = await supabase
     .from("video_processing_jobs")
@@ -221,6 +229,7 @@ async function markJobCompleted(
       status: "done",
       ocr_text: ocrText,
       transcript_text: transcriptText,
+      extracted_recipe: extractedRecipe,
       processing_ms: processingMs,
       finished_at: new Date().toISOString(),
       locked_at: null,
@@ -289,12 +298,12 @@ async function processJob(job: VideoJob): Promise<void> {
     }
 
     // Transcription: extract audio and transcribe (non-fatal on failure)
-    const openaiKey = process.env.OPENAI_API_KEY;
-    if (openaiKey) {
+    const audioTranscriptionKey = process.env.OPENAI_AUDIO_TRANSCRIPTION_KEY;
+    if (audioTranscriptionKey) {
       wavPath = join(tmpdir(), `audio-${Date.now()}-${Math.random().toString(36).substring(7)}.wav`);
       try {
         await extractAudioToWav(videoPath, wavPath);
-        transcriptText = await transcribeWithWhisper(wavPath, openaiKey, TRANSCRIPTION_TIMEOUT_MS);
+        transcriptText = await transcribeWithWhisper(wavPath, audioTranscriptionKey, TRANSCRIPTION_TIMEOUT_MS);
         await updateJobTranscript(job.id, transcriptText);
         log("DEBUG", "Transcription complete", { jobId: job.id, transcriptLength: transcriptText?.length ?? 0 });
       } catch (transcriptionError: any) {
@@ -315,7 +324,7 @@ async function processJob(job: VideoJob): Promise<void> {
         }
       }
     } else {
-      log("DEBUG", "OPENAI_API_KEY not set, skipping transcription", { jobId: job.id });
+      log("DEBUG", "OPENAI_AUDIO_TRANSCRIPTION_KEY not set, skipping transcription", { jobId: job.id });
     }
 
     // Process video with timeout (1 frame/sec, capped at MAX_FRAMES)
@@ -333,8 +342,34 @@ async function processJob(job: VideoJob): Promise<void> {
 
     const processingMs = Date.now() - startTime;
 
+    // AI reasoning: extract structured recipe from OCR + transcript (non-fatal)
+    let extractedRecipe: ExtractedRecipe | null = null;
+    const reasoningKey = process.env.OPENAI_REASONING_API_KEY;
+    if (reasoningKey && (ocrText.trim().length > 0 || (transcriptText ?? "").trim().length > 0)) {
+      try {
+        extractedRecipe = await extractRecipeFromVideo(ocrText, transcriptText, {
+          apiKey: reasoningKey,
+          log: (message, data) => log("DEBUG", message, data),
+        });
+        if (extractedRecipe) {
+          log("DEBUG", "Recipe reasoning succeeded", { jobId: job.id });
+        } else {
+          log("DEBUG", "Recipe reasoning failed or skipped", { jobId: job.id });
+        }
+      } catch (reasoningError: unknown) {
+        log("ERROR", "Recipe reasoning error", {
+          jobId: job.id,
+          error: reasoningError instanceof Error ? reasoningError.message : String(reasoningError),
+        });
+      }
+    } else {
+      if (!reasoningKey) {
+        log("DEBUG", "OPENAI_REASONING_API_KEY not set, skipping recipe extraction", { jobId: job.id });
+      }
+    }
+
     // Mark as completed
-    await markJobCompleted(job.id, ocrText, processingMs, transcriptText);
+    await markJobCompleted(job.id, ocrText, processingMs, transcriptText, extractedRecipe);
   } catch (error: any) {
     const errorMessage = error.message || "Unknown error";
     log("ERROR", "Job processing error", {

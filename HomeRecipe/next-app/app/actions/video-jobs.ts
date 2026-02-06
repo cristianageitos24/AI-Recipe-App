@@ -2,6 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@/utils/supabase/server";
+import type { ExtractedRecipe } from "@/lib/types";
 
 export interface VideoJob {
   id: string;
@@ -10,6 +11,8 @@ export interface VideoJob {
   video_url: string;
   tiktok_url: string | null;
   ocr_text: string | null;
+  transcript_text: string | null;
+  extracted_recipe: ExtractedRecipe | null;
   error_message: string | null;
   attempts: number;
   started_at: string | null;

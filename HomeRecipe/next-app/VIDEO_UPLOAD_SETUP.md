@@ -68,6 +68,7 @@ OCR preprocessing (grayscale, contrast, sharpening) is done via ffmpeg—no shar
    - `011_storage_videos_policies.sql` – storage policies
    - `012_fix_claim_video_job_ambiguous_attempts.sql` – job claiming fix
    - `013_add_transcript_text.sql` – transcript column
+   - `014_add_extracted_recipe.sql` – extracted_recipe JSONB column
 
 2. Verify the table was created:
    ```sql
@@ -104,7 +105,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # Required for worker
 
 # For audio transcription (speech-to-text)
-OPENAI_API_KEY=sk-...  # Worker-only, not exposed to browser
+OPENAI_AUDIO_TRANSCRIPTION_KEY=sk-...  # Worker-only, not exposed to browser
+
+# For AI recipe extraction (OCR + transcript → structured recipe)
+OPENAI_REASONING_API_KEY=sk-...  # Worker-only, not exposed to browser
 ```
 
 Optional worker configuration:
@@ -137,9 +141,10 @@ npm run worker:video
 
 The worker will:
 - Poll for new video uploads
-- Transcribe audio (Whisper) → stored in `transcript_text` (if `OPENAI_API_KEY` set)
+- Transcribe audio (Whisper) → stored in `transcript_text` (if `OPENAI_AUDIO_TRANSCRIPTION_KEY` set)
 - Process videos with OCR → stored in `ocr_text`
-- Handle retries and errors automatically (transcription failure does not fail the job)
+- Extract structured recipe from OCR + transcript (if `OPENAI_REASONING_API_KEY` set) → stored in `extracted_recipe`
+- Handle retries and errors automatically (transcription or reasoning failure does not fail the job)
 
 ### Production
 
@@ -193,8 +198,13 @@ Transcription runs first; if it fails, OCR still runs and `transcript_text` stay
 
 ### Transcription not working
 
-- Check `OPENAI_API_KEY` is set in `.env.local` (worker-only, not in browser)
+- Check `OPENAI_AUDIO_TRANSCRIPTION_KEY` is set in `.env.local` (worker-only, not in browser)
 - If transcription fails, job still completes; `transcript_text` will be NULL
+
+### Recipe extraction not working
+
+- Check `OPENAI_REASONING_API_KEY` is set in `.env.local` (worker-only)
+- If reasoning fails, job still completes; `extracted_recipe` will be NULL
 
 ### Jobs stuck in "processing"
 
@@ -210,12 +220,14 @@ Transcription runs first; if it fails, OCR still runs and `transcript_text` stay
 - **Worker:** `scripts/process-video-jobs.ts` - Processes videos
 - **Processing:** `lib/video-processing.ts` - Core OCR logic
 - **Transcription:** `lib/transcription.ts` - Audio extraction + Whisper
+- **Recipe reasoning:** `lib/recipe-reasoning.ts` - OCR + transcript → structured recipe (GPT-4.1 nano)
 - **UI:** `app/dashboard/video-upload/page.tsx` - Upload interface
 
 ## Features
 
 - ✅ Atomic job claiming (no double-processing)
 - ✅ Audio transcription (OpenAI Whisper) → `transcript_text`
+- ✅ AI recipe extraction (GPT-4.1 nano) → `extracted_recipe` (title, ingredients, steps)
 - ✅ OCR with ffmpeg preprocessing (grayscale, contrast, sharpen)
 - ✅ Retry logic with exponential backoff (max 3 attempts)
 - ✅ Native Tesseract CLI with JS fallback

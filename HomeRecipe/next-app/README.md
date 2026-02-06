@@ -25,7 +25,8 @@ Create `.env.local` from `.env.local.example` and set:
 Optional:
 
 - `SUPABASE_SERVICE_ROLE_KEY` – bypasses RLS for bulk import scripts and video worker
-- `OPENAI_API_KEY` – for video worker audio transcription (Whisper); worker-only, not exposed to browser
+- `OPENAI_AUDIO_TRANSCRIPTION_KEY` – for video worker audio transcription (Whisper); worker-only, not exposed to browser
+- `OPENAI_REASONING_API_KEY` – for video worker AI recipe extraction (GPT-4.1 nano); worker-only, not exposed to browser
 
 ## Database
 
