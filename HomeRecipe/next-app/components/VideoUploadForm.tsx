@@ -183,8 +183,15 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
 
           {jobStatus.status === "done" && jobStatus.ocr_text && (
             <div className="ocr-result">
-              <h4>Extracted Text:</h4>
+              <h4>Extracted Text (OCR):</h4>
               <pre className="ocr-text">{jobStatus.ocr_text}</pre>
+            </div>
+          )}
+
+          {jobStatus.status === "done" && jobStatus.transcript_text && (
+            <div className="ocr-result">
+              <h4>Speech-to-Text (Whisper):</h4>
+              <pre className="ocr-text">{jobStatus.transcript_text}</pre>
             </div>
           )}
 
