@@ -62,6 +62,8 @@ CREATE TRIGGER trigger_update_video_job_updated_at
   EXECUTE FUNCTION update_video_job_updated_at();
 
 -- Atomic job claiming function
+-- Note: Use table aliases (vpj, v2) to avoid "column reference attempts is ambiguous"
+-- when RETURNS TABLE includes attempts (PostgreSQL output param shadows table column)
 CREATE OR REPLACE FUNCTION claim_video_job(worker_id TEXT)
 RETURNS TABLE (
   id UUID, 
@@ -75,21 +77,21 @@ RETURNS TABLE (
 DECLARE
   claimed_job RECORD;
 BEGIN
-  UPDATE public.video_processing_jobs
+  UPDATE public.video_processing_jobs AS vpj
   SET 
     status = 'processing',
     locked_at = NOW(),
     locked_by = worker_id,
-    attempts = attempts + 1,
+    attempts = vpj.attempts + 1,
     started_at = NOW(),
     updated_at = NOW()
-  WHERE id = (
-    SELECT id FROM public.video_processing_jobs
-    WHERE status = 'uploaded'
-      AND (locked_at IS NULL OR locked_at < NOW() - INTERVAL '10 minutes')
-    ORDER BY created_at ASC
+  WHERE vpj.id = (
+    SELECT v2.id FROM public.video_processing_jobs v2
+    WHERE v2.status = 'uploaded'
+      AND (v2.locked_at IS NULL OR v2.locked_at < NOW() - INTERVAL '10 minutes')
+    ORDER BY v2.created_at ASC
     LIMIT 1
-    FOR UPDATE SKIP LOCKED
+    FOR UPDATE OF v2 SKIP LOCKED
   )
   RETURNING * INTO claimed_job;
   

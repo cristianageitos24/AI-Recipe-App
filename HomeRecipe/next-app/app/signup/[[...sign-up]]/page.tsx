@@ -21,7 +21,7 @@ export default function SignUpPage() {
           <ClientSignUp />
           <p className="auth-link-wrap">
             Already have an account?{" "}
-            <Link href="/">Log In</Link>
+            <Link href="/sign-in">Log In</Link>
           </p>
         </div>
       </div>

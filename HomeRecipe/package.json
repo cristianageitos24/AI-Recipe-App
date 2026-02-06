@@ -7,5 +7,9 @@
   },
   "devDependencies": {
     "tailwindcss": "^3.3.3"
+  },
+  "scripts": {
+    "dev": "cd next-app && npm run dev",
+    "dev:all": "cd next-app && npm run dev:all"
   }
 }

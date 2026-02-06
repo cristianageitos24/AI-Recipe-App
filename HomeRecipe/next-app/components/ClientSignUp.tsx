@@ -29,7 +29,7 @@ export function ClientSignUp() {
   return (
     <SignUp
       forceRedirectUrl="/dashboard"
-      signInUrl="/"
+      signInUrl="/sign-in"
       appearance={clerkAppearance}
     />
   );

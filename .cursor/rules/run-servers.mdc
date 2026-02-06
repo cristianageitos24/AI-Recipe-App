@@ -28,6 +28,12 @@ If the user said **yes** to running the worker (or otherwise needs video process
 
 On Windows, you can instead run `npm run dev:all` from `next-app` once; it starts dev and worker in **two separate windows** (see `next-app/scripts/start-dev-and-workers.js` and `next-app/dev-all.bat`).
 
+## 3. Stopping servers
+
+To stop everything before leaving:
+- Close the terminal(s) running `npm run dev` and `npm run worker:video`, or press `Ctrl+C` in each.
+- Or run (PowerShell): `Get-NetTCPConnection -LocalPort 3000,3001 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }` to free ports 3000/3001.
+
 ## Quick reference
 
 | Goal              | Location           | Command              |
@@ -37,3 +43,5 @@ On Windows, you can instead run `npm run dev:all` from `next-app` once; it start
 | Both (Windows)    | `HomeRecipe/next-app` | `npm run dev:all` (opens two windows) |
 
 Details: `HomeRecipe/next-app/START.md` and `HomeRecipe/next-app/WORKERS.md`.
+
+**Video worker:** Handles OCR (text from video frames) and audio transcription (Whisper) for uploaded videos. Requires `OPENAI_API_KEY` in `.env.local` for transcription.

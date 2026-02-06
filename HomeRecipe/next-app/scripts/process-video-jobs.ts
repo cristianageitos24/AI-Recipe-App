@@ -19,6 +19,7 @@ import {
   processVideo,
   withTimeout,
 } from "../lib/video-processing";
+import { extractAudioToWav, transcribeWithWhisper } from "../lib/transcription";
 
 // Load .env.local from script dir (next-app) or cwd (when run via npm from next-app)
 const envLocal = resolve(__dirname, "../.env.local");
@@ -56,6 +57,10 @@ const POLL_INTERVAL_MS = parseInt(
 );
 const LOCK_TIMEOUT_MINUTES = parseInt(
   process.env.WORKER_LOCK_TIMEOUT_MINUTES || "10",
+  10
+);
+const TRANSCRIPTION_TIMEOUT_MS = parseInt(
+  process.env.TRANSCRIPTION_TIMEOUT_MS || "60000",
   10
 );
 const WORKER_ID =
@@ -183,12 +188,30 @@ async function markJobFailed(jobId: string, errorMessage: string) {
 }
 
 /**
+ * Update job transcript (call when transcription succeeds or fails)
+ */
+async function updateJobTranscript(jobId: string, transcriptText: string | null) {
+  const { error } = await supabase
+    .from("video_processing_jobs")
+    .update({ transcript_text: transcriptText })
+    .eq("id", jobId);
+
+  if (error) {
+    log("ERROR", "Failed to update job transcript", {
+      jobId,
+      error: error.message,
+    });
+  }
+}
+
+/**
  * Mark job as completed
  */
 async function markJobCompleted(
   jobId: string,
   ocrText: string,
-  processingMs: number
+  processingMs: number,
+  transcriptText: string | null
 ) {
   log("INFO", "Job completed", { jobId, processingMs, textLength: ocrText.length });
 
@@ -197,6 +220,7 @@ async function markJobCompleted(
     .update({
       status: "done",
       ocr_text: ocrText,
+      transcript_text: transcriptText,
       processing_ms: processingMs,
       finished_at: new Date().toISOString(),
       locked_at: null,
@@ -241,6 +265,8 @@ async function downloadVideo(videoPath: string): Promise<string> {
 async function processJob(job: VideoJob): Promise<void> {
   const startTime = Date.now();
   let videoPath: string | null = null;
+  let wavPath: string | null = null;
+  let transcriptText: string | null = null;
 
   try {
     log("INFO", "Processing job", {
@@ -262,6 +288,36 @@ async function processJob(job: VideoJob): Promise<void> {
       );
     }
 
+    // Transcription: extract audio and transcribe (non-fatal on failure)
+    const openaiKey = process.env.OPENAI_API_KEY;
+    if (openaiKey) {
+      wavPath = join(tmpdir(), `audio-${Date.now()}-${Math.random().toString(36).substring(7)}.wav`);
+      try {
+        await extractAudioToWav(videoPath, wavPath);
+        transcriptText = await transcribeWithWhisper(wavPath, openaiKey, TRANSCRIPTION_TIMEOUT_MS);
+        await updateJobTranscript(job.id, transcriptText);
+        log("DEBUG", "Transcription complete", { jobId: job.id, transcriptLength: transcriptText?.length ?? 0 });
+      } catch (transcriptionError: any) {
+        log("ERROR", "Transcription failed, continuing with OCR", {
+          jobId: job.id,
+          error: transcriptionError?.message ?? transcriptionError,
+        });
+        transcriptText = null;
+        await updateJobTranscript(job.id, null);
+      } finally {
+        if (wavPath) {
+          try {
+            await unlink(wavPath);
+          } catch (e) {
+            log("ERROR", "Failed to cleanup temp audio file", { wavPath, error: e });
+          }
+          wavPath = null;
+        }
+      }
+    } else {
+      log("DEBUG", "OPENAI_API_KEY not set, skipping transcription", { jobId: job.id });
+    }
+
     // Process video with timeout (1 frame/sec, capped at MAX_FRAMES)
     const maxFrames = Math.min(
       Math.ceil(duration),
@@ -278,7 +334,7 @@ async function processJob(job: VideoJob): Promise<void> {
     const processingMs = Date.now() - startTime;
 
     // Mark as completed
-    await markJobCompleted(job.id, ocrText, processingMs);
+    await markJobCompleted(job.id, ocrText, processingMs, transcriptText);
   } catch (error: any) {
     const errorMessage = error.message || "Unknown error";
     log("ERROR", "Job processing error", {
@@ -302,6 +358,14 @@ async function processJob(job: VideoJob): Promise<void> {
         log("ERROR", "Failed to cleanup video file", { videoPath, error });
       }
     }
+    // Cleanup temp audio if still present (e.g. early exit)
+    if (wavPath) {
+      try {
+        await unlink(wavPath);
+      } catch (error) {
+        log("ERROR", "Failed to cleanup temp audio file", { wavPath, error });
+      }
+    }
   }
 }
 
@@ -314,6 +378,7 @@ async function main() {
     maxDuration: MAX_DURATION_SECONDS,
     maxFrames: MAX_FRAMES,
     timeout: PROCESSING_TIMEOUT_MS,
+    transcriptionTimeout: TRANSCRIPTION_TIMEOUT_MS,
     pollInterval: POLL_INTERVAL_MS,
   });
 

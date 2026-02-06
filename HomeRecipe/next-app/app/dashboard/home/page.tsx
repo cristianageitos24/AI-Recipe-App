@@ -55,6 +55,58 @@ function ResultPic({
   );
 }
 
+function RecipeCard({
+  recipe,
+  folderOptions,
+}: {
+  recipe: RecipeRow;
+  folderOptions: string[];
+}) {
+  const info = recipeRowToProcessed(recipe);
+  return (
+    <div className="results-content">
+      <ResultPic imageUrl={recipe.image_url} alt={recipe.recipe_label} />
+      <div className="results-labels">
+        <h1 className="recipe-title-two-words">{formatRecipeTitleTwoWordsPerLine(recipe.recipe_label)}</h1>
+        <div className="label-details">
+          <h3>{capitalizeFirstLetter(recipe.cuisine_type ?? "")}</h3>
+          <h3>{capitalizeFirstLetter(recipe.meal_type ?? "")}</h3>
+        </div>
+        <div className="label-details">
+          <h3>{recipe.calories} calories</h3>
+          {recipe.time_in_minutes < 1 ? (
+            <h3 className="green-light">1 minute</h3>
+          ) : recipe.time_in_minutes <= 10 ? (
+            <h3 className="green-light">{recipe.time_in_minutes} minutes</h3>
+          ) : recipe.time_in_minutes <= 30 ? (
+            <h3 className="yellow-light">{recipe.time_in_minutes} minutes</h3>
+          ) : (
+            <h3 className="red-light">{recipe.time_in_minutes} minutes</h3>
+          )}
+        </div>
+      </div>
+      <div className="result-buttons">
+        <button
+          type="button"
+          className="open-recipe-link-btn"
+          onClick={() => window.open(recipe.website_url ?? "", "_blank")}
+        >
+          Show Recipe
+        </button>
+        <div className="save-folder-btns">
+          <div className="heart-btn-search-results-card">
+            <HeartButton recipeData={info} heartStyle={{ top: "50%" }} />
+          </div>
+          <SaveToFolderButton
+            folders={[...new Set(folderOptions)]}
+            recipeData={info}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
@@ -292,52 +344,6 @@ export default function DashboardHomePage() {
   const hasSuggestions =
     suggestions.ingredients.length > 0 || suggestions.recipes.length > 0;
 
-  function RecipeCard({ recipe }: { recipe: RecipeRow }) {
-    const info = recipeRowToProcessed(recipe);
-    return (
-      <div className="results-content">
-        <ResultPic imageUrl={recipe.image_url} alt={recipe.recipe_label} />
-<div className="results-labels">
-                      <h1 className="recipe-title-two-words">{formatRecipeTitleTwoWordsPerLine(recipe.recipe_label)}</h1>
-          <div className="label-details">
-            <h3>{capitalizeFirstLetter(recipe.cuisine_type ?? "")}</h3>
-            <h3>{capitalizeFirstLetter(recipe.meal_type ?? "")}</h3>
-          </div>
-          <div className="label-details">
-            <h3>{recipe.calories} calories</h3>
-            {recipe.time_in_minutes < 1 ? (
-              <h3 className="green-light">1 minute</h3>
-            ) : recipe.time_in_minutes <= 10 ? (
-              <h3 className="green-light">{recipe.time_in_minutes} minutes</h3>
-            ) : recipe.time_in_minutes <= 30 ? (
-              <h3 className="yellow-light">{recipe.time_in_minutes} minutes</h3>
-            ) : (
-              <h3 className="red-light">{recipe.time_in_minutes} minutes</h3>
-            )}
-          </div>
-        </div>
-        <div className="result-buttons">
-          <button
-            type="button"
-            className="open-recipe-link-btn"
-            onClick={() => window.open(recipe.website_url ?? "", "_blank")}
-          >
-            Show Recipe
-          </button>
-          <div className="save-folder-btns">
-            <div className="heart-btn-search-results-card">
-              <HeartButton recipeData={info} heartStyle={{ top: "50%" }} />
-            </div>
-            <SaveToFolderButton
-              folders={[...new Set(folderOptions)]}
-              recipeData={info}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="right-side-panel">
       <div className="recipe-search-content">
@@ -493,7 +499,7 @@ export default function DashboardHomePage() {
               <div className="data-content">
                 {searchResults.map((recipe) => (
                   <motion.div key={recipe.id} whileHover={{ scale: 1.02 }}>
-                    <RecipeCard recipe={recipe} />
+                    <RecipeCard recipe={recipe} folderOptions={folderOptions} />
                   </motion.div>
                 ))}
               </div>
@@ -564,7 +570,7 @@ export default function DashboardHomePage() {
               >
                 {suggestedRecipes.map((recipe) => (
                   <motion.div key={recipe.id} className="home-recommendation-card" whileHover={{ scale: 1.02 }}>
-                    <RecipeCard recipe={recipe} />
+                    <RecipeCard recipe={recipe} folderOptions={folderOptions} />
                   </motion.div>
                 ))}
               </div>

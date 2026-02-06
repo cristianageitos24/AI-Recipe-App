@@ -24,7 +24,11 @@ In **another terminal**, from the `next-app` folder:
 npm run worker:video
 ```
 
-The worker polls for video jobs and processes them (e.g. OCR). It uses the same env as the app: `.env.local` (e.g. `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`). See `.env.local.example` if needed.
+The worker polls for video jobs and processes them with:
+- **OCR** – Extracts text from video frames (Tesseract, ffmpeg preprocessing)
+- **Transcription** – Speech-to-text from audio (OpenAI Whisper) → stored in `transcript_text`
+
+It uses `.env.local` (e.g. `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`). See `.env.local.example`.
 
 ---
 
@@ -34,3 +38,16 @@ The worker polls for video jobs and processes them (e.g. OCR). It uses the same 
 - **Other OS**: Open two terminals; in one run `npm run dev`, in the other `npm run worker:video`.
 
 Neither approach runs the worker inside the same process as the Next.js dev server.
+
+---
+
+## Stopping everything
+
+Before leaving, stop servers to free ports and resources:
+
+1. **Manual:** Press `Ctrl+C` in each terminal running `npm run dev` or `npm run worker:video`.
+2. **PowerShell (ports 3000, 3001):**
+   ```powershell
+   Get-NetTCPConnection -LocalPort 3000,3001 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
+   ```
+3. **Windows:** Close the terminal windows opened by `dev-all.bat`.

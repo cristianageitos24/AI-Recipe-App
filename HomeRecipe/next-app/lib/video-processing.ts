@@ -1,11 +1,10 @@
 import { exec } from "child_process";
 import { promisify } from "util";
 import { existsSync } from "fs";
-import { join, parse } from "path";
+import { join } from "path";
 import { tmpdir } from "os";
 import { unlink } from "fs/promises";
 import ffmpeg from "fluent-ffmpeg";
-import sharp from "sharp";
 import { createWorker } from "tesseract.js";
 
 // Try to use bundled ffmpeg/ffprobe if available, otherwise use system binaries
@@ -140,19 +139,11 @@ export async function getVideoDuration(videoPath: string): Promise<number> {
 }
 
 /**
- * Preprocess a frame image for better OCR (grayscale + contrast normalization)
+ * Preprocess a frame for OCR. Frames are already preprocessed by extractFrames (ffmpeg:
+ * grayscale, contrast, sharpening). This is a no-op pass-through for compatibility.
  */
 async function preprocessFrameForOCR(imagePath: string): Promise<string> {
-  const { dir, name } = parse(imagePath);
-  const outPath = join(dir, `${name}-ocr.png`);
-
-  await sharp(imagePath)
-    .grayscale()
-    .normalize() // Contrast enhancement
-    .png()
-    .toFile(outPath);
-
-  return outPath;
+  return imagePath;
 }
 
 /**
@@ -174,7 +165,8 @@ export async function extractFrames(
     ffmpeg(videoPath)
       .outputOptions([
         "-vf",
-        "fps=1,scale=iw*2:ih*2", // 1 fps, 2x resolution for better OCR
+        // OCR-optimized: 1fps, 2x scale, grayscale, contrast, light sharpen for text
+        "fps=1,scale=iw*2:ih*2,format=gray,eq=contrast=1.2:brightness=0.02,unsharp=5:5:0.5:5:5:0",
         "-frames:v",
         maxFrames.toString(), // Limit frames
       ])
