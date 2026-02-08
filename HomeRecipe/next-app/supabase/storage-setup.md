@@ -49,4 +49,4 @@ Alternatively, run the setup script:
 npm run setup:storage
 ```
 
-This requires `SUPABASE_SERVICE_ROLE_KEY` in your `.env.local` file.
+This requires `SUPABASE_SECRET_KEY` in your `.env.local` file.

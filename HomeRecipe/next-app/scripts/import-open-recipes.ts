@@ -2,8 +2,8 @@
  * One-time script to import Open Recipes into the recipes table.
  * Run: npm run import:recipes
  *
- * Requires: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local
- * (Service role bypasses RLS for bulk insert. Anon key may fail on insert.)
+ * Requires: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY in .env.local
+ * (Secret key bypasses RLS for bulk insert. Publishable key may fail on insert.)
  *
  * Downloads recipeitems-latest.json.gz from Open Recipes, parses NDJSON,
  * maps to recipe schema, and inserts in batches.
@@ -116,19 +116,19 @@ async function downloadFile(url: string, dest: string): Promise<void> {
 
 async function main() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseSecretKey =
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-  if (!supabaseUrl || !serviceKey) {
+  if (!supabaseUrl || !supabaseSecretKey) {
     console.error(
-      "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY/NEXT_PUBLIC_SUPABASE_ANON_KEY"
+      "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY/NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
     );
     console.error("Create .env.local with these variables.");
     process.exit(1);
   }
 
-  const supabase = createClient(supabaseUrl, serviceKey);
+  const supabase = createClient(supabaseUrl, supabaseSecretKey);
 
   let inputPath = LOCAL_PATH;
   if (!existsSync(LOCAL_PATH)) {

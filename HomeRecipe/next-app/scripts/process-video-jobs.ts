@@ -30,12 +30,12 @@ dotenv.config({ path: envLocal });
 if (envCwd !== envLocal) dotenv.config({ path: envCwd });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-if (!supabaseUrl || !serviceRoleKey) {
+if (!supabaseUrl || !supabaseSecretKey) {
   console.error("Missing required environment variables:");
   console.error("  NEXT_PUBLIC_SUPABASE_URL:", supabaseUrl ? "✓" : "✗");
-  console.error("  SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY:", serviceRoleKey ? "✓" : "✗");
+  console.error("  SUPABASE_SECRET_KEY or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:", supabaseSecretKey ? "✓" : "✗");
   process.exit(1);
 }
 
@@ -69,7 +69,7 @@ const WORKER_ID =
   process.env.WORKER_ID || `${hostname()}-${process.pid}`;
 
 // Create Supabase client with service role (bypasses RLS)
-const supabase = createClient(supabaseUrl, serviceRoleKey, {
+const supabase = createClient(supabaseUrl, supabaseSecretKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,

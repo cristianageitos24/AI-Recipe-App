@@ -42,7 +42,7 @@ See [WORKERS.md](WORKERS.md) for details and how to run both dev server and work
 - **Worker: “Missing required environment variables”**  
   Create or fix `next-app/.env.local` with:
   - `NEXT_PUBLIC_SUPABASE_URL` = your Supabase project URL  
-  - `SUPABASE_SERVICE_ROLE_KEY` = your Supabase service role key  
+  - `SUPABASE_SECRET_KEY` = your Supabase secret key  
   - `OPENAI_AUDIO_TRANSCRIPTION_KEY` = your OpenAI key (for audio transcription; optional but recommended)
   - `OPENAI_REASONING_API_KEY` = your OpenAI key (for AI recipe extraction from video; optional)  
   (See `.env.local.example` in the same folder.)

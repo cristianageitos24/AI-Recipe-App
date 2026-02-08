@@ -66,8 +66,8 @@
 1. Create a project at [supabase.com](https://supabase.com).
 2. In **Project Settings → API** you’ll find:
    - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
-   - **anon public** key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - **service_role** key → `SUPABASE_SERVICE_ROLE_KEY` (needed for video worker and import scripts; keep secret).
+   - **publishable** key → `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (client-side; respects RLS)
+   - **secret** key → `SUPABASE_SECRET_KEY` (server/worker only; needed for video worker and import scripts; keep secret).
 3. **Clerk integration:**  
    In Clerk Dashboard → [Supabase integration](https://dashboard.clerk.com/setup/supabase), activate and copy your Clerk domain.  
    In Supabase Dashboard → **Authentication** → **Sign In / Up** → **Add provider** → **Clerk** → paste the Clerk domain.  
@@ -122,8 +122,8 @@ Create `.env.local` from `.env.local.example` and set:
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Yes | Clerk publishable key |
 | `CLERK_SECRET_KEY` | Yes | Clerk secret key |
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon/public key |
-| `SUPABASE_SERVICE_ROLE_KEY` | For worker/imports | Supabase service role key (video worker, import scripts, storage setup) |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase publishable key (client-side) |
+| `SUPABASE_SECRET_KEY` | For worker/imports | Supabase secret key (video worker, import scripts, storage setup; server-only) |
 | `NEXT_PUBLIC_EDAMAM_APP_ID` | Optional | Edamam Application ID |
 | `NEXT_PUBLIC_EDAMAM_APP_KEY` | Optional | Edamam Application Key |
 
@@ -179,7 +179,7 @@ Migrations are idempotent where possible (IF EXISTS / IF NOT EXISTS). Do not ski
   ```bash
   npm run worker:video
   ```
-  Requires `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`. See [next-app/WORKERS.md](next-app/WORKERS.md).
+  Requires `SUPABASE_SECRET_KEY` in `.env.local`. See [next-app/WORKERS.md](next-app/WORKERS.md).
 
 - **Both (Windows):**  
   From `next-app`, run `npm run dev:all` or double-click `dev-all.bat` to open two windows (dev server + video worker).
@@ -193,7 +193,7 @@ Migrations are idempotent where possible (IF EXISTS / IF NOT EXISTS). Do not ski
 To populate the app with a large recipe dataset and enable search/suggestions:
 
 1. Apply all migrations (including `007_ingredients_table.sql`).
-2. From `next-app`, with `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`:
+2. From `next-app`, with `SUPABASE_SECRET_KEY` in `.env.local`:
    ```bash
    npm run import:recipes    # Imports from Open Recipes (~230k recipes; downloads ~200MB)
    npm run import:ingredients # Fills ingredients for autocomplete
@@ -246,7 +246,7 @@ For **Vercel**: set the project **Root Directory** to `next-app`, add the same e
   Ensure Clerk is set as a provider in Supabase and that all migrations have been run in order. See [next-app/supabase/README.md](next-app/supabase/README.md).
 
 - **Video worker: “Missing required environment variables”**  
-  Add `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to `.env.local` and restart the worker.
+  Add `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SECRET_KEY` to `.env.local` and restart the worker.
 
 - **Video worker: “Failed to claim job” / “fetch failed”**  
   Check Supabase URL and service role key, and that the worker can reach the internet. Restart the worker after changing env.

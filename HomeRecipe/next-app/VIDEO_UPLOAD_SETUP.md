@@ -93,7 +93,7 @@ OCR preprocessing (grayscale, contrast, sharpening) is done via ffmpeg—no shar
 npm run setup:storage
 ```
 
-Requires `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`.
+Requires `SUPABASE_SECRET_KEY` in `.env.local`.
 
 ## Environment Variables
 
@@ -101,8 +101,8 @@ Ensure your `.env.local` has:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # Required for worker
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+SUPABASE_SECRET_KEY=your-secret-key  # Required for worker
 
 # For audio transcription (speech-to-text)
 OPENAI_AUDIO_TRANSCRIPTION_KEY=sk-...  # Worker-only, not exposed to browser
@@ -185,7 +185,7 @@ Transcription runs first; if it fails, OCR still runs and `transcript_text` stay
 
 ### Worker fails to download videos
 
-- Check `SUPABASE_SERVICE_ROLE_KEY` is set
+- Check `SUPABASE_SECRET_KEY` is set
 - Verify Storage bucket exists and is named `videos`
 - Check Storage RLS policies allow service role access
 

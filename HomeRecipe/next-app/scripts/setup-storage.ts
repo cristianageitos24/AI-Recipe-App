@@ -11,16 +11,16 @@ import { resolve } from "path";
 dotenv.config({ path: resolve(__dirname, "../.env.local") });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
 
-if (!supabaseUrl || !serviceRoleKey) {
+if (!supabaseUrl || !supabaseSecretKey) {
   console.error("Missing required environment variables:");
   console.error("  NEXT_PUBLIC_SUPABASE_URL:", supabaseUrl ? "✓" : "✗");
-  console.error("  SUPABASE_SERVICE_ROLE_KEY:", serviceRoleKey ? "✓" : "✗");
+  console.error("  SUPABASE_SECRET_KEY:", supabaseSecretKey ? "✓" : "✗");
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, serviceRoleKey, {
+const supabase = createClient(supabaseUrl, supabaseSecretKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,
