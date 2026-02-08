@@ -16,8 +16,7 @@ const clerkAppearance = {
     card: "shadow-none",
     headerTitle: "hidden",
     headerSubtitle: "hidden",
-    socialButtonsBlockButton:
-      "rounded-[50px] border border-black",
+    socialButtonsBlockButton: "rounded-[50px] border border-black",
     dividerLine: "bg-[rgba(171,171,171,0.3)]",
     dividerText: "text-[#4a4a4a]",
     footer: "hidden",
@@ -29,7 +28,7 @@ export function ClientSignUp() {
   return (
     <SignUp
       forceRedirectUrl="/dashboard"
-      signInUrl="/"
+      signInUrl="/signin"
       appearance={clerkAppearance}
     />
   );

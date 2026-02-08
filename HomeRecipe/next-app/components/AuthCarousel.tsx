@@ -14,7 +14,7 @@ const DEFAULT_AUTH_IMAGES = [
   "/images/version1/food pictures/joseph-gonzalez-zcUgjyqEwe8-unsplash.jpg",
 ];
 
-const CAROUSEL_INTERVAL_MS = 2000;
+const CAROUSEL_INTERVAL_MS = 5000;
 
 type AuthCarouselProps = {
   images?: string[];
@@ -43,8 +43,10 @@ export default function AuthCarousel({ images }: AuthCarouselProps) {
   // When we jump from last (duplicate first) back to 0, disable transition so the reset is invisible
   useEffect(() => {
     if (currentIndex === 0 && prevIndexRef.current === lastIndex) {
-      setNoTransition(true);
-      const id = requestAnimationFrame(() => setNoTransition(false));
+      const id = requestAnimationFrame(() => {
+        setNoTransition(true);
+        requestAnimationFrame(() => setNoTransition(false));
+      });
       return () => cancelAnimationFrame(id);
     }
     prevIndexRef.current = currentIndex;
