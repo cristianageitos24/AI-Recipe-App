@@ -76,11 +76,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get public URL (for worker to download)
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("videos").getPublicUrl(videoPath);
-
     // Create job record
     const { data: job, error: jobError } = await supabase
       .from("video_processing_jobs")

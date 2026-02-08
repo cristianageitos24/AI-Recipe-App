@@ -1,7 +1,12 @@
 // Normalize Edamam API recipe to app shape (matches frontend ProcessRecipeData)
 
 import { v4 as uuidv4 } from "uuid";
-import type { RecipePayload, RecipeRow } from "./types";
+import type {
+  ExtractedRecipe,
+  ExtractedRecipeIngredient,
+  RecipePayload,
+  RecipeRow,
+} from "./types";
 
 export type ProcessedRecipe = {
   recipeID: string;
@@ -153,5 +158,89 @@ export function buildManualRecipePayload(params: {
     steps,
     website_url: params.websiteUrl?.trim() || null,
     image_url: params.imageUrl?.trim() || null,
+  };
+}
+
+/** Format a single extracted ingredient as a display/storage line */
+function formatIngredientLine(ing: ExtractedRecipeIngredient): string {
+  const parts: string[] = [];
+  if (ing.quantity != null) parts.push(String(ing.quantity));
+  if (ing.unit?.trim()) parts.push(ing.unit.trim());
+  parts.push(ing.item.trim());
+  if (ing.notes?.trim()) parts.push(ing.notes.trim());
+  return parts.join(" ");
+}
+
+/**
+ * Convert ExtractedRecipe (from video job) to RecipePayload for getOrCreateRecipe / addRecipeToFolder.
+ * Use a stable recipe_id so the same video job always maps to the same recipe row.
+ */
+export function extractedRecipeToPayload(
+  extracted: ExtractedRecipe,
+  jobId: string
+): RecipePayload {
+  const recipe_id = `video-recipe-${jobId}`;
+  const ingredient_lines =
+    extracted.ingredients.length > 0
+      ? extracted.ingredients.map(formatIngredientLine).join("***")
+      : null;
+  const steps =
+    extracted.steps.length > 0 ? extracted.steps.join("***") : null;
+  return {
+    recipeID: recipe_id,
+    recipe_label: extracted.title.trim() || "Untitled Recipe",
+    calories: 0,
+    cuisine_type: null,
+    meal_type: null,
+    time_in_minutes: extracted.cook_time_minutes ?? 0,
+    ingredient_lines,
+    steps,
+    website_url: null,
+    image_url: null,
+  };
+}
+
+/**
+ * Build RecipePayload from the user's edited recipe state (video upload flow).
+ * Use when saving after the user has edited title, ingredients, cook time, or steps.
+ */
+export function buildVideoRecipePayload(
+  edited: {
+    title: string;
+    ingredientLines: string[];
+    cookTimeMinutes: number;
+    steps: string[];
+  },
+  jobId: string
+): RecipePayload {
+  const recipe_id = `video-recipe-${jobId}`;
+  const ingredient_lines =
+    edited.ingredientLines.length > 0
+      ? edited.ingredientLines
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .join("***")
+      : null;
+  const steps =
+    edited.steps.length > 0
+      ? edited.steps
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .join("***")
+      : null;
+  const time = Number(edited.cookTimeMinutes);
+  const time_in_minutes =
+    Number.isFinite(time) && time >= 0 ? time : 0;
+  return {
+    recipeID: recipe_id,
+    recipe_label: edited.title.trim() || "Untitled Recipe",
+    calories: 0,
+    cuisine_type: null,
+    meal_type: null,
+    time_in_minutes,
+    ingredient_lines,
+    steps,
+    website_url: null,
+    image_url: null,
   };
 }

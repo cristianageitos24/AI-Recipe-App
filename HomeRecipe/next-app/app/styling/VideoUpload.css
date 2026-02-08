@@ -186,3 +186,250 @@
   font-size: 12px;
   color: #999;
 }
+
+/* Editable recipe (video-extracted) */
+.video-recipe-editor {
+  margin-top: 24px;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.video-recipe-editor-label {
+  display: block;
+  font-family: "Work Sans", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000;
+  margin-bottom: 8px;
+}
+
+.video-recipe-title-input {
+  margin-bottom: 16px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.video-recipe-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #ddd;
+}
+
+.video-recipe-tab {
+  padding: 10px 16px;
+  font-family: "Work Sans", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+}
+
+.video-recipe-tab:hover {
+  color: #000;
+}
+
+.video-recipe-tab.active {
+  color: #4a90e2;
+  border-bottom-color: #4a90e2;
+}
+
+.video-recipe-tab-panel {
+  min-height: 120px;
+  margin-bottom: 20px;
+}
+
+.video-recipe-ingredients .video-recipe-line-row,
+.video-recipe-steps .video-recipe-step-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.video-recipe-line-input,
+.video-recipe-step-input {
+  flex: 1;
+}
+
+.video-recipe-step-input {
+  min-height: 52px;
+  resize: vertical;
+}
+
+.video-recipe-step-num {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: #666;
+  padding-top: 12px;
+}
+
+.video-recipe-remove-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 20px;
+  line-height: 1;
+  color: #999;
+  background: #eee;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.video-recipe-remove-btn:hover {
+  color: #c33;
+  background: #fee;
+}
+
+.video-recipe-add-btn {
+  margin-top: 8px;
+  padding: 8px 12px;
+  font-family: "Work Sans", sans-serif;
+  font-size: 14px;
+  color: #4a90e2;
+  background: none;
+  border: 1px dashed #4a90e2;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.video-recipe-add-btn:hover {
+  background: #e3f2fd;
+}
+
+.video-recipe-cooktime .form-group {
+  margin-bottom: 16px;
+}
+
+.video-recipe-servings-display {
+  margin: 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.video-recipe-save-btn {
+  margin-top: 8px;
+}
+
+/* Save modal */
+.video-save-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.video-save-modal-content {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.video-save-modal-title {
+  font-family: "Work Sans", sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+  color: #000;
+}
+
+.video-save-error {
+  margin-bottom: 16px;
+}
+
+.video-save-success {
+  color: #388e3c;
+  font-size: 14px;
+  margin: 0 0 16px 0;
+}
+
+.video-save-section {
+  margin-bottom: 20px;
+}
+
+.video-save-section-label {
+  font-family: "Work Sans", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.video-save-folder-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.video-save-folder-list li {
+  margin-bottom: 4px;
+}
+
+.video-save-folder-btn {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+  font-family: "Work Sans", sans-serif;
+  font-size: 14px;
+  color: #333;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.video-save-folder-btn:hover:not(:disabled) {
+  background: #e8f5e9;
+  border-color: #4a90e2;
+}
+
+.video-save-folder-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.video-save-new-folder {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.video-save-new-input {
+  flex: 1;
+}
+
+.video-save-create-btn {
+  flex-shrink: 0;
+}
+
+.video-save-cancel-btn {
+  margin-top: 16px;
+  padding: 8px 16px;
+  font-family: "Work Sans", sans-serif;
+  font-size: 14px;
+  color: #666;
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.video-save-cancel-btn:hover:not(:disabled) {
+  background: #f5f5f5;
+  color: #000;
+}
