@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import Image from "next/image";
 
 const DEFAULT_AUTH_IMAGES = [
   "/images/food pictures/Cooking by Calum Lewis.jpg",
@@ -74,12 +75,18 @@ export default function AuthCarousel({ images }: AuthCarouselProps) {
           }
         >
           {displayList.map((src, index) => (
-            <div key={`${index}-${src}`} className="auth-slide">
-              <img
+            <div
+              key={`${index}-${src}`}
+              className="auth-slide"
+              style={{ position: "relative" }}
+            >
+              <Image
                 className="auth-slide-image"
                 src={src}
                 alt=""
-                loading={index === 0 ? "eager" : "lazy"}
+                priority={index === 0}
+                fill
+                style={{ objectFit: "cover" }}
               />
             </div>
           ))}
