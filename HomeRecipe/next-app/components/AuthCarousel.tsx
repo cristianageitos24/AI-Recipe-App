@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import Image from "next/image";
 
 const DEFAULT_AUTH_IMAGES = [
   "/images/food pictures/Cooking by Calum Lewis.jpg",
@@ -14,7 +15,7 @@ const DEFAULT_AUTH_IMAGES = [
   "/images/version1/food pictures/joseph-gonzalez-zcUgjyqEwe8-unsplash.jpg",
 ];
 
-const CAROUSEL_INTERVAL_MS = 2000;
+const CAROUSEL_INTERVAL_MS = 5000;
 
 type AuthCarouselProps = {
   images?: string[];
@@ -23,7 +24,7 @@ type AuthCarouselProps = {
 export default function AuthCarousel({ images }: AuthCarouselProps) {
   const list = useMemo(
     () => (images && images.length > 0 ? images : DEFAULT_AUTH_IMAGES),
-    [images]
+    [images],
   );
   // Duplicate first slide at end so we can animate to it, then instantly reset to real first
   const displayList = useMemo(() => [...list, list[0]], [list]);
@@ -43,8 +44,10 @@ export default function AuthCarousel({ images }: AuthCarouselProps) {
   // When we jump from last (duplicate first) back to 0, disable transition so the reset is invisible
   useEffect(() => {
     if (currentIndex === 0 && prevIndexRef.current === lastIndex) {
-      setNoTransition(true);
-      const id = requestAnimationFrame(() => setNoTransition(false));
+      const id = requestAnimationFrame(() => {
+        setNoTransition(true);
+        requestAnimationFrame(() => setNoTransition(false));
+      });
       return () => cancelAnimationFrame(id);
     }
     prevIndexRef.current = currentIndex;
@@ -57,29 +60,33 @@ export default function AuthCarousel({ images }: AuthCarouselProps) {
           <div className="auth-image-overlay" aria-hidden />
           <div className="auth-text-overlay">
             <h2 className="auth-large-pic-text">SIMPLE AND TASTY RECIPES</h2>
-            <p className="auth-small-pic-text">
-              But a recipe is soulless. The essence of the recipe must come from
-              you, the cook.
-            </p>
           </div>
         </div>
         <div
           className="auth-slides-strip"
-          style={{
-            "--slide-count": displayList.length,
-            transform: `translate3d(0, -${(100 * currentIndex) / displayList.length}%, 0)`,
-            transition: noTransition
-              ? "none"
-              : "transform 1.25s cubic-bezier(0.25, 0.1, 0.25, 1)",
-          } as React.CSSProperties & { "--slide-count": number }}
+          style={
+            {
+              "--slide-count": displayList.length,
+              transform: `translate3d(0, -${(100 * currentIndex) / displayList.length}%, 0)`,
+              transition: noTransition
+                ? "none"
+                : "transform 1.25s cubic-bezier(0.25, 0.1, 0.25, 1)",
+            } as React.CSSProperties & { "--slide-count": number }
+          }
         >
           {displayList.map((src, index) => (
-            <div key={`${index}-${src}`} className="auth-slide">
-              <img
+            <div
+              key={`${index}-${src}`}
+              className="auth-slide"
+              style={{ position: "relative" }}
+            >
+              <Image
                 className="auth-slide-image"
                 src={src}
                 alt=""
-                loading={index === 0 ? "eager" : "lazy"}
+                priority={index === 0}
+                fill
+                style={{ objectFit: "cover" }}
               />
             </div>
           ))}
