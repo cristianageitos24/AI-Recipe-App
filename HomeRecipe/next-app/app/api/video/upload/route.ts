@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { createClient } from "@/utils/supabase/server";
+import { ensureProfile } from "@/app/actions/profiles";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const MAX_DURATION_SECONDS = parseInt(
@@ -20,6 +21,8 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    await ensureProfile();
 
     // Parse form data
     const formData = await request.formData();
@@ -108,9 +111,14 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Upload error:", error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error("Upload error:", err.message, err.stack);
+    const isDev = process.env.NODE_ENV === "development";
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: "Internal server error",
+        ...(isDev && { detail: err.message }),
+      },
       { status: 500 }
     );
   }

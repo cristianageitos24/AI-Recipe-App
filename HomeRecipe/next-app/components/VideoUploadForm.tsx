@@ -106,7 +106,10 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Upload failed");
+        const message = data.detail
+          ? `${data.error}: ${data.detail}`
+          : data.error || "Upload failed";
+        throw new Error(message);
       }
 
       setJobId(data.jobId);

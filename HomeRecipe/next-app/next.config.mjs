@@ -5,6 +5,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "50mb",
+    },
+    // When middleware (proxy) runs, Next.js buffers the body; default 10MB truncates ~13MB+ uploads
+    proxyClientMaxBodySize: "50mb",
+  },
   webpack: (config, { isServer }) => {
     // Prefer next-app/node_modules so tailwindcss and deps resolve here when Webpack is used (e.g. PostCSS pipeline).
     config.resolve.modules = [path.join(__dirname, "node_modules"), ...(config.resolve.modules || [])];

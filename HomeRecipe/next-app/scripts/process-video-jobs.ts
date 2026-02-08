@@ -23,8 +23,9 @@ import { extractAudioToWav, transcribeWithWhisper } from "../lib/transcription";
 import { extractRecipeFromVideo } from "../lib/recipe-reasoning";
 import type { ExtractedRecipe } from "../lib/types";
 
-// Load .env.local from script dir (next-app) or cwd (when run via npm from next-app)
-const envLocal = resolve(__dirname, "../.env.local");
+// Load .env.local from next-app (script's parent dir) then cwd so worker always sees keys
+const nextAppDir = resolve(__dirname, "..");
+const envLocal = resolve(nextAppDir, ".env.local");
 const envCwd = resolve(process.cwd(), ".env.local");
 dotenv.config({ path: envLocal });
 if (envCwd !== envLocal) dotenv.config({ path: envCwd });
@@ -408,6 +409,8 @@ async function processJob(job: VideoJob): Promise<void> {
  * Main worker loop
  */
 async function main() {
+  const hasTranscriptionKey = Boolean(process.env.OPENAI_AUDIO_TRANSCRIPTION_KEY);
+  const hasReasoningKey = Boolean(process.env.OPENAI_REASONING_API_KEY);
   log("INFO", "Worker starting", {
     workerId: WORKER_ID,
     maxDuration: MAX_DURATION_SECONDS,
@@ -415,7 +418,15 @@ async function main() {
     timeout: PROCESSING_TIMEOUT_MS,
     transcriptionTimeout: TRANSCRIPTION_TIMEOUT_MS,
     pollInterval: POLL_INTERVAL_MS,
+    OPENAI_AUDIO_TRANSCRIPTION_KEY: hasTranscriptionKey ? "set" : "not set",
+    OPENAI_REASONING_API_KEY: hasReasoningKey ? "set" : "not set",
   });
+  if (!hasTranscriptionKey) {
+    console.warn("[worker] OPENAI_AUDIO_TRANSCRIPTION_KEY is not set — speech-to-text will be skipped. Add it to next-app/.env.local and restart the worker.");
+  }
+  if (!hasReasoningKey) {
+    console.warn("[worker] OPENAI_REASONING_API_KEY is not set — structured recipe extraction will be skipped. Add it to next-app/.env.local and restart the worker.");
+  }
 
   // Initialize OCR provider
   try {

@@ -29,7 +29,7 @@ The worker polls for video jobs and processes them with:
 - **Transcription** – Speech-to-text from audio (OpenAI Whisper) → stored in `transcript_text` (uses `OPENAI_AUDIO_TRANSCRIPTION_KEY`)
 - **Recipe extraction** – AI combines OCR + transcript into structured recipe JSON (GPT-4.1 nano) → stored in `extracted_recipe` (uses `OPENAI_REASONING_API_KEY`)
 
-It uses `.env.local` (e.g. `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `OPENAI_AUDIO_TRANSCRIPTION_KEY`, `OPENAI_REASONING_API_KEY`). See `.env.local.example`.
+It uses `.env.local` (e.g. `OPENAI_AUDIO_TRANSCRIPTION_KEY`, `OPENAI_REASONING_API_KEY`). See `.env.local.example`.
 
 ---
 
