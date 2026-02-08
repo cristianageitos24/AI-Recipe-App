@@ -23,7 +23,7 @@ type AuthCarouselProps = {
 export default function AuthCarousel({ images }: AuthCarouselProps) {
   const list = useMemo(
     () => (images && images.length > 0 ? images : DEFAULT_AUTH_IMAGES),
-    [images]
+    [images],
   );
   // Duplicate first slide at end so we can animate to it, then instantly reset to real first
   const displayList = useMemo(() => [...list, list[0]], [list]);
@@ -57,21 +57,19 @@ export default function AuthCarousel({ images }: AuthCarouselProps) {
           <div className="auth-image-overlay" aria-hidden />
           <div className="auth-text-overlay">
             <h2 className="auth-large-pic-text">SIMPLE AND TASTY RECIPES</h2>
-            <p className="auth-small-pic-text">
-              But a recipe is soulless. The essence of the recipe must come from
-              you, the cook.
-            </p>
           </div>
         </div>
         <div
           className="auth-slides-strip"
-          style={{
-            "--slide-count": displayList.length,
-            transform: `translate3d(0, -${(100 * currentIndex) / displayList.length}%, 0)`,
-            transition: noTransition
-              ? "none"
-              : "transform 1.25s cubic-bezier(0.25, 0.1, 0.25, 1)",
-          } as React.CSSProperties & { "--slide-count": number }}
+          style={
+            {
+              "--slide-count": displayList.length,
+              transform: `translate3d(0, -${(100 * currentIndex) / displayList.length}%, 0)`,
+              transition: noTransition
+                ? "none"
+                : "transform 1.25s cubic-bezier(0.25, 0.1, 0.25, 1)",
+            } as React.CSSProperties & { "--slide-count": number }
+          }
         >
           {displayList.map((src, index) => (
             <div key={`${index}-${src}`} className="auth-slide">
