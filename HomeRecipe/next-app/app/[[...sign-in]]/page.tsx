@@ -25,11 +25,9 @@ export default async function SignInPage() {
           />
           <h1 className="auth-title">HomeRecipe</h1>
           <p className="auth-subtitle">Sign in and let&apos;s start cooking!</p>
+
+          {/* This holds the Sign In form with Sign Up button option */}
           <ClientSignIn />
-          <p className="auth-link-wrap">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup">Sign up</Link>
-          </p>
         </div>
       </div>
       <div className="auth-right">

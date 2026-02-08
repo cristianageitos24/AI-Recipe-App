@@ -18,11 +18,9 @@ export default function SignUpPage() {
           />
           <h1 className="auth-title">HomeRecipe</h1>
           <p className="auth-subtitle">Let&apos;s get started!</p>
+
+          {/* This holds the Sign Up form with Sign In button option */}
           <ClientSignUp />
-          <p className="auth-link-wrap">
-            Already have an account?{" "}
-            <Link href="/">Log In</Link>
-          </p>
         </div>
       </div>
       <div className="auth-right">
