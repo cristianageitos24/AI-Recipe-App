@@ -14,6 +14,7 @@ const navItems = [
   { href: "/dashboard/home", label: "Home", icon: "/images/dashboard/homeicon.svg" },
   { href: "/dashboard/cookbook", label: "Cookbooks", icon: "/images/dashboard/cookbook-icon.svg" },
   { href: "/dashboard/calendar", label: "Meal Calendar", icon: "/images/dashboard/calendaricon.svg" },
+  { href: "/dashboard/video-upload", label: "Video Upload", icon: "/images/dashboard/homeicon.svg" },
 ];
 
 export function DashboardNav() {
