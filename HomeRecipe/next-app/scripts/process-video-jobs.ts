@@ -19,16 +19,24 @@ import {
   processVideo,
   withTimeout,
 } from "../lib/video-processing";
+import { extractAudioToWav, transcribeWithWhisper } from "../lib/transcription";
+import { extractRecipeFromVideo } from "../lib/recipe-reasoning";
+import type { ExtractedRecipe } from "../lib/types";
 
-dotenv.config({ path: resolve(__dirname, "../.env.local") });
+// Load .env.local from next-app (script's parent dir) then cwd so worker always sees keys
+const nextAppDir = resolve(__dirname, "..");
+const envLocal = resolve(nextAppDir, ".env.local");
+const envCwd = resolve(process.cwd(), ".env.local");
+dotenv.config({ path: envLocal });
+if (envCwd !== envLocal) dotenv.config({ path: envCwd });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-if (!supabaseUrl || !serviceRoleKey) {
+if (!supabaseUrl || !supabaseSecretKey) {
   console.error("Missing required environment variables:");
   console.error("  NEXT_PUBLIC_SUPABASE_URL:", supabaseUrl ? "✓" : "✗");
-  console.error("  SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY:", serviceRoleKey ? "✓" : "✗");
+  console.error("  SUPABASE_SECRET_KEY or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:", supabaseSecretKey ? "✓" : "✗");
   process.exit(1);
 }
 
@@ -39,7 +47,11 @@ const MAX_DURATION_SECONDS = parseInt(
   10
 );
 const PROCESSING_TIMEOUT_MS = parseInt(
-  process.env.VIDEO_PROCESSING_TIMEOUT_MS || "180000",
+  process.env.VIDEO_PROCESSING_TIMEOUT_MS || "600000",
+  10
+);
+const MAX_FRAMES = parseInt(
+  process.env.VIDEO_MAX_FRAMES || "300",
   10
 );
 const POLL_INTERVAL_MS = parseInt(
@@ -50,11 +62,15 @@ const LOCK_TIMEOUT_MINUTES = parseInt(
   process.env.WORKER_LOCK_TIMEOUT_MINUTES || "10",
   10
 );
+const TRANSCRIPTION_TIMEOUT_MS = parseInt(
+  process.env.TRANSCRIPTION_TIMEOUT_MS || "60000",
+  10
+);
 const WORKER_ID =
   process.env.WORKER_ID || `${hostname()}-${process.pid}`;
 
 // Create Supabase client with service role (bypasses RLS)
-const supabase = createClient(supabaseUrl, serviceRoleKey, {
+const supabase = createClient(supabaseUrl, supabaseSecretKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,
@@ -175,20 +191,46 @@ async function markJobFailed(jobId: string, errorMessage: string) {
 }
 
 /**
- * Mark job as completed
+ * Update job transcript (call when transcription succeeds or fails)
+ */
+async function updateJobTranscript(jobId: string, transcriptText: string | null) {
+  const { error } = await supabase
+    .from("video_processing_jobs")
+    .update({ transcript_text: transcriptText })
+    .eq("id", jobId);
+
+  if (error) {
+    log("ERROR", "Failed to update job transcript", {
+      jobId,
+      error: error.message,
+    });
+  }
+}
+
+/**
+ * Mark job as completed (with optional extracted recipe from AI reasoning)
  */
 async function markJobCompleted(
   jobId: string,
   ocrText: string,
-  processingMs: number
+  processingMs: number,
+  transcriptText: string | null,
+  extractedRecipe: ExtractedRecipe | null
 ) {
-  log("INFO", "Job completed", { jobId, processingMs, textLength: ocrText.length });
+  log("INFO", "Job completed", {
+    jobId,
+    processingMs,
+    textLength: ocrText.length,
+    hasExtractedRecipe: extractedRecipe != null,
+  });
 
   const { error } = await supabase
     .from("video_processing_jobs")
     .update({
       status: "done",
       ocr_text: ocrText,
+      transcript_text: transcriptText,
+      extracted_recipe: extractedRecipe,
       processing_ms: processingMs,
       finished_at: new Date().toISOString(),
       locked_at: null,
@@ -233,6 +275,8 @@ async function downloadVideo(videoPath: string): Promise<string> {
 async function processJob(job: VideoJob): Promise<void> {
   const startTime = Date.now();
   let videoPath: string | null = null;
+  let wavPath: string | null = null;
+  let transcriptText: string | null = null;
 
   try {
     log("INFO", "Processing job", {
@@ -254,8 +298,43 @@ async function processJob(job: VideoJob): Promise<void> {
       );
     }
 
-    // Process video with timeout
-    const processingPromise = processVideo(videoPath, ocrProvider!, 60);
+    // Transcription: extract audio and transcribe (non-fatal on failure)
+    const audioTranscriptionKey = process.env.OPENAI_AUDIO_TRANSCRIPTION_KEY;
+    if (audioTranscriptionKey) {
+      wavPath = join(tmpdir(), `audio-${Date.now()}-${Math.random().toString(36).substring(7)}.wav`);
+      try {
+        await extractAudioToWav(videoPath, wavPath);
+        transcriptText = await transcribeWithWhisper(wavPath, audioTranscriptionKey, TRANSCRIPTION_TIMEOUT_MS);
+        await updateJobTranscript(job.id, transcriptText);
+        log("DEBUG", "Transcription complete", { jobId: job.id, transcriptLength: transcriptText?.length ?? 0 });
+      } catch (transcriptionError: any) {
+        log("ERROR", "Transcription failed, continuing with OCR", {
+          jobId: job.id,
+          error: transcriptionError?.message ?? transcriptionError,
+        });
+        transcriptText = null;
+        await updateJobTranscript(job.id, null);
+      } finally {
+        if (wavPath) {
+          try {
+            await unlink(wavPath);
+          } catch (e) {
+            log("ERROR", "Failed to cleanup temp audio file", { wavPath, error: e });
+          }
+          wavPath = null;
+        }
+      }
+    } else {
+      log("DEBUG", "OPENAI_AUDIO_TRANSCRIPTION_KEY not set, skipping transcription", { jobId: job.id });
+    }
+
+    // Process video with timeout (1 frame/sec, capped at MAX_FRAMES)
+    const maxFrames = Math.min(
+      Math.ceil(duration),
+      MAX_FRAMES
+    );
+    log("DEBUG", "Processing frames", { jobId: job.id, duration, maxFrames });
+    const processingPromise = processVideo(videoPath, ocrProvider!, maxFrames);
     const ocrText = await withTimeout(
       processingPromise,
       PROCESSING_TIMEOUT_MS,
@@ -264,8 +343,34 @@ async function processJob(job: VideoJob): Promise<void> {
 
     const processingMs = Date.now() - startTime;
 
+    // AI reasoning: extract structured recipe from OCR + transcript (non-fatal)
+    let extractedRecipe: ExtractedRecipe | null = null;
+    const reasoningKey = process.env.OPENAI_REASONING_API_KEY;
+    if (reasoningKey && (ocrText.trim().length > 0 || (transcriptText ?? "").trim().length > 0)) {
+      try {
+        extractedRecipe = await extractRecipeFromVideo(ocrText, transcriptText, {
+          apiKey: reasoningKey,
+          log: (message, data) => log("DEBUG", message, data),
+        });
+        if (extractedRecipe) {
+          log("DEBUG", "Recipe reasoning succeeded", { jobId: job.id });
+        } else {
+          log("DEBUG", "Recipe reasoning failed or skipped", { jobId: job.id });
+        }
+      } catch (reasoningError: unknown) {
+        log("ERROR", "Recipe reasoning error", {
+          jobId: job.id,
+          error: reasoningError instanceof Error ? reasoningError.message : String(reasoningError),
+        });
+      }
+    } else {
+      if (!reasoningKey) {
+        log("DEBUG", "OPENAI_REASONING_API_KEY not set, skipping recipe extraction", { jobId: job.id });
+      }
+    }
+
     // Mark as completed
-    await markJobCompleted(job.id, ocrText, processingMs);
+    await markJobCompleted(job.id, ocrText, processingMs, transcriptText, extractedRecipe);
   } catch (error: any) {
     const errorMessage = error.message || "Unknown error";
     log("ERROR", "Job processing error", {
@@ -289,6 +394,14 @@ async function processJob(job: VideoJob): Promise<void> {
         log("ERROR", "Failed to cleanup video file", { videoPath, error });
       }
     }
+    // Cleanup temp audio if still present (e.g. early exit)
+    if (wavPath) {
+      try {
+        await unlink(wavPath);
+      } catch (error) {
+        log("ERROR", "Failed to cleanup temp audio file", { wavPath, error });
+      }
+    }
   }
 }
 
@@ -296,12 +409,24 @@ async function processJob(job: VideoJob): Promise<void> {
  * Main worker loop
  */
 async function main() {
+  const hasTranscriptionKey = Boolean(process.env.OPENAI_AUDIO_TRANSCRIPTION_KEY);
+  const hasReasoningKey = Boolean(process.env.OPENAI_REASONING_API_KEY);
   log("INFO", "Worker starting", {
     workerId: WORKER_ID,
     maxDuration: MAX_DURATION_SECONDS,
+    maxFrames: MAX_FRAMES,
     timeout: PROCESSING_TIMEOUT_MS,
+    transcriptionTimeout: TRANSCRIPTION_TIMEOUT_MS,
     pollInterval: POLL_INTERVAL_MS,
+    OPENAI_AUDIO_TRANSCRIPTION_KEY: hasTranscriptionKey ? "set" : "not set",
+    OPENAI_REASONING_API_KEY: hasReasoningKey ? "set" : "not set",
   });
+  if (!hasTranscriptionKey) {
+    console.warn("[worker] OPENAI_AUDIO_TRANSCRIPTION_KEY is not set — speech-to-text will be skipped. Add it to next-app/.env.local and restart the worker.");
+  }
+  if (!hasReasoningKey) {
+    console.warn("[worker] OPENAI_REASONING_API_KEY is not set — structured recipe extraction will be skipped. Add it to next-app/.env.local and restart the worker.");
+  }
 
   // Initialize OCR provider
   try {

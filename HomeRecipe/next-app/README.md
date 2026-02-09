@@ -20,11 +20,13 @@ Create `.env.local` from `.env.local.example` and set:
 | Variable | Description |
 |----------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public key |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key (client-side) |
 
-Optional (for import scripts and admin operations):
+Optional:
 
-- `SUPABASE_SERVICE_ROLE_KEY` – bypasses RLS for bulk import scripts
+- `SUPABASE_SECRET_KEY` – server/worker only; bypasses RLS for bulk import scripts and video worker
+- `OPENAI_AUDIO_TRANSCRIPTION_KEY` – for video worker audio transcription (Whisper); worker-only, not exposed to browser
+- `OPENAI_REASONING_API_KEY` – for video worker AI recipe extraction (GPT-4.1 nano); worker-only, not exposed to browser
 
 ## Database
 
@@ -48,7 +50,7 @@ See `supabase/README.md` for schema and RLS details. If you haven’t run 008 ye
 To populate the app with recipes and enable search/suggestions:
 
 1. Apply all migrations (including `007_ingredients_table.sql`).
-2. Run the import scripts (requires `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`):
+2. Run the import scripts (requires `SUPABASE_SECRET_KEY` in `.env.local`):
 
 ```bash
 npm run import:recipes    # Imports recipes from Open Recipes (~230k recipes)

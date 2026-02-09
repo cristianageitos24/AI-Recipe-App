@@ -16,6 +16,13 @@ export default clerkMiddleware(async (auth, req) => {
     // fallthrough to auth checks if redirect can't be performed
   }
   if (isProtectedRoute(req)) await auth.protect();
+
+  const pathname = req.nextUrl.pathname;
+  if (pathname === "/dashboard" || pathname === "/dashboard/") {
+    return NextResponse.redirect(new URL("/dashboard/home", req.url));
+  }
+
+  return NextResponse.next();
 });
 
 export const config = {

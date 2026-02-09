@@ -3,7 +3,7 @@
  * Run after: npm run import:recipes
  * Run: npm run import:ingredients
  *
- * Requires: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local
+ * Requires: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY in .env.local
  */
 
 import { config } from "dotenv";
@@ -35,18 +35,18 @@ function displayName(ingredient: string): string {
 
 async function main() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseSecretKey =
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-  if (!supabaseUrl || !serviceKey) {
+  if (!supabaseUrl || !supabaseSecretKey) {
     console.error(
-      "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY"
+      "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY"
     );
     process.exit(1);
   }
 
-  const supabase = createClient(supabaseUrl, serviceKey);
+  const supabase = createClient(supabaseUrl, supabaseSecretKey);
 
   console.log("Fetching recipes...");
   const { data: recipes, error: fetchError } = await supabase

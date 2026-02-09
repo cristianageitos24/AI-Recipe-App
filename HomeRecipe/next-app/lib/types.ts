@@ -46,3 +46,20 @@ export type MealDateWithRecipe = MealDateRow & {
   recipe_id: string;
   recipe?: RecipeRow;
 };
+
+/** Single ingredient from AI-extracted recipe (video pipeline) */
+export type ExtractedRecipeIngredient = {
+  item: string;
+  quantity: number | null;
+  unit: string | null;
+  notes: string | null;
+};
+
+/** Structured recipe extracted from video OCR + transcript (AI reasoning) */
+export type ExtractedRecipe = {
+  title: string;
+  servings: number | null;
+  cook_time_minutes: number | null;
+  ingredients: ExtractedRecipeIngredient[];
+  steps: string[];
+};
