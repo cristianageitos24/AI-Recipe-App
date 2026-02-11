@@ -31,11 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider
-      signInUrl="/"
-      signUpUrl="/signup"
-      afterSignOutUrl="/"
-    >
+    <ClerkProvider signInUrl="/signin" signUpUrl="/signup" afterSignOutUrl="/">
       <html lang="en">
         <body
           className={`${geistSans.variable} ${geistMono.variable} ${workSans.variable} antialiased`}

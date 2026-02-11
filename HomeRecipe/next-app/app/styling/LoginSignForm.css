@@ -133,19 +133,6 @@
   letter-spacing: 6.4px;
 }
 
-.auth-small-pic-text {
-  position: absolute;
-  bottom: 30px;
-  width: 80%;
-  max-height: 85px;
-  color: #fff;
-  text-align: center;
-  font-family: "Work Sans", sans-serif;
-  font-size: 24px;
-  font-weight: 400;
-  line-height: normal;
-}
-
 .auth-page .auth-logo {
   width: 40px;
   height: 50px;
@@ -340,6 +327,15 @@
   margin-top: 10px;
 }
 
+.cl-internal-poy8jg {
+  /*removes the clerk notification on bottom right*/
+  display: none;
+}
+
+.cl-internal-1dauvpw {
+  display: none;
+}
+
 @media screen and (max-width: 980px) {
   .login-sign-form-section h1 {
     font-size: 16px;
@@ -398,11 +394,6 @@
 
   .auth-large-pic-text {
     font-size: clamp(32px, 6vw, 64px);
-  }
-
-  .auth-small-pic-text {
-    font-size: 18px;
-    bottom: 15px;
   }
 }
 
