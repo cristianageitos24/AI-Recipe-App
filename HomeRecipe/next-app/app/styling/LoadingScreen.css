@@ -7,16 +7,16 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.5rem;
-  background: var(--background, #ffffff);
-  color: var(--foreground, #171717);
+  gap: var(--space-6);
+  background: var(--color-bg);
+  color: var(--color-fg);
 }
 
 .loading-screen-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem;
+  gap: var(--space-6);
 }
 
 /* Wrapper for the bowl SVG – applies pulse animation */
@@ -50,7 +50,7 @@
 }
 
 .loading-screen-text {
-  font-size: 0.9375rem;
-  color: var(--foreground, #171717);
+  font-size: var(--text-base);
+  color: var(--color-fg);
   opacity: 0.85;
 }

@@ -1,16 +1,13 @@
 .event-search-options {
   position: absolute;
   z-index: 999;
-
-  background-color: #fff;
-
+  background-color: var(--color-bg);
   box-sizing: border-box;
-  border: 1px solid #ababab;
+  border: 1px solid var(--gray-500);
   margin-top: -1px;
   margin-left: -1px;
-
   width: -webkit-fill-available;
-  margin-right: 21px;
+  margin-right: var(--space-5);
 }
 
 .unordered-search-options-list {
@@ -20,20 +17,18 @@
 }
 
 .unordered-search-options-list > li {
-  padding: 5px;
+  padding: var(--space-2);
   cursor: pointer;
-
-  font-family: "Work Sans";
+  font-family: var(--font-body);
   font-style: normal;
   font-weight: 500;
-  font-size: 14px;
+  font-size: var(--text-sm);
   line-height: 16px;
   display: flex;
   align-items: center;
-
-  color: gray;
+  color: var(--gray-600);
 }
 
 .unordered-search-options-list > li:hover {
-  background-color: #ffe6d8;
+  background-color: var(--accent-muted-bg);
 }

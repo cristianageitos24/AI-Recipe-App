@@ -1,20 +1,121 @@
 @import "tailwindcss";
 
+/* ========== DESIGN TOKENS (Five Pillars) ========== */
+
 :root {
+  /* Base (existing) */
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Spacing scale (all divisible by 4) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-9: 36px;
+  --space-10: 40px;
+  --space-11: 48px;
+  --space-12: 56px;
+  --space-13: 64px;
+  --space-14: 72px;
+  --space-15: 80px;
+  --space-16: 96px;
+
+  /* Type scale (body 16px) */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 32px;
+  --text-4xl: 40px;
+  --text-5xl: 64px;
+  --text-display: 106px;
+
+  /* Font: single font for entire app (Work Sans) */
+  --font-body: var(--font-work-sans), "Work Sans", system-ui, sans-serif;
+  --font-display: var(--font-body);
+
+  /* Colors: base */
+  --color-bg: #ffffff;
+  --color-bg-muted: #f7f9f7;
+  --color-fg: #171717;
+  --color-fg-muted: #4a4a4a;
+
+  /* Colors: accent (single brand color, 5–10% use) */
+  --accent: #dc2100;
+  --accent-hover: #a01800;
+  --accent-muted: rgba(220, 33, 0, 0.2);
+  --accent-muted-bg: rgba(220, 33, 0, 0.06);
+
+  /* Colors: grays */
+  --gray-100: #f5f5f5;
+  --gray-200: #ebebeb;
+  --gray-300: #e0e0e0;
+  --gray-400: #d4d4d4;
+  --gray-500: #ababab;
+  --gray-600: #737373;
+  --gray-700: #666666;
+  --gray-800: #404342;
+  --gray-900: #333333;
+  --gray-950: #1a1a1a;
+  --gray-nav: #1a1a1a;
+  --gray-nav-hover: #2d2d2d;
+  --gray-nav-active: #252525;
+
+  /* Colors: semantic (muted, for labels only) */
+  --success-bg: #e8f2e8;
+  --success-fg: #519451;
+  --warning-bg: #fdf6e4;
+  --warning-fg: #d9a112;
+  --error-bg: #f7dbd7;
+  --error-fg: #ba3523;
+
+  /* Border radius (from spacing scale) */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 50px;
+
+  /* Icons */
+  --icon-size: 16px;
+  --icon-size-sm: 12px;
+  --icon-size-lg: 20px;
+
+  /* Overlay */
+  --overlay: rgba(0, 0, 0, 0.35);
+  --overlay-light: rgba(0, 0, 0, 0.1);
+
+  /* Placeholder image gradient (reuse everywhere) */
+  --placeholder-bg: linear-gradient(135deg, #e8ecf0 0%, #d2dce1 100%);
+
+  /* Breakpoints (for reference; use in media queries) */
+  /* sm: 640px, md: 768px, lg: 1024px, xl: 1280px */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-body);
 }
 
 /* App uses light theme to match design; dark mode not applied */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-work-sans), "Work Sans", system-ui, sans-serif;
+  font-family: var(--font-body);
+}
+
+/* Focus: use accent for visible focus ring (accessibility) */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }

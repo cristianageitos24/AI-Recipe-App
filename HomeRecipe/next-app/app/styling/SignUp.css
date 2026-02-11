@@ -36,7 +36,7 @@
 .checklist p,
 ul {
   color: #000;
-  font-family: Work Sans;
+  font-family: var(--font-body);
   font-size: 12px;
   font-style: normal;
   font-weight: 400;
@@ -69,7 +69,7 @@ ul {
 
 .error-input {
   color: #eb4335;
-  font-family: Work Sans;
+  font-family: var(--font-body);
   font-size: 14px;
   font-style: italic;
   font-weight: 400;
@@ -80,7 +80,7 @@ ul {
 
 .error-input-span {
   color: #eb4335;
-  font-family: Work Sans;
+  font-family: var(--font-body);
   font-size: 14px;
   font-style: italic;
   font-weight: 600;

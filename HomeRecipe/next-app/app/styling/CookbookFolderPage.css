@@ -2,17 +2,16 @@
   display: grid;
   grid-template-rows: auto;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  grid-gap: 10px;
-  padding-right: 40px;
-
-  margin-top: 30px;
+  grid-gap: var(--space-3);
+  padding-right: var(--space-10);
+  margin-top: var(--space-7);
 }
 
 /*       WHEN FOLDER IS EMPTY       */
 .isLoading {
   color: #000;
   text-align: start;
-  font-family: "EB Garamond";
+  font-family: var(--font-body);
   font-size: clamp(10px, 8vw, 16px);
   font-style: normal;
   font-weight: 500;
@@ -37,7 +36,7 @@
   height: 454px;
 }
 .empty-folder-subtxt {
-  font-family: "EB Garamond";
+  font-family: var(--font-body);
   font-style: normal;
   font-weight: 500;
   font-size: clamp(10px, 8vw, 16px);
@@ -62,7 +61,7 @@
 
 .bttn-titles .back-bttn,
 .bttn-titles .folder-bttn {
-  font-family: "EB Garamond";
+  font-family: var(--font-body);
   font-style: normal;
   font-weight: 500;
   font-size: 18px;
@@ -97,11 +96,11 @@
 
 .add-recipe-to-folder-btn {
   margin-left: auto;
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   color: #fff;
-  background: #ff4d6d;
+  background: var(--accent);
   border: none;
   border-radius: 10px;
   padding: 10px 16px;
@@ -110,7 +109,7 @@
 }
 
 .add-recipe-to-folder-btn:hover {
-  background: #e63950;
+  background: var(--accent-hover);
 }
 
 /*      FOLDER BTTN IS CLICKED       */
@@ -159,7 +158,7 @@
 .folder-bttn .folder-options li {
   color: #000;
   text-align: center;
-  font-family: Work Sans;
+  font-family: var(--font-body);
   font-size: 14px;
   font-style: normal;
   font-weight: 400;
@@ -218,7 +217,7 @@
 /*       HEADER CONTENT     */
 
 .rename-popup-title {
-  font-family: "Work Sans";
+  font-family: var(--font-body);
   font-style: normal;
   font-weight: 500;
   font-size: clamp(14px, 4vw, 20px);
@@ -242,7 +241,7 @@
   border: 1px solid #ababab;
   border-radius: 10px;
 
-  font-family: "Work Sans";
+  font-family: var(--font-body);
   font-style: normal;
   font-weight: 500;
   font-size: 14px;
@@ -258,7 +257,7 @@
 }
 
 .rename-input:focus {
-  outline: 5px auto #ff4d6d;
+  outline: 5px auto var(--accent);
 }
 .rename-input::placeholder {
   color: #808080;
@@ -278,7 +277,7 @@
   cursor: pointer;
 
   color: #000;
-  font-family: "Work Sans";
+  font-family: var(--font-body);
   font-style: normal;
   font-weight: 400;
   font-size: 12px;
@@ -314,7 +313,7 @@
 
 /*       CONFIRM BUTTON     */
 .rename-popup-bttns .confirm {
-  color: #ff4d6d;
+  color: var(--accent);
   font-weight: 600;
 
   transition: 0.1s ease-in-out;
@@ -398,7 +397,7 @@
 }
 
 .add-recipe-tab {
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   padding: 8px 16px;
@@ -415,8 +414,8 @@
 }
 
 .add-recipe-tab.active {
-  background: #ff4d6d;
-  border-color: #ff4d6d;
+  background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
 
@@ -428,7 +427,7 @@
 }
 
 .add-recipe-empty-msg {
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   color: #666;
   margin: 16px 0;
@@ -459,7 +458,7 @@
   border-radius: 8px;
   background: #fff;
   cursor: pointer;
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   text-align: left;
   transition: background 0.2s, border-color 0.2s;
@@ -467,7 +466,7 @@
 
 .add-recipe-list-item:hover {
   background: #fae0e4;
-  border-color: #ff4d6d;
+  border-color: var(--accent);
 }
 
 .add-recipe-list-item-img {
@@ -505,13 +504,13 @@
   padding: 10px 12px;
   border: 1px solid #ababab;
   border-radius: 8px;
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
 }
 
 .add-recipe-search-input:focus {
   outline: none;
-  border-color: #ff4d6d;
+  border-color: var(--accent);
 }
 
 .add-recipe-search-btn {
@@ -520,7 +519,7 @@
   border-radius: 8px;
   background: #000;
   color: #fff;
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -551,7 +550,7 @@
   border-radius: 8px;
   background: #fff;
   cursor: pointer;
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   text-align: left;
   transition: background 0.2s, border-color 0.2s;
@@ -559,7 +558,7 @@
 
 .add-recipe-search-result-item:hover {
   background: #fae0e4;
-  border-color: #ff4d6d;
+  border-color: var(--accent);
 }
 
 /* Toggle: Search online / Add manually */
@@ -570,7 +569,7 @@
 }
 
 .add-recipe-mode-toggle-btn {
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   padding: 8px 16px;
@@ -587,8 +586,8 @@
 }
 
 .add-recipe-mode-toggle-btn.active {
-  background: #ff4d6d;
-  border-color: #ff4d6d;
+  background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
 
@@ -600,7 +599,7 @@
 }
 
 .add-recipe-manual-error {
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   color: #c00;
   margin: 0;
@@ -608,7 +607,7 @@
 }
 
 .add-recipe-manual-label {
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   color: #333;
@@ -616,7 +615,7 @@
 }
 
 .add-recipe-manual-required {
-  color: #ff4d6d;
+  color: var(--accent);
 }
 
 .add-recipe-manual-input,
@@ -626,7 +625,7 @@
   padding: 10px 12px;
   border: 1px solid #ababab;
   border-radius: 8px;
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   color: #000;
 }
@@ -634,7 +633,7 @@
 .add-recipe-manual-input:focus,
 .add-recipe-manual-textarea:focus {
   outline: none;
-  border-color: #ff4d6d;
+  border-color: var(--accent);
 }
 
 .add-recipe-manual-textarea {
@@ -647,9 +646,9 @@
   padding: 10px 16px;
   border: none;
   border-radius: 8px;
-  background: #ff4d6d;
+  background: var(--accent);
   color: #fff;
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -657,7 +656,7 @@
 }
 
 .add-recipe-manual-submit:hover:not(:disabled) {
-  background: #e63950;
+  background: var(--accent-hover);
 }
 
 .add-recipe-manual-submit:disabled {
@@ -679,7 +678,7 @@
 
 .manual-recipe-tab {
   padding: 10px 16px;
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   color: #666;
@@ -695,8 +694,8 @@
 }
 
 .manual-recipe-tab.active {
-  color: #ff4d6d;
-  border-bottom-color: #ff4d6d;
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 .manual-recipe-tab-panel {
@@ -752,11 +751,11 @@
 .manual-recipe-add-btn {
   margin-top: 8px;
   padding: 8px 12px;
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
-  color: #ff4d6d;
+  color: var(--accent);
   background: none;
-  border: 1px dashed #ff4d6d;
+  border: 1px dashed var(--accent);
   border-radius: 4px;
   cursor: pointer;
 }

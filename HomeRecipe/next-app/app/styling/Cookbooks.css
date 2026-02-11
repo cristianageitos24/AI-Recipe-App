@@ -1,14 +1,13 @@
 .tabcookbook-cookbooks-section {
-  padding: 75px 40px 40px 0px;
+  padding: var(--space-14) var(--space-10) var(--space-10) 0;
 }
 
 .tabcookbook-cookbooks-section .cookbook-subtitle {
   margin: 0;
-  margin-bottom: 15px;
-
-  color: #000;
-  font-family: EB Garamond;
-  font-size: 16px;
+  margin-bottom: var(--space-4);
+  color: var(--color-fg);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
   font-style: normal;
   font-weight: 500;
   line-height: normal;
@@ -18,85 +17,69 @@
 .cookbook-folders {
   width: auto;
   height: auto;
-
   display: flex;
   justify-content: left;
   align-items: flex-start;
   flex-wrap: wrap;
-
-  gap: 5px;
+  gap: var(--space-2);
 }
 
-/*  COOKBOOKS STYLING   */
-
 .cookbook-folders-content-container {
-  gap: 10px;
+  gap: var(--space-3);
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   grid-template-rows: auto;
   align-items: stretch;
   width: 100%;
 }
-/*      ADD NEW COOKBOOK (brand-aligned: black/orange)     */
+
 .add-new-folder-btn {
   cursor: pointer;
-
   flex-shrink: 0;
   min-height: 52px;
   max-width: 100%;
-
-  border-radius: 10px;
-  border: 2px dashed #4a4a4a;
+  border-radius: var(--radius-2xl);
+  border: 2px dashed var(--color-fg-muted);
   background: none;
-
-  color: #4a4a4a;
-  font-family: "Work Sans", sans-serif;
-  font-size: 14px;
+  color: var(--color-fg-muted);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
   font-style: normal;
   font-weight: 500;
   line-height: normal;
   text-transform: capitalize;
-
   transition: 0.2s ease-in;
-
-  padding: 12px 18px;
+  padding: var(--space-3) var(--space-5);
 }
 
 .add-new-folder-btn:hover {
   transition: 0.2s ease-in;
-
-  border: 2px dashed #000;
-  background-color: #eee;
-
-  color: #000;
+  border: 2px dashed var(--color-fg);
+  background-color: var(--gray-200);
+  color: var(--color-fg);
 }
 
 .add-new-folder-btn.new-folder-btn-active {
-  border: 2px dashed #dc2100;
-  background: rgba(220, 33, 0, 0.06);
-
-  color: #dc2100;
+  border: 2px dashed var(--accent);
+  background: var(--accent-muted-bg);
+  color: var(--accent);
 }
 
-/*      MODAL STLYING       */
 .new-folder-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.35); /* Semi-transparent background */
-
+  background-color: var(--overlay);
   z-index: 100;
 }
 
 .new-folder-info-modal-content {
   position: absolute;
-
-  background-color: white;
-  padding: 20px;
-  border-radius: 10px;
-
+  background-color: var(--color-bg);
+  padding: var(--space-5);
+  border-radius: var(--radius-2xl);
   width: 300px;
   left: 15%;
   right: 0;
@@ -104,126 +87,95 @@
   margin: auto;
 }
 
-/*      MODAL CONTENT STYLE     */
 .new-folder-title {
   margin: 0;
-  margin-bottom: 30px;
-
-  font-family: "Work Sans";
+  margin-bottom: var(--space-7);
+  font-family: var(--font-body);
   font-style: normal;
   font-weight: 500;
-  font-size: clamp(14px, 4vw, 20px);
-
-  color: #000000;
+  font-size: clamp(var(--text-sm), 4vw, var(--text-xl));
+  color: var(--color-fg);
 }
 
 .new-folder-input {
   position: relative;
-
   width: 100%;
   height: 100%;
-
   box-sizing: border-box;
-
-  background: #ffffff;
-  border: 1px solid #ababab;
-  border-radius: 10px;
-
-  font-family: "Work Sans";
+  background: var(--color-bg);
+  border: 1px solid var(--gray-500);
+  border-radius: var(--radius-2xl);
+  font-family: var(--font-body);
   font-style: normal;
   font-weight: 500;
-  font-size: 14px;
+  font-size: var(--text-sm);
   line-height: 16px;
   display: flex;
   align-items: center;
-
-  color: #000000;
-
-  padding: 10px;
-
+  color: var(--color-fg);
+  padding: var(--space-3);
   margin-left: -1px;
 }
 
 .new-folder-input:focus {
-  outline: 5px auto #ff4d6d;
+  outline: var(--space-2) solid var(--accent);
+  outline-offset: 2px;
 }
 
 .modal-folder-action-btns {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 5px;
-
-  margin-top: 30px;
+  gap: var(--space-2);
+  margin-top: var(--space-7);
 }
 
 .modal-folder-action-btns button {
-  padding: 8px 15px;
-
+  padding: var(--space-2) var(--space-4);
   cursor: pointer;
-
-  font-family: "Work Sans";
+  font-family: var(--font-body);
   font-style: normal;
-  font-size: 12px;
+  font-size: var(--text-xs);
   line-height: 14px;
-
   display: flex;
   align-items: center;
   text-align: center;
-
-  border-radius: 10px;
+  border-radius: var(--radius-2xl);
   outline: none;
   border: none;
   background: none;
 }
 
-.new-folder-cancel-btn:hover {
-  transition: 0.2s ease-in;
-  background: #ebebeb;
-}
-
-.new-folder-create-btn:active {
-  background: #000;
-  color: #fff;
-}
-
-/*       CANCEL BUTTON     */
 .new-folder-cancel-btn {
-  color: #000000;
+  color: var(--color-fg);
   transition: 0.1s ease-in-out;
 }
 
 .new-folder-cancel-btn:hover {
-  background: #e6e6e6;
+  background: var(--gray-200);
   transition: 0.1s ease-in-out;
 }
 
 .new-folder-cancel-btn:active {
-  background: #ababab;
+  background: var(--gray-500);
   transition: 0.1s ease-in-out;
 }
 
-/*       CREATE BUTTON     */
 .new-folder-create-btn {
-  color: #ff4d6d;
+  color: var(--accent);
   font-weight: 600;
-
   transition: 0.1s ease-in-out;
 }
 
 .new-folder-create-btn:hover {
-  background: #fae0e4;
-
-  color: #000000;
-
+  background: var(--error-bg);
+  color: var(--color-fg);
   transition: 0.1s ease-in-out;
 }
 
 .new-folder-create-btn:active {
-  background: #000;
-
-  color: #fff;
-
+  background: var(--color-fg);
+  color: var(--color-bg);
   transition: 0.1s ease-in-out;
 }
 
@@ -238,6 +190,7 @@
     padding-right: 0;
   }
 }
+
 @media screen and (max-width: 980px) {
   .tabcookbook-cookbooks-section {
     margin-right: 0;

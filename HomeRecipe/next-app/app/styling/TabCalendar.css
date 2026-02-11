@@ -1,42 +1,37 @@
 .calendar-app {
-  padding-right: 40px;
+  padding-right: var(--space-10);
   height: 65%;
 }
 
 .recipe-event-div {
-  border: None;
-  border-radius: 5px;
+  border: none;
+  border-radius: var(--radius-md);
 }
 
 .tabcalendar-event-title-container {
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  gap: 5px;
-
-  padding: 4px;
-  border-radius: 5px;
-  border: 2px solid #000;
-
-  background-color: #000;
-
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.15);
+  gap: var(--space-2);
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-fg);
+  background-color: var(--color-fg);
+  box-shadow: 0 var(--space-1) var(--space-3) var(--overlay-light);
 }
 
 .tabcalendar-event-title-container.active {
-  border: 2px solid #dc2100;
+  border: 2px solid var(--accent);
 }
 
 .active-event-blob-div {
   position: absolute;
   inset: 0;
-
   background: none;
-  border-radius: 5px;
+  border-radius: var(--radius-md);
   height: 100%;
   width: 100%;
-
-  box-shadow: 0 0 0 0 rgba(220, 33, 0, 0);
+  box-shadow: 0 0 0 0 var(--accent-muted);
   transform: scale(1);
   animation: pulse 2s infinite;
 }
@@ -44,47 +39,27 @@
 @keyframes pulse {
   0% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(220, 33, 0, 0.7);
+    box-shadow: 0 0 0 0 var(--accent-muted);
   }
-
   70% {
     transform: scale(1);
-    box-shadow: 0 0 0 10px rgba(220, 33, 0, 0);
+    box-shadow: 0 0 0 var(--space-3) transparent;
   }
-
   100% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(220, 33, 0, 0);
+    box-shadow: 0 0 0 0 var(--accent-muted);
   }
 }
 
 .tabcalendar-event-title-container:hover {
-  background: hsla(9, 100%, 43%, 1);
-
-  background: linear-gradient(
-    0deg,
-    hsla(9, 100%, 43%, 1) 0%,
-    hsla(0, 0%, 0%, 1) 100%
-  );
-
-  background: -moz-linear-gradient(
-    0deg,
-    hsla(9, 100%, 43%, 1) 0%,
-    hsla(0, 0%, 0%, 1) 100%
-  );
-
-  background: -webkit-linear-gradient(
-    0deg,
-    hsla(9, 100%, 43%, 1) 0%,
-    hsla(0, 0%, 0%, 1) 100%
-  );
-
-  filter: progid: DXImageTransform.Microsoft.gradient( startColorstr="#DC2100", endColorstr="#000000", GradientType=1 );
+  background: linear-gradient(0deg, var(--accent) 0%, var(--color-fg) 100%);
+  -moz-background: linear-gradient(0deg, var(--accent) 0%, var(--color-fg) 100%);
+  -webkit-background: linear-gradient(0deg, var(--accent) 0%, var(--color-fg) 100%);
 }
 
 .tabcalendar-event-title-container img {
   height: clamp(10px, 4vw, 30px);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
 }
 
 .tabcalendar-event-title-container p {
@@ -92,28 +67,25 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-
   text-align: center;
-  font-family: "Work Sans";
-  font-size: clamp(10px, 4vw, 12px);
+  font-family: var(--font-body);
+  font-size: clamp(10px, 4vw, var(--text-xs));
   font-style: normal;
   font-weight: 400;
   line-height: normal;
 }
 
-/* FullCalendar theme variables */
 :root {
   --fc-today-bg-color: #ffdcd5;
-  --fc-page-bg-color: #f7f9f7;
-  --fc-neutral-bg-color: #f7f9f7;
-  --fc-list-event-hover-bg-color: #eee;
-  --fc-border-color: rgba(0, 0, 0, 0.1);
+  --fc-page-bg-color: var(--color-bg-muted);
+  --fc-neutral-bg-color: var(--color-bg-muted);
+  --fc-list-event-hover-bg-color: var(--gray-200);
+  --fc-border-color: var(--overlay-light);
 }
 
-/* FullCalendar: light content area so calendar grid is never black */
 .fc {
-  background: #f7f9f7;
-  font-family: "Work Sans", sans-serif;
+  background: var(--color-bg-muted);
+  font-family: var(--font-body);
 }
 
 .fc .fc-view-harness,
@@ -126,56 +98,53 @@
 .fc .fc-scrollgrid-section-body table,
 .fc-theme-standard td,
 .fc-theme-standard th {
-  background: #f7f9f7;
+  background: var(--color-bg-muted);
 }
 
-.fc .fc-daygrid-day-number {
-  color: #171717;
-}
-
+.fc .fc-daygrid-day-number,
 .fc .fc-col-header-cell-cushion {
-  color: #171717;
+  color: var(--color-fg);
 }
 
 .fc table {
-  font-size: clamp(10px, 4vw, 12px);
-  font-family: "Work Sans", sans-serif;
+  font-size: clamp(10px, 4vw, var(--text-xs));
+  font-family: var(--font-body);
 }
 
 .fc .fc-toolbar-title {
-  color: #000;
+  color: var(--color-fg);
   text-align: center;
-  font-family: "Work Sans", sans-serif;
-  font-size: clamp(16px, 4vw, 20px);
+  font-family: var(--font-body);
+  font-size: clamp(var(--text-base), 4vw, var(--text-xl));
   font-style: normal;
   font-weight: 500;
   line-height: normal;
 }
 
 .fc .fc-toolbar {
-  background: #f7f9f7;
+  background: var(--color-bg-muted);
 }
 
 .fc .fc-button-primary:hover {
-  background-color: #333;
+  background-color: var(--gray-900);
   transition: 0.2s ease;
 }
 
 .fc .fc-button {
   text-align: center;
-  font-family: "Work Sans", sans-serif;
-  font-size: clamp(10px, 4vw, 14px);
+  font-family: var(--font-body);
+  font-size: clamp(10px, 4vw, var(--text-sm));
   font-style: normal;
   font-weight: 500;
   line-height: normal;
-  height: 35px;
-  background-color: #000;
+  height: 36px;
+  background-color: var(--color-fg);
   border: none;
-  color: #fff;
+  color: var(--color-bg);
 }
 
 .fc .fc-toolbar.fc-header-toolbar {
-  margin-bottom: 7px;
+  margin-bottom: var(--space-2);
 }
 
 .fc-event .fc-event-main {
@@ -183,16 +152,13 @@
   z-index: auto;
 }
 
-.fc .fc-daygrid-body {
-  z-index: auto;
-}
-
+.fc .fc-daygrid-body,
 .fc .fc-daygrid-event {
   z-index: auto;
 }
 
 @media screen and (max-width: 575px) {
   .calendar-app {
-    padding: 0px 0px 0px 0px;
+    padding: 0;
   }
 }

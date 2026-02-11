@@ -1,19 +1,8 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Geist, Geist_Mono } from "next/font/google";
 import { Work_Sans } from "next/font/google";
 import { NavigationLoadingOverlay } from "@/components/NavigationLoadingOverlay";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 const workSans = Work_Sans({
   variable: "--font-work-sans",
@@ -34,7 +23,7 @@ export default function RootLayout({
     <ClerkProvider signInUrl="/signin" signUpUrl="/signup" afterSignOutUrl="/">
       <html lang="en">
         <body
-          className={`${geistSans.variable} ${geistMono.variable} ${workSans.variable} antialiased`}
+          className={`${workSans.variable} font-sans antialiased`}
         >
           {children}
           <NavigationLoadingOverlay />

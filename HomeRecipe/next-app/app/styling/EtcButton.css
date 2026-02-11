@@ -1,4 +1,3 @@
-/*  DOTS IS CLICKED   */
 .etc-content {
   position: relative;
   flex-shrink: 0;
@@ -8,77 +7,67 @@
   margin: 0;
   outline: none;
   border: none;
-
   display: flex;
   justify-content: center;
   align-items: center;
-
-  padding: 5px;
+  padding: var(--space-2);
   background: none;
-
   cursor: pointer;
 }
 
 .etc-button:hover {
-  background-color: #beccd4;
-  border-radius: 5px;
+  background-color: var(--gray-400);
+  border-radius: var(--radius-md);
   transition: background-color ease-in 0.1s;
 }
 
 .etc-button svg {
-  width: 4px;
+  width: var(--space-1);
   height: 19px;
 }
+
 .etc-content .etc-options {
   position: absolute;
   z-index: 100;
   top: 100%;
   left: -850%;
-
   list-style-type: none;
-
   display: flex;
   justify-content: center;
   align-items: center;
   flex-direction: column;
-
   margin: 0;
   cursor: auto;
-  padding: 4px;
-
-  background: #ffffff;
-  border-radius: 6px;
+  padding: var(--space-1);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
 }
 
 .etc-content .etc-options li {
-  color: #000;
+  color: var(--color-fg);
   text-align: center;
-  font-family: Work Sans;
-  font-size: 14px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
   font-style: normal;
   font-weight: 400;
   line-height: normal;
-
   display: flex;
   justify-content: flex-start;
   align-items: center;
-
   margin: 0;
   cursor: pointer;
   white-space: nowrap;
-
-  background: #fff;
+  background: var(--color-bg);
   border: none;
-
-  border-radius: 5px;
-  padding: 5px 40px 5px 10px;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-10) var(--space-2) var(--space-3);
   width: -webkit-fill-available;
 }
 
 .etc-content .etc-options li:hover {
-  background: #d2dce1;
+  background: var(--gray-400);
 }
 
 .etc-content .etc-options li:active {
-  background: #ababab;
+  background: var(--gray-500);
 }

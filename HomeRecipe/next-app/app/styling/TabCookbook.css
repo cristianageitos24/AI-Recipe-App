@@ -10,36 +10,31 @@
   grid-template-rows: auto 1fr;
 }
 
-/*          IF NO CONTENT         */
-
 .tabcookbook-no-recipes-default {
   margin-bottom: auto;
-
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
 }
+
 .tabcookbook-no-recipes-default h2 {
-  color: #000;
+  color: var(--color-fg);
   text-align: center;
-  font-family: EB Garamond;
-  font-size: 16px;
+  font-family: var(--font-display);
+  font-size: var(--text-base);
   font-style: normal;
   font-weight: 500;
   line-height: normal;
-
   margin: 0;
 }
 
 .tabcookbook-no-recipes-default img {
   max-width: 220px;
-  max-width: 220px;
   flex-shrink: 0;
 }
 
-/*          CONTENT         */
 .tabcookbook-show-liked-recipes {
   min-width: 100%;
   display: flex;
@@ -48,36 +43,34 @@
 }
 
 .tabcookbook-show-liked-recipes .sub-header-title {
-  color: #000;
-  font-family: EB Garamond;
-  font-size: 16px;
+  color: var(--color-fg);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
   font-style: normal;
   font-weight: 500;
   line-height: normal;
   text-transform: capitalize;
-
   margin: 0;
-  margin-bottom: 10px;
+  margin-bottom: var(--space-3);
 }
 
-/* Liked Recipes horizontal scroll (aligned with Home Favorites) */
 .tabcookbook-liked-scroll {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 20px 0 28px 0;
-  margin-right: 10px;
+  padding: var(--space-5) 0 var(--space-7);
+  margin-right: var(--space-3);
   scrollbar-width: thin;
 }
 
 .tabcookbook-liked-scroll::-webkit-scrollbar {
-  height: 8px;
+  height: var(--space-2);
 }
 
 .tabcookbook-liked-scroll::-webkit-scrollbar-thumb {
-  background: #d0d0d0;
-  border-radius: 4px;
+  background: var(--gray-400);
+  border-radius: var(--radius-sm);
 }
 
 .tabcookbook-liked-card-wrap {

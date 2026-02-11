@@ -1,23 +1,20 @@
-/*      RECIPE CARDS BEFORE        */
-
 .tabcookbook-show-liked-recipes .cards-container {
-  overflow-x: auto; /* Enable horizontal scrolling */
-  white-space: nowrap; /* Prevent list items from wrapping */
-
-  margin-right: 10px;
-  margin-top: 10px;
-  min-height: 320px; /* One card height (image + info box overlap) so row doesn't collapse */
+  overflow-x: auto;
+  white-space: nowrap;
+  margin-right: var(--space-3);
+  margin-top: var(--space-3);
+  min-height: 320px;
 }
 
 .tabcookbook-show-liked-recipes .scrollable-wrapper {
-  width: fit-content; /* Ensures the wrapper fits its content */
+  width: fit-content;
   display: inline-block;
 }
 
 .recipe-cards-horizontal-list {
-  display: inline-flex; /* Display list items in a row */
-  gap: 10px;
-  padding: 5px;
+  display: inline-flex;
+  gap: var(--space-3);
+  padding: var(--space-2);
   align-items: flex-start;
 }
 
@@ -25,16 +22,11 @@
   flex-shrink: 0;
 }
 
-/*      RECIPE CARDS ACTUAL CONTENT        */
-
-/*      IMAGE CONTENT        */
-
 .recipe-card-canvas {
   display: flex;
   justify-content: center;
   align-items: center;
   flex-direction: column;
-
   transition: 0.2s ease;
 }
 
@@ -48,9 +40,7 @@
   height: 255px;
   flex-shrink: 0;
   overflow: hidden;
-
-  border-radius: 20px;
-
+  border-radius: var(--radius-2xl);
   position: relative;
 }
 
@@ -59,85 +49,68 @@
   height: 255px;
   object-fit: cover;
   object-position: center;
-
-  border-radius: 20px;
-
+  border-radius: var(--radius-2xl);
   display: block;
 }
 
 .recipe-card-image-box .recipe-card-image-placeholder {
   width: 268px;
   height: 255px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, #e8ecf0 0%, #d2dce1 100%);
-
+  border-radius: var(--radius-2xl);
+  background: var(--placeholder-bg);
   object-fit: cover;
   object-position: center;
-
   display: block;
 }
 
 .recipe-card-image-box .options-btn-bkg {
-  width: 70px;
-  height: 30px;
+  width: 72px;
+  height: var(--space-7);
   flex-shrink: 0;
-  border-radius: 50px;
+  border-radius: var(--radius-full);
   background: rgba(247, 249, 247, 0.9);
-
   display: flex;
   justify-content: center;
   align-items: center;
-
   position: absolute;
-  top: 15px;
-  right: 15px;
-
-  padding: 0px 2px;
-  gap: 6px;
+  top: var(--space-4);
+  right: var(--space-4);
+  padding: 0 var(--space-1);
+  gap: var(--space-2);
 }
 
-/*  FOLDER IS CLICKED   */
 .save-to-folder-content {
   position: relative;
 }
 
 .save-to-folder-button {
   position: relative;
-
   outline: none;
-
   display: flex;
   justify-content: center;
   align-items: center;
   margin: 0;
-  padding: 5px 3px;
-
+  padding: var(--space-2) var(--space-1);
   background: none;
   border: none;
-  border-radius: 5px 13px 13px 5px;
-
+  border-radius: var(--radius-2) var(--radius-lg) var(--radius-lg) var(--radius-2);
   cursor: pointer;
-
   transition: 0.2s ease;
 }
 
 .save-to-folder-button svg {
-  width: 20px;
-  margin-left: 2px;
+  width: var(--icon-size-lg);
+  margin-left: var(--space-1);
 }
 
 .save-to-folder-button svg path {
-  fill: #adb8c1;
+  fill: var(--gray-400);
 }
 
 .save-to-folder-button:hover {
-  background: #ebebeb;
-  border-radius: 5px 13px 13px 5px;
+  background: var(--gray-200);
+  border-radius: var(--radius-2) var(--radius-lg) var(--radius-lg) var(--radius-2);
   transition: background-color ease-in 0.1s;
-}
-
-.save-to-folder-button svg {
-  width: 20px;
 }
 
 .save-to-folder-content .save-to-folder-options {
@@ -145,73 +118,59 @@
   z-index: 100;
   top: 100%;
   right: -16%;
-
   width: 100px;
   max-height: 200px;
-
   margin: 0;
   cursor: auto;
-
-  background: #ffffff;
-  border-radius: 6px;
-
-  padding: 5px;
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
   display: grid;
   grid-template-columns: 1fr;
   justify-content: flex-start;
   align-items: flex-start;
-
   overflow-y: auto;
 }
 
 .save-to-folder-content .save-to-folder-options p {
-  color: #000;
+  color: var(--color-fg);
   text-align: justify;
-  font-family: Work Sans;
-  font-size: 14px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
   font-style: normal;
   font-weight: 400;
-
   margin: 0;
-  padding: 5px 10px;
+  padding: var(--space-2) var(--space-3);
   cursor: pointer;
-
-  background: #fff;
+  background: var(--color-bg);
   border: none;
-  border-radius: 5px;
-
+  border-radius: var(--radius-2);
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
 }
 
 .save-to-folder-content .save-to-folder-options p:hover {
-  background: #d2dce1;
+  background: var(--gray-400);
 }
 
 .save-to-folder-content .save-to-folder-options p:active {
-  background: #ababab;
+  background: var(--gray-500);
 }
-
-/*      LABEL CONTENT        */
 
 .recipe-card-information-box {
   width: 221px;
-  height: 75px;
   width: auto;
   min-height: 100px;
   flex-shrink: 0;
-
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: 0px 4px 20px 0px rgba(0, 0, 0, 0.25);
-
+  border-radius: var(--radius-2xl);
+  background: var(--color-bg);
+  box-shadow: 0 var(--space-1) var(--space-5) var(--overlay);
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
   justify-content: center;
-
-  padding: 12px 20px 12px 20px;
+  padding: var(--space-3) var(--space-5);
   margin-top: -36px;
   z-index: 1;
 }
@@ -220,15 +179,12 @@
   display: flex;
   justify-content: left;
   align-items: center;
-
   flex-direction: column;
-
   position: relative;
   min-height: 0;
   min-width: 0;
 }
 
-/* Wrapper must shrink so line-clamp can take effect inside flex layout */
 .recipe-card-labels .recipe-title-wrap {
   min-height: 0;
   min-width: 0;
@@ -243,15 +199,13 @@
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-
-  color: #000;
+  color: var(--color-fg);
   text-align: center;
-  font-family: EB Garamond;
-  font-size: 14px;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
   font-style: normal;
   font-weight: 500;
   line-height: 1.3;
-
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -265,98 +219,81 @@
 }
 
 .recipe-card-labels .small-labels {
-  margin-top: 6px;
+  margin-top: var(--space-2);
   margin-right: auto;
-
   display: flex;
   justify-content: left;
   align-items: center;
-
-  gap: 30px;
+  gap: var(--space-7);
 }
 
 .recipe-card-labels .small-labels p {
   margin: 0;
-
-  color: #989898;
+  color: var(--gray-600);
   text-align: center;
-  font-family: Work Sans;
-  font-size: 10px;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
   font-style: normal;
   font-weight: 300;
   line-height: normal;
 }
 
 .recipe-card-labels .small-labels span {
-  color: #404342;
+  color: var(--gray-800);
   text-align: center;
-  font-family: Work Sans;
-  font-size: 10px;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
   font-style: normal;
   font-weight: 500;
   line-height: normal;
 }
 
-/*      BUTTON CONTENT        */
-
 .recipe-card-information-box .recipe-card-openlink-btn {
-  margin-left: 10px;
-
+  margin-left: var(--space-3);
   border: none;
-  border-radius: 50px;
-  background: #000;
-
+  border-radius: var(--radius-full);
+  background: var(--color-fg);
   width: 33px;
-  height: 21px;
-
+  height: 24px;
   cursor: pointer;
 }
 
 .recipe-card-information-box .recipe-card-openlink-btn .openlink-icon {
-  width: 11px;
-  height: 11px;
-
-  margin-top: 2px;
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  margin-top: var(--space-1);
 }
 
 .recipe-card-information-box .recipe-card-openlink-btn .openlink-icon path {
-  fill: white;
+  fill: var(--color-bg);
 }
 
 .recipe-card-openlink-btn:hover {
-  background: #dedede;
-
+  background: var(--gray-400);
   transition: 0.2s ease-in;
 }
 
 .recipe-card-openlink-btn:hover .openlink-icon path {
-  fill: #000;
-
+  fill: var(--color-fg);
   transition: 0.2s ease-in;
 }
 
-/*      DRAGGED CONTENT STYLING        */
 .drag-preview-content {
   position: absolute;
   pointer-events: none;
   z-index: -1;
-
-  color: #000;
+  color: var(--color-fg);
   text-align: center;
-  font-family: EB Garamond;
-  font-size: 14px;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
   font-style: normal;
   font-weight: 500;
   line-height: normal;
-
   margin: 0;
-
-  left: -10px;
-  top: -10px;
-  padding: 10px 10px;
-
+  left: -var(--space-3);
+  top: -var(--space-3);
+  padding: var(--space-3);
   box-sizing: border-box;
-  border-radius: 10px;
-
-  background-color: #fff;
+  border-radius: var(--radius-2xl);
+  background-color: var(--color-bg);
 }

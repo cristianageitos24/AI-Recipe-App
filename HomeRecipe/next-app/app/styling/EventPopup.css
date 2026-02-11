@@ -32,7 +32,7 @@
 
 /*       TITLE CONTENT     */
 .event-popup-title {
-  font-family: "Work Sans";
+  font-family: var(--font-body);
   font-style: normal;
   font-weight: 500;
   font-size: clamp(14px, 4vw, 20px);
@@ -51,7 +51,7 @@
 }
 
 .event-popup-empty-state-text {
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   line-height: 1.5;
   color: #333;
@@ -59,17 +59,17 @@
 }
 
 .event-popup-empty-state-link {
-  color: #ff4d6d;
+  color: var(--accent);
   font-weight: 600;
   text-decoration: underline;
 }
 
 .event-popup-empty-state-link:hover {
-  color: #c9184a;
+  color: var(--accent-hover);
 }
 
 .event-popup-no-match {
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   color: #808080;
   margin: 12px;
@@ -95,7 +95,7 @@
 }
 
 .event-popup-edamam-label {
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   font-weight: 500;
   color: #333;
@@ -113,13 +113,13 @@
   padding: 8px 12px;
   border: 1px solid #ababab;
   border-radius: 8px;
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
 }
 
 .event-popup-edamam-input:focus {
   outline: none;
-  border-color: #ff4d6d;
+  border-color: var(--accent);
 }
 
 .event-popup-edamam-btn {
@@ -128,7 +128,7 @@
   border-radius: 8px;
   background: #000;
   color: #fff;
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -164,7 +164,7 @@
   border-radius: 8px;
   background: #fff;
   cursor: pointer;
-  font-family: "Work Sans", sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   text-align: left;
   transition: background 0.2s, border-color 0.2s;
@@ -172,7 +172,7 @@
 
 .event-popup-edamam-item:hover {
   background: #fae0e4;
-  border-color: #ff4d6d;
+  border-color: var(--accent);
 }
 
 .event-popup-edamam-item-img {
@@ -230,7 +230,7 @@
   border: 1px solid #ababab;
   border-radius: 10px 0px 0px 10px;
 
-  font-family: "Work Sans";
+  font-family: var(--font-body);
   font-style: normal;
   font-weight: 500;
   font-size: 12px;
@@ -271,7 +271,7 @@
   border: 1px solid #ababab;
   border-radius: 0px 10px 10px 0px;
 
-  font-family: "Work Sans";
+  font-family: var(--font-body);
   font-style: normal;
   font-weight: 500;
   font-size: 14px;
@@ -306,7 +306,7 @@
 .event-popup-bttns button {
   cursor: pointer;
 
-  font-family: "Work Sans";
+  font-family: var(--font-body);
   font-style: normal;
   font-weight: 400;
   font-size: 12px;
@@ -342,7 +342,7 @@
 
 /*       CONFIRM BUTTON     */
 .event-popup-bttns .confirm {
-  color: #ff4d6d;
+  color: var(--accent);
   font-weight: 600;
 
   transition: 0.1s ease-in-out;

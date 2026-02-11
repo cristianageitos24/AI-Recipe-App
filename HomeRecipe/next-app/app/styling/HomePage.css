@@ -4,33 +4,27 @@
   position: fixed;
   top: 0;
   left: 0;
-
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 100vh;
-  overflow: hidden; /* Hide any overflowing content */
-
-  background: #ffffff;
-
+  overflow: hidden;
+  background: var(--color-bg);
   overflow-y: scroll;
 }
 
 .left-section {
-  padding: 30px 0px 30px 30px;
-
+  padding: var(--space-7) 0 var(--space-7) var(--space-7);
   flex: 1;
-  margin-right: 5px;
+  margin-right: var(--space-2);
   height: 100%;
   display: flex;
-  align-items: center; /* Center the image vertically */
+  align-items: center;
   box-sizing: border-box;
-
   overflow-y: auto;
 }
 
 .left-content {
   margin-left: auto;
-
   width: 100%;
   height: 100%;
   max-width: 726px;
@@ -41,21 +35,21 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-
-  margin-top: 30px;
-  margin-left: 30px;
+  margin-top: var(--space-7);
+  margin-left: var(--space-7);
 }
 
 .logo {
-  width: 40px;
+  width: var(--space-10);
   height: 50px;
-  margin-right: 9px;
+  margin-right: var(--space-2);
   object-fit: fill;
 }
+
 .title {
-  color: #000;
-  font-family: EB Garamond;
-  font-size: 24px;
+  color: var(--color-fg);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
   font-style: normal;
   font-weight: 400;
   line-height: normal;
@@ -73,29 +67,26 @@
 }
 
 .centered-content .main-title {
-  /*Log In*/
-  color: #000;
+  color: var(--color-fg);
   text-align: center;
-  font-family: EB Garamond;
-  font-size: 32px;
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
   font-style: normal;
   font-weight: 800;
   line-height: normal;
-
-  margin-top: 35px;
+  margin-top: var(--space-9);
 }
 
 .centered-content .main-title-sub {
-  color: #4a4a4a;
+  color: var(--color-fg-muted);
   text-align: center;
-  font-family: Work Sans;
-  font-size: 20px;
+  font-family: var(--font-body);
+  font-size: var(--text-xl);
   font-style: normal;
   font-weight: 500;
   line-height: normal;
-
-  margin-top: 20px;
-  margin-bottom: 20px;
+  margin-top: var(--space-5);
+  margin-bottom: var(--space-5);
 }
 
 .centered-content .login-signup-section {
@@ -103,27 +94,25 @@
   justify-content: center;
   align-items: center;
   flex-direction: column;
-
   width: 70%;
   height: 100%;
 }
 
 .signup-text {
-  color: #000;
-  font-family: Work Sans;
-  font-size: 16px;
+  color: var(--color-fg);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
   font-style: normal;
   font-weight: 400;
   line-height: normal;
-
-  margin-top: 20px;
+  margin-top: var(--space-5);
   margin-right: auto;
 }
 
 .signup-text span {
-  color: #2d75f6;
-  font-family: Work Sans;
-  font-size: 16px;
+  color: var(--accent);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
   font-style: normal;
   font-weight: 400;
   line-height: normal;
@@ -131,44 +120,42 @@
 }
 
 .signup-text span:hover {
-  color: #004080;
+  color: var(--accent-hover);
   text-decoration: underline;
   cursor: pointer;
 }
+
 /* ================== RIGHT SECTION ================== */
 
 .right-section {
-  padding: 30px 30px 30px 0px;
-
+  padding: var(--space-7) var(--space-7) var(--space-7) 0;
   flex: 1;
-  margin-left: 5px;
+  margin-left: var(--space-2);
   height: 100%;
   display: flex;
-  align-items: center; /* Center the image vertically */
+  align-items: center;
   box-sizing: border-box;
 }
 
 .right-section .right-section-title-logo {
   display: none;
-
   justify-content: flex-start;
   align-items: center;
-
-  margin-top: 30px;
-  margin-left: 30px;
+  margin-top: var(--space-7);
+  margin-left: var(--space-7);
 }
 
 .right-section-logo {
-  width: 40px;
+  width: var(--space-10);
   height: 50px;
-  margin-right: 9px;
+  margin-right: var(--space-2);
   object-fit: fill;
 }
 
 .right-section-title {
-  color: #000;
-  font-family: EB Garamond;
-  font-size: 24px;
+  color: var(--color-fg);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
   font-style: normal;
   font-weight: 400;
   line-height: normal;
@@ -180,18 +167,12 @@
   right: 0;
   bottom: 0;
   left: 0;
-  background: rgba(
-    0,
-    0,
-    0,
-    0.35
-  ); /* Adjust the opacity to control the darkness of the shade */
-  border-radius: 50px;
+  background: var(--overlay);
+  border-radius: var(--radius-full);
 }
 
 .text-overlay {
   position: relative;
-
   width: 100%;
   height: 100%;
   display: flex;
@@ -206,40 +187,31 @@
   flex-direction: column;
   justify-content: center;
   flex-shrink: 0;
-
   margin: 0;
 }
 
 .large-pic-text {
-  /* SIMPLE AND TASTY RECIPES */
   width: 80%;
   height: 100%;
-
-  color: #fff;
+  color: var(--color-bg);
   text-align: center;
-  font-family: EB Garamond;
-  font-size: 106px;
+  font-family: var(--font-display);
+  font-size: var(--text-display);
   font-style: normal;
   font-weight: 500;
   line-height: normal;
   letter-spacing: 6.4px;
-
-  color: #ffffff;
-
-  text-align: center;
 }
 
 .small-pic-text {
-  /* A recipe is soulless. The essence of the recipe must come from you, the cook. */
   position: absolute;
-  bottom: 30px;
+  bottom: var(--space-7);
   width: 80%;
   max-height: 85px;
-
-  color: #fff;
+  color: var(--color-bg);
   text-align: center;
-  font-family: Work Sans;
-  font-size: 24px;
+  font-family: var(--font-body);
+  font-size: var(--text-2xl);
   font-style: normal;
   font-weight: 400;
   line-height: normal;
@@ -254,19 +226,14 @@
 
 .slideshow-container {
   overflow: hidden;
-
   width: 100%;
   height: 100%;
   max-width: 726px;
   max-height: 922px;
-
-  border-radius: 50px;
-
+  border-radius: var(--radius-full);
   background-size: cover;
   background-position: center;
-
-  box-shadow: 4px 4px 10px 0px rgba(0, 0, 0, 0.5);
-
+  box-shadow: var(--space-1) var(--space-1) var(--space-3) 0 var(--overlay);
   position: relative;
 }
 
@@ -293,9 +260,8 @@
   .large-pic-text {
     font-size: 96px;
   }
-
   .small-pic-text {
-    font-size: 20px;
+    font-size: var(--text-xl);
   }
 }
 
@@ -303,98 +269,80 @@
   .large-pic-text {
     font-size: 86px;
   }
-
   .small-pic-text {
-    font-size: 20px;
+    font-size: var(--text-xl);
   }
 }
+
 @media screen and (max-width: 980px) {
   .landing-page {
     grid-template-columns: 1fr;
     grid-template-rows: 50% 1fr;
     height: 100vh;
   }
-
   .left-section {
     margin: 0;
-    padding: 20px;
+    padding: var(--space-5);
     padding-top: 0;
     grid-row: 2;
   }
-
   .left-content {
     margin-right: auto;
     margin-left: auto;
   }
-
   .left-section .title-logo {
     display: none;
   }
-
   .large-pic-text {
-    font-size: 64px;
+    font-size: var(--text-5xl);
   }
   .small-pic-text {
-    font-size: 24px;
+    font-size: var(--text-2xl);
   }
-
   .slideshow-container {
     margin-right: auto;
     margin-left: auto;
   }
-
   .centered-content .main-title {
-    font-size: 24px;
+    font-size: var(--text-2xl);
     margin-top: 0;
   }
-
   .centered-content .main-title-sub {
-    font-size: 16px;
-
-    margin-top: 10px;
-    margin-bottom: 10px;
+    font-size: var(--text-base);
+    margin-top: var(--space-3);
+    margin-bottom: var(--space-3);
   }
-
   .centered-content .login-signup-section {
     width: 100%;
   }
-
-  .signup-text {
-    font-size: 16px;
-  }
-
+  .signup-text,
   .signup-text span {
-    font-size: 16px;
+    font-size: var(--text-base);
   }
-
   .right-section {
     margin: 0;
-    padding: 30px;
+    padding: var(--space-7);
     grid-row: 1;
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding-top: 10px;
+    padding-top: var(--space-3);
   }
-
   .right-section .right-section-title-logo {
     display: flex;
     justify-content: flex-start;
     align-items: center;
-
     margin: 0;
-    margin-bottom: 10px;
+    margin-bottom: var(--space-3);
   }
-
   .right-section-logo {
     width: 30px;
-    height: 40px;
-    margin-right: 9px;
+    height: var(--space-10);
+    margin-right: var(--space-2);
     object-fit: fill;
   }
-
   .right-section-title {
-    font-size: 18px;
+    font-size: var(--text-lg);
   }
 }
 
@@ -403,26 +351,25 @@
     font-size: 42px;
   }
   .centered-content .main-title {
-    font-size: 20px;
+    font-size: var(--text-xl);
   }
   .centered-content .main-title-sub {
-    font-size: 12px;
-    margin-top: 5px;
-    margin-bottom: 5px;
+    font-size: var(--text-xs);
+    margin-top: var(--space-2);
+    margin-bottom: var(--space-2);
   }
-
   .signup-text {
-    font-size: 10px;
-    margin-top: 5px;
+    font-size: var(--text-xs);
+    margin-top: var(--space-2);
   }
   .signup-text span {
-    font-size: 10px;
+    font-size: var(--text-xs);
   }
 }
 
 @media screen and (max-width: 300px) {
   .large-pic-text {
-    font-size: 32px;
+    font-size: var(--text-3xl);
   }
 }
 
@@ -441,26 +388,25 @@
   }
   .right-section {
     padding: 0;
-    padding-top: 20px;
+    padding-top: var(--space-5);
   }
-
   .right-section-title-logo {
     margin: 0;
   }
-
   .slideshow-container {
     display: none;
   }
   .main-title {
-    margin-top: 0px;
+    margin-top: 0;
   }
 }
 
 @media screen and (max-height: 800px) {
   .small-pic-text {
-    font-size: 20px;
+    font-size: var(--text-xl);
   }
 }
+
 @media screen and (max-height: 600px) {
   .large-pic-text {
     font-size: 42px;
