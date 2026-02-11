@@ -25,3 +25,22 @@ export async function createClient() {
     },
   });
 }
+
+/**
+ * Service-role Supabase client for backend-only tasks that need to bypass RLS.
+ * Uses SUPABASE_SECRET_KEY and should only be used in trusted server actions / scripts.
+ */
+export async function createServiceRoleClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SECRET_KEY;
+
+  if (!url || !key) {
+    console.error(
+      "Supabase env missing for service role client: NEXT_PUBLIC_SUPABASE_URL and/or SUPABASE_SECRET_KEY"
+    );
+    throw new Error("Server misconfiguration (service role)");
+  }
+
+  return createSupabaseClient(url, key);
+}
+

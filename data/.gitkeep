@@ -1,0 +1,1 @@
+# Keeps data/ in the repo; large CSVs (e.g. full_dataset.csv) are gitignored

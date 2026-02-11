@@ -24,22 +24,29 @@ const EXTRACTED_RECIPE_JSON_SCHEMA = {
     },
     ingredients: {
       type: "array" as const,
-      description: "Deduplicated ingredient list; each item is a single ingredient name only (no preparation or actions)",
+      description:
+        "Deduplicated ingredient list. Each entry must represent ONE raw ingredient (a noun phrase like 'paprika' or 'red onion') with optional quantity/unit/short notes. Never include instructions or full sentences here.",
       items: {
         type: "object" as const,
         properties: {
-          item: { type: "string" as const, description: "Ingredient name only; no preparation verbs or actions (e.g. do not write 'onion sautéed with garlic'—use 'onion' and put the action in steps)" },
+          item: {
+            type: "string" as const,
+            description:
+              "Single ingredient name only (a noun or short noun phrase). No verbs, instructions, or sentences. Examples: 'paprika', 'red onion', 'olive oil'. Do NOT write things like 'add the paprika and stir' or 'onion sautéed with garlic'.",
+          },
           quantity: {
             type: ["number", "null"] as const,
-            description: "Numeric quantity, or null",
+            description: "Numeric quantity, or null if not clearly given.",
           },
           unit: {
             type: ["string", "null"] as const,
-            description: "Unit (e.g. cups, tbsp), or null",
+            description:
+              "Unit (e.g. cups, tbsp, tsp, g, ml), or null if not clearly given.",
           },
           notes: {
             type: ["string", "null"] as const,
-            description: "Optional short descriptor only (e.g. diced, optional); no preparation verbs or actions",
+            description:
+              "Optional very short descriptor only (e.g. 'diced', 'minced', 'optional'). No verbs, instructions, or multi-step text.",
           },
         },
         required: ["item", "quantity", "unit", "notes"] as const,
@@ -103,7 +110,12 @@ Rules:
 - Order cooking steps chronologically.
 - Do not invent or assume information that is not present in the input. Use null for unknown servings, cook_time_minutes, or ingredient quantity/unit/notes when not stated.
 - Title: infer a short recipe title; use "Untitled Recipe" only if nothing suggests a name.
-- Ingredients vs steps: Each ingredient "item" must be a single ingredient name (with optional quantity/unit). Do NOT include preparation or actions in ingredients (e.g. do not write "onion sautéed with garlic", "garlic grated, added to onion", "Parmesan mixed into panko"). Put all actions, preparation, and order of operations in "steps". Use ingredient "notes" only for short descriptors like "diced" or "optional", never for verbs or actions.
+- Ingredients vs steps:
+  - Each ingredient "item" must be ONLY the ingredient name (a noun or short noun phrase), never a sentence or instruction.
+  - Examples of valid items: "paprika", "red onion", "olive oil".
+  - Examples of INVALID items (do NOT output these in ingredients): "add the paprika and stir", "onion sautéed with garlic", "smoked paprika is available at most supermarkets".
+  - Put all actions, preparation, and order of operations in "steps".
+  - Use ingredient "notes" only for very short descriptors like "diced" or "optional", never for verbs or instructions.
 - Return only valid JSON that matches the exact schema provided.`;
 
 /**
@@ -138,18 +150,70 @@ function validateExtractedRecipe(raw: unknown): raw is ExtractedRecipe {
 /**
  * Normalize and type the validated object.
  */
+function isStepLikeText(text: string | null | undefined): boolean {
+  if (!text) return false;
+  const s = String(text).trim();
+  if (!s) return false;
+
+  const lower = s.toLowerCase();
+  // Obvious sentence markers or long text with verbs look like steps
+  if (/[.!?]/.test(s)) return true;
+
+  const verbPatterns =
+    /\b(add|mix|stir|bake|cook|preheat|combine|place|heat|pour|remove|serve|garnish|sprinkle|whisk|simmer|boil|fry|saute|sauté)\b/;
+  const words = lower.split(/\s+/);
+
+  if (words.length > 10 && verbPatterns.test(lower)) {
+    return true;
+  }
+
+  return false;
+}
+
 function normalizeExtractedRecipe(raw: ExtractedRecipe): ExtractedRecipe {
+  const normalizedIngredients: ExtractedRecipeIngredient[] = [];
+  const extraSteps: string[] = [];
+
+  for (const ing of raw.ingredients || []) {
+    const item = String(ing.item ?? "").trim();
+    const quantity =
+      ing.quantity == null ? null : Number(ing.quantity);
+    const unit =
+      ing.unit == null ? null : String(ing.unit).trim() || null;
+    const notes =
+      ing.notes == null ? null : String(ing.notes).trim() || null;
+
+    // If the model accidentally put a step-like sentence into ingredients,
+    // move it into steps instead of treating it as an ingredient.
+    if (isStepLikeText(item) || isStepLikeText(notes)) {
+      const combined = [item, notes].filter(Boolean).join(" - ");
+      if (combined) {
+        extraSteps.push(combined);
+      }
+      continue;
+    }
+
+    if (!item) continue;
+
+    normalizedIngredients.push({
+      item,
+      quantity,
+      unit,
+      notes,
+    });
+  }
+
+  const normalizedSteps = (raw.steps || [])
+    .map((s) => String(s).trim())
+    .filter(Boolean);
+
   return {
     title: String(raw.title).trim() || "Untitled Recipe",
     servings: raw.servings == null ? null : Number(raw.servings),
-    cook_time_minutes: raw.cook_time_minutes == null ? null : Number(raw.cook_time_minutes),
-    ingredients: (raw.ingredients || []).map((i: ExtractedRecipeIngredient) => ({
-      item: String(i.item).trim(),
-      quantity: i.quantity == null ? null : Number(i.quantity),
-      unit: i.unit == null ? null : String(i.unit).trim(),
-      notes: i.notes == null ? null : String(i.notes).trim(),
-    })),
-    steps: (raw.steps || []).map((s) => String(s).trim()).filter(Boolean),
+    cook_time_minutes:
+      raw.cook_time_minutes == null ? null : Number(raw.cook_time_minutes),
+    ingredients: normalizedIngredients,
+    steps: [...normalizedSteps, ...extraSteps],
   };
 }
 

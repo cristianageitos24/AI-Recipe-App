@@ -1,0 +1,6 @@
+# For import_full_dataset.py (Supabase import). Requires polars first.
+# Note: supabase pulls in pyiceberg/pyroaring, which need Microsoft C++ Build Tools on Windows.
+# If install fails, install Build Tools from https://visualstudio.microsoft.com/visual-cpp-build-tools/
+polars>=0.20.0
+supabase>=2.0.0
+python-dotenv>=1.0.0

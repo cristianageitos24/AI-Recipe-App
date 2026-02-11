@@ -1,0 +1,2 @@
+# View data only (inspect_large_csv.py). Install with: pip install -r data/requirements.txt
+polars>=0.20.0

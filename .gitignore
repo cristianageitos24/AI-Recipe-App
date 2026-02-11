@@ -1,0 +1,4 @@
+# Ignore large CSV in data/; track scripts, requirements, and docs
+data/*.csv
+# Keep import script local (not shared)
+data/import_full_dataset.py

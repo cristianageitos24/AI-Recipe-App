@@ -9,29 +9,9 @@
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import { join } from "path";
+import { normalizeIngredientName } from "../lib/ingredient-normalize";
 
 config({ path: join(process.cwd(), ".env.local") });
-
-// Strip leading quantities/units to get core ingredient name
-const QTY_REGEX =
-  /^(?:\d+\s*\/\s*\d+|\d+[.,]?\d*)\s*(?:cup|cups|tbsp|tsp|oz|lb|pound|ounce|clove|cloves|slice|slices|piece|pieces|can|cans|package|packages|bag|bags|bunch|pinch|dash|dashes|to\s*taste)?\s*/i;
-
-function normalizeIngredient(raw: string): string | null {
-  let s = raw.trim();
-  if (!s || s.length < 2) return null;
-  s = s.replace(QTY_REGEX, "").trim();
-  if (!s || s.length < 2) return null;
-  s = s.replace(/\s+/g, " ").toLowerCase();
-  if (s.length < 2) return null;
-  return s;
-}
-
-function displayName(ingredient: string): string {
-  return ingredient
-    .split(" ")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-}
 
 async function main() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -63,9 +43,10 @@ async function main() {
   for (const r of recipes ?? []) {
     const lines = (r.ingredient_lines ?? "").split("***");
     for (const line of lines) {
-      const normalized = normalizeIngredient(line);
+      const normalized = normalizeIngredientName(line);
       if (normalized) {
-        countMap.set(normalized, (countMap.get(normalized) ?? 0) + 1);
+        const key = normalized.search_name;
+        countMap.set(key, (countMap.get(key) ?? 0) + 1);
       }
     }
   }
@@ -80,7 +61,10 @@ async function main() {
   let inserted = 0;
   for (let i = 0; i < entries.length; i += BATCH_SIZE) {
     const batch = entries.slice(i, i + BATCH_SIZE).map(([searchName, useCount]) => ({
-      name: displayName(searchName),
+      name: normalizeIngredientName(searchName)?.name ?? searchName
+        .split(" ")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" "),
       search_name: searchName,
       use_count: useCount,
     }));
