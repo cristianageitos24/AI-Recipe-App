@@ -5,6 +5,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Next.js 16 uses Turbopack by default; empty config satisfies the build when webpack is also set
+  turbopack: {},
   experimental: {
     serverActions: {
       bodySizeLimit: "50mb",

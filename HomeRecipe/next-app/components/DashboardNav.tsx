@@ -49,7 +49,7 @@ export function DashboardNav() {
       </ul>
       <div className="bottom-nav-content">
         <div className="loggedin-username-label">
-          <UserButton afterSignOutUrl="/sign-in" />
+          <UserButton afterSignOutUrl="/signin" />
           <span className="signedin-label">Account</span>
         </div>
       </div>
