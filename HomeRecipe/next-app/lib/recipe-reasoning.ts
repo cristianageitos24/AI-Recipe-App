@@ -24,11 +24,11 @@ const EXTRACTED_RECIPE_JSON_SCHEMA = {
     },
     ingredients: {
       type: "array" as const,
-      description: "Deduplicated, normalized ingredient list",
+      description: "Deduplicated ingredient list; each item is a single ingredient name only (no preparation or actions)",
       items: {
         type: "object" as const,
         properties: {
-          item: { type: "string" as const, description: "Ingredient name" },
+          item: { type: "string" as const, description: "Ingredient name only; no preparation verbs or actions (e.g. do not write 'onion sautéed with garlic'—use 'onion' and put the action in steps)" },
           quantity: {
             type: ["number", "null"] as const,
             description: "Numeric quantity, or null",
@@ -39,7 +39,7 @@ const EXTRACTED_RECIPE_JSON_SCHEMA = {
           },
           notes: {
             type: ["string", "null"] as const,
-            description: "Optional note (e.g. diced, optional)",
+            description: "Optional short descriptor only (e.g. diced, optional); no preparation verbs or actions",
           },
         },
         required: ["item", "quantity", "unit", "notes"] as const,
@@ -103,6 +103,7 @@ Rules:
 - Order cooking steps chronologically.
 - Do not invent or assume information that is not present in the input. Use null for unknown servings, cook_time_minutes, or ingredient quantity/unit/notes when not stated.
 - Title: infer a short recipe title; use "Untitled Recipe" only if nothing suggests a name.
+- Ingredients vs steps: Each ingredient "item" must be a single ingredient name (with optional quantity/unit). Do NOT include preparation or actions in ingredients (e.g. do not write "onion sautéed with garlic", "garlic grated, added to onion", "Parmesan mixed into panko"). Put all actions, preparation, and order of operations in "steps". Use ingredient "notes" only for short descriptors like "diced" or "optional", never for verbs or actions.
 - Return only valid JSON that matches the exact schema provided.`;
 
 /**

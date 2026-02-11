@@ -1,10 +1,11 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { addRecipeToFolder, deleteFolder, getFolderRecipes, getFolders, renameFolder } from "@/app/actions/folders";
 import { getFavorites } from "@/app/actions/favorites";
 import { CookbookPageRecipeCard } from "@/components/CookbookPageRecipeCard";
+import { RecipeFullView } from "@/components/RecipeFullView";
 import { buildManualRecipePayload, processRecipeData, toRecipePayload } from "@/lib/processRecipeData";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/CookbookFolderPage.css";
@@ -14,9 +15,11 @@ type EdamamHit = { recipe: unknown };
 export default function CookbookFolderPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const folderName = decodeURIComponent((params.folderName as string) ?? "");
   const [copyFolderName, setCopyFolderName] = useState(folderName);
   const [folderRecipes, setFolderRecipes] = useState<RecipeRow[]>([]);
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [isFolderOptionsOpen, setIsFolderOptionsOpen] = useState(false);
   const [isRenameOptionOpen, setIsRenameOptionOpen] = useState(false);
   const [folderRename, setFolderRename] = useState("");
@@ -29,8 +32,9 @@ export default function CookbookFolderPage() {
   const [addRecipeSearching, setAddRecipeSearching] = useState(false);
   const [addRecipeMode, setAddRecipeMode] = useState<"search" | "manual">("search");
   const [manualRecipeLabel, setManualRecipeLabel] = useState("");
-  const [manualIngredients, setManualIngredients] = useState("");
-  const [manualSteps, setManualSteps] = useState("");
+  const [manualAddRecipeTab, setManualAddRecipeTab] = useState<"ingredients" | "cooktime" | "steps">("ingredients");
+  const [manualIngredientLines, setManualIngredientLines] = useState<string[]>([""]);
+  const [manualStepsLines, setManualStepsLines] = useState<string[]>([""]);
   const [manualTimeInMinutes, setManualTimeInMinutes] = useState("");
   const [manualCalories, setManualCalories] = useState("");
   const [manualCuisineType, setManualCuisineType] = useState("");
@@ -58,6 +62,16 @@ export default function CookbookFolderPage() {
       setIsLoading(false);
     });
   }, [folderName]);
+
+  const openRecipeId = searchParams.get("openRecipeId");
+  useEffect(() => {
+    if (!openRecipeId || folderRecipes.length === 0) return;
+    const match = folderRecipes.find((r) => r.id === openRecipeId);
+    if (match) {
+      setSelectedRecipeId(openRecipeId);
+      router.replace(`/dashboard/cookbook/${encodeURIComponent(folderName)}`, { scroll: false });
+    }
+  }, [openRecipeId, folderRecipes, folderName, router]);
 
   useEffect(() => {
     if (!isAddRecipeModalOpen) return;
@@ -122,8 +136,9 @@ export default function CookbookFolderPage() {
     setAddRecipeSearchResults([]);
     setAddRecipeMode("search");
     setManualRecipeLabel("");
-    setManualIngredients("");
-    setManualSteps("");
+    setManualAddRecipeTab("ingredients");
+    setManualIngredientLines([""]);
+    setManualStepsLines([""]);
     setManualTimeInMinutes("");
     setManualCalories("");
     setManualCuisineType("");
@@ -173,7 +188,7 @@ export default function CookbookFolderPage() {
 
   function getManualFormValid(): boolean {
     const label = manualRecipeLabel.trim();
-    const ingredients = manualIngredients.trim().split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+    const ingredients = manualIngredientLines.map((s) => s.trim()).filter(Boolean);
     const time = Number(manualTimeInMinutes);
     return label.length > 0 && ingredients.length > 0 && Number.isFinite(time) && time > 0;
   }
@@ -187,10 +202,12 @@ export default function CookbookFolderPage() {
     }
     setManualSubmitting(true);
     try {
+      const ingredientsText = manualIngredientLines.map((s) => s.trim()).filter(Boolean).join("\n");
+      const stepsText = manualStepsLines.map((s) => s.trim()).filter(Boolean).join("\n") || undefined;
       const payload = buildManualRecipePayload({
         recipeLabel: manualRecipeLabel,
-        ingredientsText: manualIngredients,
-        stepsText: manualSteps || undefined,
+        ingredientsText,
+        stepsText,
         timeInMinutes: Number(manualTimeInMinutes) || 0,
         calories: manualCalories ? Number(manualCalories) : undefined,
         cuisineType: manualCuisineType || undefined,
@@ -257,10 +274,30 @@ export default function CookbookFolderPage() {
       ) : (
         <div className="cookbook-page-recipe-cards-container">
           {folderRecipes.map((recipe) => (
-            <CookbookPageRecipeCard key={recipe.id} recipeData={recipe} />
+            <CookbookPageRecipeCard
+              key={recipe.id}
+              recipeData={recipe}
+              onSelectRecipe={(r) => setSelectedRecipeId(r.id)}
+            />
           ))}
         </div>
       )}
+      {selectedRecipeId && (() => {
+        const recipe = folderRecipes.find((r) => r.id === selectedRecipeId);
+        return recipe ? (
+          <div
+            className="recipe-full-view-overlay"
+            onClick={() => setSelectedRecipeId(null)}
+            onKeyDown={(e) => e.key === "Escape" && setSelectedRecipeId(null)}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="recipe-full-view-scroll-wrapper" onClick={(e) => e.stopPropagation()}>
+              <RecipeFullView recipeData={recipe} onClose={() => setSelectedRecipeId(null)} />
+            </div>
+          </div>
+        ) : null;
+      })()}
       {isRenameOptionOpen && (
         <div className="rename-popup-overlay" onClick={handleCancel} onKeyDown={handleKeyPress}>
           <div className="rename-folder-popup" onClick={(e) => e.stopPropagation()}>
@@ -406,88 +443,174 @@ export default function CookbookFolderPage() {
                     </>
                   )
                 ) : (
-                  <form className="add-recipe-manual-form" onSubmit={handleSubmitManualRecipe}>
+                  <form className="add-recipe-manual-form manual-recipe-tabbed-form" onSubmit={handleSubmitManualRecipe}>
                     {manualError && <p className="add-recipe-manual-error">{manualError}</p>}
                     <label className="add-recipe-manual-label">
                       Recipe name <span className="add-recipe-manual-required">*</span>
                     </label>
                     <input
                       type="text"
-                      className="add-recipe-manual-input"
+                      className="add-recipe-manual-input manual-recipe-title-input"
                       placeholder="e.g. Chocolate Cake"
                       value={manualRecipeLabel}
                       onChange={(e) => setManualRecipeLabel(e.target.value)}
                     />
-                    <label className="add-recipe-manual-label">
-                      Ingredients <span className="add-recipe-manual-required">*</span> (one per line)
-                    </label>
-                    <textarea
-                      className="add-recipe-manual-textarea"
-                      placeholder={"1 cup flour\n2 eggs\n..."}
-                      value={manualIngredients}
-                      onChange={(e) => setManualIngredients(e.target.value)}
-                      rows={4}
-                    />
-                    <label className="add-recipe-manual-label">Steps (optional, one per line)</label>
-                    <textarea
-                      className="add-recipe-manual-textarea"
-                      placeholder={"Preheat oven to 350°F\nMix dry ingredients\n..."}
-                      value={manualSteps}
-                      onChange={(e) => setManualSteps(e.target.value)}
-                      rows={4}
-                    />
-                    <label className="add-recipe-manual-label">
-                      Cook time (minutes) <span className="add-recipe-manual-required">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      min={1}
-                      className="add-recipe-manual-input"
-                      placeholder="e.g. 30"
-                      value={manualTimeInMinutes}
-                      onChange={(e) => setManualTimeInMinutes(e.target.value)}
-                    />
-                    <label className="add-recipe-manual-label">Calories (optional)</label>
-                    <input
-                      type="number"
-                      min={0}
-                      className="add-recipe-manual-input"
-                      placeholder="e.g. 250"
-                      value={manualCalories}
-                      onChange={(e) => setManualCalories(e.target.value)}
-                    />
-                    <label className="add-recipe-manual-label">Cuisine type (optional)</label>
-                    <input
-                      type="text"
-                      className="add-recipe-manual-input"
-                      placeholder="e.g. American"
-                      value={manualCuisineType}
-                      onChange={(e) => setManualCuisineType(e.target.value)}
-                    />
-                    <label className="add-recipe-manual-label">Meal type (optional)</label>
-                    <input
-                      type="text"
-                      className="add-recipe-manual-input"
-                      placeholder="e.g. lunch"
-                      value={manualMealType}
-                      onChange={(e) => setManualMealType(e.target.value)}
-                    />
-                    <label className="add-recipe-manual-label">Image URL (optional)</label>
-                    <input
-                      type="url"
-                      className="add-recipe-manual-input"
-                      placeholder="https://..."
-                      value={manualImageUrl}
-                      onChange={(e) => setManualImageUrl(e.target.value)}
-                    />
-                    <label className="add-recipe-manual-label">Website URL (optional)</label>
-                    <input
-                      type="url"
-                      className="add-recipe-manual-input"
-                      placeholder="https://..."
-                      value={manualWebsiteUrl}
-                      onChange={(e) => setManualWebsiteUrl(e.target.value)}
-                    />
+                    <div className="manual-recipe-tabs">
+                      <button
+                        type="button"
+                        className={`manual-recipe-tab ${manualAddRecipeTab === "ingredients" ? "active" : ""}`}
+                        onClick={() => setManualAddRecipeTab("ingredients")}
+                      >
+                        Ingredients
+                      </button>
+                      <button
+                        type="button"
+                        className={`manual-recipe-tab ${manualAddRecipeTab === "cooktime" ? "active" : ""}`}
+                        onClick={() => setManualAddRecipeTab("cooktime")}
+                      >
+                        Cook time
+                      </button>
+                      <button
+                        type="button"
+                        className={`manual-recipe-tab ${manualAddRecipeTab === "steps" ? "active" : ""}`}
+                        onClick={() => setManualAddRecipeTab("steps")}
+                      >
+                        Steps
+                      </button>
+                    </div>
+                    <div className="manual-recipe-tab-panel">
+                      {manualAddRecipeTab === "ingredients" && (
+                        <div className="manual-recipe-ingredients">
+                          {manualIngredientLines.map((line, i) => (
+                            <div key={i} className="manual-recipe-line-row">
+                              <input
+                                type="text"
+                                className="add-recipe-manual-input manual-recipe-line-input"
+                                value={line}
+                                onChange={(e) => {
+                                  const next = [...manualIngredientLines];
+                                  next[i] = e.target.value;
+                                  setManualIngredientLines(next);
+                                }}
+                                placeholder="Ingredient"
+                              />
+                              <button
+                                type="button"
+                                className="manual-recipe-remove-btn"
+                                onClick={() => {
+                                  const next = manualIngredientLines.filter((_, idx) => idx !== i);
+                                  setManualIngredientLines(next.length === 0 ? [""] : next);
+                                }}
+                                aria-label="Remove ingredient"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            className="manual-recipe-add-btn"
+                            onClick={() => setManualIngredientLines([...manualIngredientLines, ""])}
+                          >
+                            + Add ingredient
+                          </button>
+                        </div>
+                      )}
+                      {manualAddRecipeTab === "cooktime" && (
+                        <div className="manual-recipe-cooktime">
+                          <label className="add-recipe-manual-label">
+                            Cook time (minutes) <span className="add-recipe-manual-required">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            className="add-recipe-manual-input"
+                            placeholder="e.g. 30"
+                            value={manualTimeInMinutes}
+                            onChange={(e) => setManualTimeInMinutes(e.target.value)}
+                          />
+                          <label className="add-recipe-manual-label" style={{ marginTop: 12 }}>Calories (optional)</label>
+                          <input
+                            type="number"
+                            min={0}
+                            className="add-recipe-manual-input"
+                            placeholder="e.g. 250"
+                            value={manualCalories}
+                            onChange={(e) => setManualCalories(e.target.value)}
+                          />
+                          <label className="add-recipe-manual-label" style={{ marginTop: 12 }}>Cuisine type (optional)</label>
+                          <input
+                            type="text"
+                            className="add-recipe-manual-input"
+                            placeholder="e.g. American"
+                            value={manualCuisineType}
+                            onChange={(e) => setManualCuisineType(e.target.value)}
+                          />
+                          <label className="add-recipe-manual-label" style={{ marginTop: 12 }}>Meal type (optional)</label>
+                          <input
+                            type="text"
+                            className="add-recipe-manual-input"
+                            placeholder="e.g. lunch"
+                            value={manualMealType}
+                            onChange={(e) => setManualMealType(e.target.value)}
+                          />
+                          <label className="add-recipe-manual-label" style={{ marginTop: 12 }}>Image URL (optional)</label>
+                          <input
+                            type="url"
+                            className="add-recipe-manual-input"
+                            placeholder="https://..."
+                            value={manualImageUrl}
+                            onChange={(e) => setManualImageUrl(e.target.value)}
+                          />
+                          <label className="add-recipe-manual-label" style={{ marginTop: 12 }}>Website URL (optional)</label>
+                          <input
+                            type="url"
+                            className="add-recipe-manual-input"
+                            placeholder="https://..."
+                            value={manualWebsiteUrl}
+                            onChange={(e) => setManualWebsiteUrl(e.target.value)}
+                          />
+                        </div>
+                      )}
+                      {manualAddRecipeTab === "steps" && (
+                        <div className="manual-recipe-steps">
+                          {manualStepsLines.map((step, i) => (
+                            <div key={i} className="manual-recipe-step-row">
+                              <span className="manual-recipe-step-num">{i + 1}.</span>
+                              <textarea
+                                className="add-recipe-manual-input manual-recipe-step-input"
+                                value={step}
+                                onChange={(e) => {
+                                  const next = [...manualStepsLines];
+                                  next[i] = e.target.value;
+                                  setManualStepsLines(next);
+                                }}
+                                placeholder="Step"
+                                rows={2}
+                              />
+                              <button
+                                type="button"
+                                className="manual-recipe-remove-btn"
+                                onClick={() => {
+                                  const next = manualStepsLines.filter((_, idx) => idx !== i);
+                                  setManualStepsLines(next.length === 0 ? [""] : next);
+                                }}
+                                aria-label="Remove step"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            className="manual-recipe-add-btn"
+                            onClick={() => setManualStepsLines([...manualStepsLines, ""])}
+                          >
+                            + Add step
+                          </button>
+                        </div>
+                      )}
+                    </div>
                     <button
                       type="submit"
                       className="add-recipe-manual-submit"

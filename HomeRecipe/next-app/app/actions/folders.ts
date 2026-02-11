@@ -167,5 +167,5 @@ export async function addRecipeToFolder(
     if (error.code === "23505") return { error: "Recipe already in folder" };
     return { error: error.message };
   }
-  return { error: null };
+  return { error: null, data: { folderName, recipeId: recipeUuid } };
 }

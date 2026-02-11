@@ -6,17 +6,30 @@ import type { RecipeRow } from "@/lib/types";
 import { formatRecipeTitleTwoWordsPerLine } from "@/lib/formatRecipeTitle";
 import "@/app/styling/CookbookPageRecipeCard.css";
 
-export function CookbookPageRecipeCard({ recipeData }: { recipeData: RecipeRow }) {
+type CookbookPageRecipeCardProps = {
+  recipeData: RecipeRow;
+  onSelectRecipe?: (recipe: RecipeRow) => void;
+};
+
+export function CookbookPageRecipeCard({ recipeData, onSelectRecipe }: CookbookPageRecipeCardProps) {
   const [isMoreInformationOpen, setIsMoreInformationOpen] = useState(false);
+
+  const handleOpen = () => {
+    if (onSelectRecipe) {
+      onSelectRecipe(recipeData);
+    } else {
+      setIsMoreInformationOpen((v) => !v);
+    }
+  };
 
   return (
     <>
       <div
         className="image-bttn-container"
-        onClick={() => setIsMoreInformationOpen(!isMoreInformationOpen)}
+        onClick={handleOpen}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => e.key === "Enter" && setIsMoreInformationOpen((v) => !v)}
+        onKeyDown={(e) => e.key === "Enter" && handleOpen()}
       >
         <div className="image-blur" />
         <button
@@ -37,12 +50,14 @@ export function CookbookPageRecipeCard({ recipeData }: { recipeData: RecipeRow }
           {formatRecipeTitleTwoWordsPerLine(recipeData.recipe_label)}
         </h1>
       </div>
-      {isMoreInformationOpen && (
+      {!onSelectRecipe && isMoreInformationOpen && (
         <div
           className="recipe-full-view-overlay"
           onClick={() => setIsMoreInformationOpen(false)}
         >
-          <RecipeFullView recipeData={recipeData} />
+          <div className="recipe-full-view-scroll-wrapper" onClick={(e) => e.stopPropagation()}>
+            <RecipeFullView recipeData={recipeData} onClose={() => setIsMoreInformationOpen(false)} />
+          </div>
         </div>
       )}
     </>

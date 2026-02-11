@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { getVideoJob, type VideoJob } from "@/app/actions/video-jobs";
 import {
   createFolder,
@@ -48,6 +49,7 @@ function initialEditedFromExtracted(extracted: ExtractedRecipe): EditedRecipeSta
 }
 
 export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
+  const router = useRouter();
   const [tiktokUrl, setTiktokUrl] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -221,10 +223,16 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
       return;
     }
     setSaveSuccess(`Saved to "${folderName}"`);
+    const data = "data" in res ? res.data : undefined;
     setTimeout(() => {
       setSaveModalOpen(false);
       setSaveSuccess(null);
       setNewFolderName("");
+      if (data?.folderName != null && data?.recipeId != null) {
+        router.push(
+          `/dashboard/cookbook/${encodeURIComponent(data.folderName)}?openRecipeId=${encodeURIComponent(data.recipeId)}`
+        );
+      }
     }, 1500);
   }
 
@@ -251,10 +259,16 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
       return;
     }
     setSaveSuccess(`Created "${name}" and saved recipe`);
+    const data = "data" in addRes ? addRes.data : undefined;
     setTimeout(() => {
       setSaveModalOpen(false);
       setSaveSuccess(null);
       setNewFolderName("");
+      if (data?.folderName != null && data?.recipeId != null) {
+        router.push(
+          `/dashboard/cookbook/${encodeURIComponent(data.folderName)}?openRecipeId=${encodeURIComponent(data.recipeId)}`
+        );
+      }
     }, 1500);
   }
 

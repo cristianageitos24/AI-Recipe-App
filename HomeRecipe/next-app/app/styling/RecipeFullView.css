@@ -2,14 +2,49 @@
 
 /*  TOP IMAGE BOX STYLING  */
 .more-information-container {
-  position: absolute;
-
-  left: 15%;
+  position: relative;
+  left: 0;
   right: 0;
-  margin: auto;
-
-  height: auto;
+  margin: 0 auto;
   width: 390px;
+  max-height: 88vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  background: #e7ecef;
+}
+
+/* Close button - visible, top-right of card */
+.recipe-fullview-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  line-height: 1;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.recipe-fullview-close-btn:hover {
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+}
+
+.recipe-fullview-close-btn:focus {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 
 .more-information-image-box {
@@ -118,51 +153,173 @@
   color: #2d75f6;
 }
 
-.full-information .ingredients-subtitle {
-  font-family: "Work Sans";
-  font-style: normal;
-  font-weight: 500;
-  font-size: 12px;
+/* Tabs: Ingredients (left) | Steps (right) */
+.recipe-fullview-tabs {
   display: flex;
-  align-items: center;
-
-  margin: 0;
-  padding-left: 15px;
-
-  color: #ababab;
+  gap: 0;
+  margin: 0 20px 16px;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
 }
 
-.full-information .ingredients-content {
-  margin: 15px;
-  margin-top: 10px;
-  padding-left: 10px;
+.recipe-fullview-tab {
+  flex: 1;
+  padding: 12px 16px;
+  font-family: "Work Sans", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.recipe-fullview-tab:hover {
+  color: #333;
+}
+
+.recipe-fullview-tab.active {
+  color: #1a1a1a;
+  border-bottom-color: #67b4db;
+}
+
+.recipe-fullview-tab-panel {
+  min-height: 120px;
+  padding: 0 20px 8px;
+}
+
+/* Section titles - clear hierarchy */
+.recipe-section-title {
+  font-family: "Work Sans", sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  color: #1a1a1a;
+  margin: 0 0 12px 0;
+  padding: 0 0 6px 0;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+  letter-spacing: 0.02em;
+}
+
+/* Ingredients section - scannable list */
+.recipe-section {
+  margin-bottom: 20px;
+}
+
+.recipe-section-ingredients {
+  padding: 0;
+}
+
+.recipe-ingredients-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.recipe-ingredient-item {
+  font-family: "Work Sans", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #333;
+  padding: 10px 14px;
+  margin-bottom: 6px;
+  background: #fff;
+  border-radius: 8px;
+  border-left: 3px solid #67b4db;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.recipe-ingredient-item:last-child {
+  margin-bottom: 0;
+}
+
+.recipe-ingredient-item.recipe-empty-hint {
+  color: #888;
+  border-left-color: #ddd;
+}
+
+/* Instructions section - numbered steps, easy to follow */
+.recipe-section-steps {
+  padding: 0;
+}
+
+.recipe-steps-empty {
+  font-family: "Work Sans", sans-serif;
+  font-size: 14px;
+  color: #888;
+  margin: 0;
+  padding: 12px 0;
+}
+
+.recipe-steps-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: step;
+}
+
+.recipe-step-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  font-family: "Work Sans", sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #333;
+}
+
+.recipe-step-item:last-child {
+  margin-bottom: 0;
+}
+
+.recipe-step-num {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a1a1a;
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  border-radius: 50%;
+}
+
+.recipe-step-text {
+  flex: 1;
+  padding: 4px 0 0 0;
+}
+
+/* Legacy class compatibility */
+.full-information .ingredients-subtitle,
+.full-information .recipe-section-title {
+  padding-left: 20px;
+}
+
+.full-information .recipe-ingredients-list {
+  margin: 0;
+  padding-left: 0;
 }
 
 .full-information .ingredients-content .bullet-points {
   font-family: "Work Sans";
-  font-style: normal;
   font-weight: 500;
   font-size: 14px;
-
-  color: #000000;
-}
-
-.full-information .recipe-steps-list {
-  list-style-type: decimal;
-  padding-left: 24px;
+  color: #000;
 }
 
 .recipe-fullview-openlink-btn {
-  margin-left: auto;
-  margin-right: 15px;
-
+  margin: 16px 20px 20px auto;
   background-color: #000000;
   border: none;
   border-radius: 50px;
   cursor: pointer;
   width: auto;
   height: auto;
-
   display: flex;
   justify-content: center;
   align-items: center;

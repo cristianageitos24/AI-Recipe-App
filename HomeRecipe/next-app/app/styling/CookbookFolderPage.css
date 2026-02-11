@@ -664,3 +664,112 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Manual recipe tabbed form (aligned with video extractor UI) */
+.manual-recipe-tabbed-form .manual-recipe-title-input {
+  margin-bottom: 16px;
+}
+
+.manual-recipe-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #ddd;
+}
+
+.manual-recipe-tab {
+  padding: 10px 16px;
+  font-family: "Work Sans", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+}
+
+.manual-recipe-tab:hover {
+  color: #000;
+}
+
+.manual-recipe-tab.active {
+  color: #ff4d6d;
+  border-bottom-color: #ff4d6d;
+}
+
+.manual-recipe-tab-panel {
+  min-height: 120px;
+  margin-bottom: 20px;
+}
+
+.manual-recipe-ingredients .manual-recipe-line-row,
+.manual-recipe-steps .manual-recipe-step-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.manual-recipe-line-input,
+.manual-recipe-step-input {
+  flex: 1;
+  box-sizing: border-box;
+}
+
+.manual-recipe-step-input {
+  min-height: 52px;
+  resize: vertical;
+}
+
+.manual-recipe-step-num {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: #666;
+  padding-top: 12px;
+}
+
+.manual-recipe-remove-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 20px;
+  line-height: 1;
+  color: #999;
+  background: #eee;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.manual-recipe-remove-btn:hover {
+  color: #c33;
+  background: #fee;
+}
+
+.manual-recipe-add-btn {
+  margin-top: 8px;
+  padding: 8px 12px;
+  font-family: "Work Sans", sans-serif;
+  font-size: 14px;
+  color: #ff4d6d;
+  background: none;
+  border: 1px dashed #ff4d6d;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.manual-recipe-add-btn:hover {
+  background: #fae0e4;
+}
+
+.manual-recipe-cooktime .add-recipe-manual-label {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.manual-recipe-cooktime .add-recipe-manual-input {
+  margin-bottom: 0;
+}
