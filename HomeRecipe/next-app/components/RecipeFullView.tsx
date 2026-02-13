@@ -56,6 +56,17 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
           {recipeData.cuisine_type && <p>{capitalizeFirstLetter(recipeData.cuisine_type)}</p>}
           {recipeData.meal_type && <p>{capitalizeFirstLetter(recipeData.meal_type)}</p>}
           <p>{recipeData.calories} cal</p>
+          {recipeData.website_url && (
+            <a
+              href={recipeData.website_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="recipe-fullview-view-source"
+              onClick={(e) => e.stopPropagation()}
+            >
+              View source
+            </a>
+          )}
           {recipeData.time_in_minutes < 1 ? (
             <p>1 min</p>
           ) : (

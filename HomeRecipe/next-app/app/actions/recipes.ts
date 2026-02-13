@@ -20,6 +20,10 @@ export async function getOrCreateRecipe(payload: RecipePayload) {
     return { error: null, data: existing };
   }
 
+  const isUserOwned =
+    payload.recipeID.startsWith("manual-") || payload.recipeID.startsWith("video-recipe-");
+  const user_id = isUserOwned ? userId : null;
+
   const { data: inserted, error } = await supabase
     .from("recipes")
     .insert({
@@ -33,6 +37,7 @@ export async function getOrCreateRecipe(payload: RecipePayload) {
       steps: payload.steps ?? null,
       website_url: payload.website_url,
       image_url: payload.image_url,
+      user_id,
     })
     .select("id")
     .single();

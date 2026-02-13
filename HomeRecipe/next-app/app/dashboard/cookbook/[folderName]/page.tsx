@@ -19,6 +19,7 @@ export default function CookbookFolderPage() {
   const folderName = decodeURIComponent((params.folderName as string) ?? "");
   const [copyFolderName, setCopyFolderName] = useState(folderName);
   const [folderRecipes, setFolderRecipes] = useState<RecipeRow[]>([]);
+  const [favorites, setFavorites] = useState<RecipeRow[]>([]);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [isFolderOptionsOpen, setIsFolderOptionsOpen] = useState(false);
   const [isRenameOptionOpen, setIsRenameOptionOpen] = useState(false);
@@ -62,6 +63,22 @@ export default function CookbookFolderPage() {
       setIsLoading(false);
     });
   }, [folderName]);
+
+  useEffect(() => {
+    getFavorites().then((res) => {
+      if (res.data) setFavorites(res.data);
+    });
+  }, []);
+
+  const favoriteIds = new Set(favorites.map((r) => r.recipe_id));
+
+  const handleFavoriteChange = useCallback((recipe: RecipeRow, isFavorited: boolean) => {
+    if (isFavorited) {
+      setFavorites((prev) => (prev.some((r) => r.recipe_id === recipe.recipe_id) ? prev : [...prev, recipe]));
+    } else {
+      setFavorites((prev) => prev.filter((r) => r.recipe_id !== recipe.recipe_id));
+    }
+  }, []);
 
   const openRecipeId = searchParams.get("openRecipeId");
   useEffect(() => {
@@ -278,6 +295,8 @@ export default function CookbookFolderPage() {
               key={recipe.id}
               recipeData={recipe}
               onSelectRecipe={(r) => setSelectedRecipeId(r.id)}
+              isHearted={favoriteIds.has(recipe.recipe_id)}
+              onFavoriteChange={handleFavoriteChange}
             />
           ))}
         </div>

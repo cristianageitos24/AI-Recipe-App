@@ -153,6 +153,26 @@
   color: var(--accent);
 }
 
+.full-information .bubble-content .recipe-fullview-view-source {
+  margin: 0;
+  background: var(--accent-muted-bg);
+  border-radius: 5px;
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 11px;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.full-information .bubble-content .recipe-fullview-view-source:hover {
+  color: var(--gray-900);
+}
+
 /* Tabs: Ingredients (left) | Steps (right) */
 .recipe-fullview-tabs {
   display: flex;
