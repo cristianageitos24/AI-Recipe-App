@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { DashboardNav } from "@/components/DashboardNav";
-import { ensureProfile } from "@/app/actions/profiles";
+import { EnsureProfileOnMount } from "@/components/EnsureProfileOnMount";
 import "@/app/styling/Nav.css";
 
 export default async function DashboardLayout({
@@ -14,10 +14,9 @@ export default async function DashboardLayout({
     redirect("/signin");
   }
 
-  await ensureProfile();
-
   return (
     <div className="dashboard-page">
+      <EnsureProfileOnMount />
       <DashboardNav />
       <main className="dashboard-main overflow-auto">{children}</main>
     </div>

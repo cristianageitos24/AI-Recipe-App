@@ -1,14 +1,7 @@
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
 import Image from "next/image";
 import { ClientSignIn } from "@/components/ClientSignIn";
 
-export default async function SignInPage() {
-  const { userId } = await auth();
-  if (userId) {
-    redirect("/dashboard");
-  }
-
+export default function SignInPage() {
   return (
     <div className="auth-card">
       <Image
