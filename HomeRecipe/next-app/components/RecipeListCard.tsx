@@ -6,7 +6,7 @@ import { SaveToFolderButton } from "@/components/SaveToFolderButton";
 import { recipeRowToProcessed } from "@/lib/processRecipeData";
 import { formatRecipeTitleTwoWordsPerLine } from "@/lib/formatRecipeTitle";
 import type { RecipeRow } from "@/lib/types";
-import "@/app/styling/FavoriteCard.css";
+import "@/app/styling/RecipeListCard.css";
 
 function capitalizeFirstLetter(string: string): string {
   if (string.includes("/")) {
@@ -29,7 +29,7 @@ function RecipeImage({
   if (!imageUrl || imageError) {
     return (
       <img
-        className="favorite-card-pic favorite-card-pic-placeholder"
+        className="recipe-list-card-pic recipe-list-card-pic-placeholder"
         src="/images/recipe-placeholder.png"
         alt=""
         aria-hidden
@@ -38,7 +38,7 @@ function RecipeImage({
   }
   return (
     <img
-      className="favorite-card-pic"
+      className="recipe-list-card-pic"
       src={imageUrl}
       alt={alt}
       onError={() => setImageError(true)}
@@ -46,19 +46,21 @@ function RecipeImage({
   );
 }
 
-export type FavoriteCardProps = {
+export type RecipeListCardProps = {
   recipe: RecipeRow;
   folders: string[];
   isHearted?: boolean;
   className?: string;
+  onFavoriteChange?: (recipe: RecipeRow, isFavorited: boolean) => void;
 };
 
-export function FavoriteCard({
+export function RecipeListCard({
   recipe,
   folders,
-  isHearted = true,
+  isHearted = false,
   className = "",
-}: FavoriteCardProps) {
+  onFavoriteChange,
+}: RecipeListCardProps) {
   const info = recipeRowToProcessed(recipe);
   const timeClass =
     recipe.time_in_minutes <= 10
@@ -68,37 +70,39 @@ export function FavoriteCard({
         : "red-light";
 
   return (
-    <div className={`favorite-card ${className}`.trim()}>
+    <div className={`recipe-list-card ${className}`.trim()}>
       <RecipeImage imageUrl={recipe.image_url} alt={recipe.recipe_label} />
-      <div className="favorite-card-labels">
+      <div className="recipe-list-card-labels">
         <h1 className="recipe-title-two-words">
           {formatRecipeTitleTwoWordsPerLine(recipe.recipe_label)}
         </h1>
-        <div className="label-details">
+        <div className="recipe-list-card-label-details">
           <h3>{capitalizeFirstLetter(recipe.cuisine_type ?? "")}</h3>
           <h3>{capitalizeFirstLetter(recipe.meal_type ?? "")}</h3>
         </div>
-        <div className="label-details">
+        <div className="recipe-list-card-label-details">
           <h3>{recipe.calories} calories</h3>
           <h3 className={timeClass}>
             {recipe.time_in_minutes < 1 ? "1" : recipe.time_in_minutes} min
           </h3>
         </div>
       </div>
-      <div className="favorite-card-buttons">
+      <div className="recipe-list-card-buttons">
         <button
           type="button"
-          className="open-recipe-link-btn"
+          className="recipe-list-card-open-btn"
           onClick={() => window.open(recipe.website_url ?? "", "_blank")}
         >
           Show Recipe
         </button>
-        <div className="save-folder-btns">
-          <div className="heart-btn-search-results-card">
+        <div className="recipe-list-card-save-folder-btns">
+          <div className="recipe-list-card-heart-wrap">
             <HeartButton
               recipeData={info}
               heartStyle={{ top: "50%" }}
               isHearted={isHearted}
+              recipe={recipe}
+              onFavoriteChange={onFavoriteChange}
             />
           </div>
           <SaveToFolderButton folders={folders} recipeData={info} />

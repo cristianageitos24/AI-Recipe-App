@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { getFavorites } from "@/app/actions/favorites";
 import { getFolders } from "@/app/actions/folders";
 import { Cookbooks } from "@/components/Cookbooks";
-import { FavoriteCard } from "@/components/FavoriteCard";
+import { RecipeListCard } from "@/components/RecipeListCard";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/TabCookbook.css";
 
@@ -24,6 +24,12 @@ export default function CookbookPage() {
       if (foldRes.data) setFoldersData({ folders: foldRes.data.folders, results: foldRes.data.results });
       setIsLoading(false);
     });
+  }, []);
+
+  const handleFavoriteChange = useCallback((recipe: RecipeRow, isFavorited: boolean) => {
+    if (!isFavorited) {
+      setLikedRecipes((prev) => prev.filter((r) => r.recipe_id !== recipe.recipe_id));
+    }
   }, []);
 
   return (
@@ -43,10 +49,11 @@ export default function CookbookPage() {
                     className="tabcookbook-liked-card-wrap"
                     whileHover={{ scale: 1.02 }}
                   >
-                    <FavoriteCard
+                    <RecipeListCard
                       recipe={recipe}
                       folders={foldersData?.folders ?? []}
                       isHearted
+                      onFavoriteChange={handleFavoriteChange}
                     />
                   </motion.div>
                 ))}

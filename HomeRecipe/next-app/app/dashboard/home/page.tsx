@@ -1,12 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { HeartButton } from "@/components/HeartButton";
-import { SaveToFolderButton } from "@/components/SaveToFolderButton";
-import { FavoriteCard } from "@/components/FavoriteCard";
-import { recipeRowToProcessed } from "@/lib/processRecipeData";
+import { RecipeListCard } from "@/components/RecipeListCard";
 import { getFolders } from "@/app/actions/folders";
 import { getFavorites } from "@/app/actions/favorites";
 import {
@@ -17,95 +14,11 @@ import {
   getSuggestedRecipes,
 } from "@/app/actions/search";
 import type { RecipeRow } from "@/lib/types";
-import { formatRecipeTitleTwoWordsPerLine } from "@/lib/formatRecipeTitle";
 import "@/app/styling/TabHome.css";
-
-function capitalizeFirstLetter(string: string): string {
-  if (string.includes("/")) {
-    string = string.replace(/\/(.)/g, (_, char: string) => `/${char.toUpperCase()}`);
-  }
-  return string.charAt(0).toUpperCase() + string.slice(1);
-}
 
 type FolderWithCount = { folderName: string; count: number };
 
 type SearchMode = "recipe" | "ingredients";
-
-function ResultPic({
-  imageUrl,
-  alt,
-}: {
-  imageUrl: string | null | undefined;
-  alt: string;
-}) {
-  const [imageError, setImageError] = useState(false);
-  useEffect(() => {
-    setImageError(false);
-  }, [imageUrl]);
-  if (!imageUrl || imageError) {
-    return <img className="result-pic result-pic-placeholder" src="/images/recipe-placeholder.png" alt="" aria-hidden />;
-  }
-  return (
-    <img
-      className="result-pic"
-      src={imageUrl}
-      alt={alt}
-      onError={() => setImageError(true)}
-    />
-  );
-}
-
-function RecipeCard({
-  recipe,
-  folderOptions,
-}: {
-  recipe: RecipeRow;
-  folderOptions: string[];
-}) {
-  const info = recipeRowToProcessed(recipe);
-  return (
-    <div className="results-content">
-      <ResultPic imageUrl={recipe.image_url} alt={recipe.recipe_label} />
-      <div className="results-labels">
-        <h1 className="recipe-title-two-words">{formatRecipeTitleTwoWordsPerLine(recipe.recipe_label)}</h1>
-        <div className="label-details">
-          <h3>{capitalizeFirstLetter(recipe.cuisine_type ?? "")}</h3>
-          <h3>{capitalizeFirstLetter(recipe.meal_type ?? "")}</h3>
-        </div>
-        <div className="label-details">
-          <h3>{recipe.calories} calories</h3>
-          {recipe.time_in_minutes < 1 ? (
-            <h3 className="green-light">1 minute</h3>
-          ) : recipe.time_in_minutes <= 10 ? (
-            <h3 className="green-light">{recipe.time_in_minutes} minutes</h3>
-          ) : recipe.time_in_minutes <= 30 ? (
-            <h3 className="yellow-light">{recipe.time_in_minutes} minutes</h3>
-          ) : (
-            <h3 className="red-light">{recipe.time_in_minutes} minutes</h3>
-          )}
-        </div>
-      </div>
-      <div className="result-buttons">
-        <button
-          type="button"
-          className="open-recipe-link-btn"
-          onClick={() => window.open(recipe.website_url ?? "", "_blank")}
-        >
-          Show Recipe
-        </button>
-        <div className="save-folder-btns">
-          <div className="heart-btn-search-results-card">
-            <HeartButton recipeData={info} heartStyle={{ top: "50%" }} />
-          </div>
-          <SaveToFolderButton
-            folders={[...new Set(folderOptions)]}
-            recipeData={info}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -144,6 +57,24 @@ export default function DashboardHomePage() {
     canScrollRight: false,
   });
   const recommendationsScrollRef = useRef<HTMLDivElement>(null);
+
+  const favoriteIds = useMemo(
+    () => new Set(favorites.map((r) => r.recipe_id)),
+    [favorites]
+  );
+
+  const handleFavoriteChange = useCallback(
+    (recipe: RecipeRow, isFavorited: boolean) => {
+      if (isFavorited) {
+        setFavorites((prev) =>
+          prev.some((r) => r.recipe_id === recipe.recipe_id) ? prev : [...prev, recipe]
+        );
+      } else {
+        setFavorites((prev) => prev.filter((r) => r.recipe_id !== recipe.recipe_id));
+      }
+    },
+    []
+  );
 
   const debouncedText = useDebounce(text, 450);
 
@@ -499,7 +430,12 @@ export default function DashboardHomePage() {
               <div className="data-content">
                 {searchResults.map((recipe) => (
                   <motion.div key={recipe.id} whileHover={{ scale: 1.02 }}>
-                    <RecipeCard recipe={recipe} folderOptions={folderOptions} />
+                    <RecipeListCard
+                      recipe={recipe}
+                      folders={folderOptions}
+                      isHearted={favoriteIds.has(recipe.recipe_id)}
+                      onFavoriteChange={handleFavoriteChange}
+                    />
                   </motion.div>
                 ))}
               </div>
@@ -517,10 +453,11 @@ export default function DashboardHomePage() {
                   className="home-card"
                   whileHover={{ scale: 1.02 }}
                 >
-                  <FavoriteCard
+                  <RecipeListCard
                     recipe={recipe}
                     folders={[...new Set(folderOptions)]}
                     isHearted
+                    onFavoriteChange={handleFavoriteChange}
                   />
                 </motion.div>
               ))}
@@ -570,7 +507,12 @@ export default function DashboardHomePage() {
               >
                 {suggestedRecipes.map((recipe) => (
                   <motion.div key={recipe.id} className="home-recommendation-card" whileHover={{ scale: 1.02 }}>
-                    <RecipeCard recipe={recipe} folderOptions={folderOptions} />
+                    <RecipeListCard
+                      recipe={recipe}
+                      folders={folderOptions}
+                      isHearted={favoriteIds.has(recipe.recipe_id)}
+                      onFavoriteChange={handleFavoriteChange}
+                    />
                   </motion.div>
                 ))}
               </div>
