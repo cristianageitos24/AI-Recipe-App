@@ -6,6 +6,7 @@
   cursor: pointer;
   border: 1px solid transparent;
   border-radius: var(--radius-2xl);
+  overflow: hidden;
 }
 
 .image-bttn-container:hover {

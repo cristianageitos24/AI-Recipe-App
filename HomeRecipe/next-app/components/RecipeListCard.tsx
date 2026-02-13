@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { HeartButton } from "@/components/HeartButton";
-import { SaveToFolderButton } from "@/components/SaveToFolderButton";
 import { RecipeFullView } from "@/components/RecipeFullView";
 import { recipeRowToProcessed } from "@/lib/processRecipeData";
 import { formatRecipeTitleTwoWordsPerLine } from "@/lib/formatRecipeTitle";
@@ -10,7 +9,6 @@ import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/RecipeListCard.css";
 import "@/app/styling/CookbookPageRecipeCard.css";
 import "@/app/styling/HeartButton.css";
-import "@/app/styling/SaveToFolderButton.css";
 
 function RecipeImage({
   imageUrl,
@@ -45,7 +43,6 @@ function RecipeImage({
 
 export type RecipeListCardProps = {
   recipe: RecipeRow;
-  folders: string[];
   isHearted?: boolean;
   className?: string;
   onFavoriteChange?: (recipe: RecipeRow, isFavorited: boolean) => void;
@@ -53,7 +50,6 @@ export type RecipeListCardProps = {
 
 export function RecipeListCard({
   recipe,
-  folders,
   isHearted = false,
   className = "",
   onFavoriteChange,
@@ -81,13 +77,12 @@ export function RecipeListCard({
           <div className="recipe-card-heart-wrap">
             <HeartButton
               recipeData={info}
-              heartStyle={{ top: "50%", transform: "translateY(-50%)" }}
+              heartStyle={{ top: 0, right: 0 }}
               isHearted={isHearted}
               recipe={recipe}
               onFavoriteChange={onFavoriteChange}
             />
           </div>
-          <SaveToFolderButton folders={folders} recipeData={info} />
         </div>
         <RecipeImage imageUrl={recipe.image_url} alt={recipe.recipe_label} />
         <h1 className="recipe-label recipe-title-two-words">

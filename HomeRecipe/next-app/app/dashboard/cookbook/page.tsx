@@ -51,7 +51,6 @@ export default function CookbookPage() {
                   >
                     <RecipeListCard
                       recipe={recipe}
-                      folders={foldersData?.folders ?? []}
                       isHearted
                       onFavoriteChange={handleFavoriteChange}
                     />

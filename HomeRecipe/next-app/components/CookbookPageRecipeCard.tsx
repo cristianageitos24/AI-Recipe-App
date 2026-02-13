@@ -51,7 +51,7 @@ export function CookbookPageRecipeCard({
         >
           <HeartButton
             recipeData={recipeRowToProcessed(recipeData)}
-            heartStyle={{ top: "50%", transform: "translateY(-50%)" }}
+            heartStyle={{ top: 0, right: 0 }}
             isHearted={isHearted}
             recipe={recipeData}
             onFavoriteChange={onFavoriteChange}

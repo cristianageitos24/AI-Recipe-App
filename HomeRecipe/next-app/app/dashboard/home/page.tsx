@@ -434,7 +434,6 @@ export default function DashboardHomePage() {
                   <motion.div key={recipe.id} whileHover={{ scale: 1.02 }}>
                     <RecipeListCard
                       recipe={recipe}
-                      folders={folderOptions}
                       isHearted={favoriteIds.has(recipe.recipe_id)}
                       onFavoriteChange={handleFavoriteChange}
                     />
@@ -457,7 +456,6 @@ export default function DashboardHomePage() {
                 >
                   <RecipeListCard
                     recipe={recipe}
-                    folders={[...new Set(folderOptions)]}
                     isHearted
                     onFavoriteChange={handleFavoriteChange}
                   />
@@ -511,7 +509,6 @@ export default function DashboardHomePage() {
                   <motion.div key={recipe.id} className="home-recommendation-card" whileHover={{ scale: 1.02 }}>
                     <RecipeListCard
                       recipe={recipe}
-                      folders={folderOptions}
                       isHearted={favoriteIds.has(recipe.recipe_id)}
                       onFavoriteChange={handleFavoriteChange}
                     />
