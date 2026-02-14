@@ -37,21 +37,9 @@ export function DashboardNav() {
   const pathname = usePathname();
 
   return (
-    <aside className="left-side-panel">
-      <div className="left-side-tab-sidebar">
-        <Link href="/dashboard/home" className="top-title">
-          <div className="icon-text-main">
-            <Image
-              src="/images/homerecipelogo1.png"
-              alt="HomeRecipe"
-              width={32}
-              height={40}
-              className="web-icon"
-            />
-            <p>HomeRecipe</p>
-          </div>
-        </Link>
-        <ul className="side-tabs">
+    <>
+      <nav className="dock-nav">
+        <ul className="dock-tabs">
           {navItems.map(({ href, label, icon }) => {
             const isActive =
               pathname === href || pathname.startsWith(href + "/");
@@ -65,13 +53,13 @@ export function DashboardNav() {
             );
           })}
         </ul>
-      </div>
-      <div className="bottom-nav-content">
+      </nav>
+      <div className="account-nav">
         <div className="loggedin-username-label">
           <UserButton />
           <span className="signedin-label">Account</span>
         </div>
       </div>
-    </aside>
+    </>
   );
 }
