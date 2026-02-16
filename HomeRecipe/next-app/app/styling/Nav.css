@@ -116,6 +116,11 @@
   fill: #fff;
 }
 
+/* Hide dock when recipe card modal is open */
+.dashboard-page:has(.recipe-full-view-overlay) .dock-nav {
+  visibility: hidden;
+}
+
 /* Account section - top right */
 .account-nav {
   position: fixed;
