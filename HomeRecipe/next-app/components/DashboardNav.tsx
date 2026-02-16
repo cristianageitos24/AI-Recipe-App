@@ -27,6 +27,11 @@ const navItems = [
     icon: "/images/dashboard/calendaricon.svg",
   },
   {
+    href: "/dashboard/grocery",
+    label: "Grocery List",
+    icon: "/images/dashboard/groceryicon.svg",
+  },
+  {
     href: "/dashboard/video-upload",
     label: "Video Upload",
     icon: "/images/dashboard/videouploadicon.svg",

@@ -8,6 +8,25 @@
   border-radius: var(--radius-md);
 }
 
+.grocery-trip-event {
+  border: none;
+  border-radius: var(--radius-md);
+}
+
+.tabcalendar-grocery-event {
+  background: linear-gradient(135deg, #2d5a3d 0%, #1e3d2b 100%);
+  border-color: #2d5a3d;
+}
+
+.tabcalendar-grocery-event:hover {
+  background: linear-gradient(135deg, #3a6f4a 0%, #2d5a3d 100%);
+  border-color: #3a6f4a;
+}
+
+.tabcalendar-grocery-event svg {
+  color: white;
+}
+
 .tabcalendar-event-title-container {
   display: flex;
   justify-content: flex-start;

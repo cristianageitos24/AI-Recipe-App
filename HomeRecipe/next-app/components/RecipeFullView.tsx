@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { RecipeRow } from "@/lib/types";
+import { addGroceryItem, addGroceryItems } from "@/app/actions/grocery-items";
 import "@/app/styling/RecipeFullView.css";
 
 function capitalizeFirstLetter(string: string): string {
@@ -16,12 +17,49 @@ type RecipeFullViewProps = {
   onClose?: () => void;
 };
 
+function AddToGroceryIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="9" cy="21" r="1" />
+      <circle cx="20" cy="21" r="1" />
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+      <line x1="12" y1="8" x2="12" y2="12" />
+      <line x1="10" y1="10" x2="14" y2="10" />
+    </svg>
+  );
+}
+
 export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
   const [activeTab, setActiveTab] = useState<"ingredients" | "steps">("ingredients");
+  const [groceryFeedback, setGroceryFeedback] = useState<string | null>(null);
   const ingredientLines = (recipeData.ingredient_lines ?? "").split("***").map((s) => s.trim()).filter(Boolean);
   const stepsLines = (recipeData.steps ?? "").trim()
     ? (recipeData.steps ?? "").split("***").map((s) => s.trim()).filter(Boolean)
     : [];
+
+  async function handleAddIngredient(item: string) {
+    const res = await addGroceryItem(item);
+    if (res.error) {
+      setGroceryFeedback(res.error);
+    } else if (res.duplicate) {
+      setGroceryFeedback("Already in list");
+    } else {
+      setGroceryFeedback("Added");
+    }
+    setTimeout(() => setGroceryFeedback(null), 2000);
+  }
+
+  async function handleAddAllIngredients() {
+    const res = await addGroceryItems(ingredientLines);
+    if (res.error) {
+      setGroceryFeedback(res.error);
+    } else if (res.added === 0 && res.skipped > 0) {
+      setGroceryFeedback("All already in list");
+    } else if (res.added > 0) {
+      setGroceryFeedback(`Added ${res.added} item${res.added === 1 ? "" : "s"}`);
+    }
+    setTimeout(() => setGroceryFeedback(null), 2000);
+  }
 
   return (
     <div className="more-information-container" onClick={(e) => e.stopPropagation()}>
@@ -94,11 +132,39 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
         <div className="recipe-fullview-tab-panel">
           {activeTab === "ingredients" && (
             <section className="recipe-section recipe-section-ingredients">
+              {ingredientLines.length > 0 && (
+                <button
+                  type="button"
+                  className="recipe-fullview-add-all-grocery"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddAllIngredients();
+                  }}
+                >
+                  Add all to grocery list
+                </button>
+              )}
+              {groceryFeedback && (
+                <p role="status" className="recipe-fullview-grocery-feedback">
+                  {groceryFeedback}
+                </p>
+              )}
               <ul className="recipe-ingredients-list">
                 {ingredientLines.length > 0 ? (
                   ingredientLines.map((item, index) => (
-                    <li key={index} className="recipe-ingredient-item">
-                      {item}
+                    <li key={index} className="recipe-ingredient-item recipe-ingredient-item-with-add">
+                      <span className="recipe-ingredient-text">{item}</span>
+                      <button
+                        type="button"
+                        className="recipe-ingredient-add-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddIngredient(item);
+                        }}
+                        aria-label={`Add ${item} to grocery list`}
+                      >
+                        <AddToGroceryIcon />
+                      </button>
                     </li>
                   ))
                 ) : (

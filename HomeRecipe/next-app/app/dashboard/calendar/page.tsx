@@ -9,6 +9,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import type { EventClickArg, EventDropArg } from "@fullcalendar/core";
 import { v4 as uuidv4 } from "uuid";
 import { getMealDates, createOrUpdateMealDate, deleteMealDate } from "@/app/actions/meal-dates";
+import { getGroceryTrips, deleteGroceryTrip } from "@/app/actions/grocery-trips";
 import { getFolders } from "@/app/actions/folders";
 import { getFavorites } from "@/app/actions/favorites";
 import { getOrCreateRecipe } from "@/app/actions/recipes";
@@ -27,6 +28,7 @@ type CalendarEvent = {
   imageURL: string;
   allDay: boolean;
   editable: boolean;
+  eventType?: "recipe" | "grocery";
 };
 
 export default function CalendarPage() {
@@ -53,20 +55,37 @@ export default function CalendarPage() {
   );
 
   const loadEvents = useCallback(async () => {
-    const res = await getMealDates();
-    if (!res.data) return;
+    const [mealRes, tripsRes] = await Promise.all([getMealDates(), getGroceryTrips()]);
     const newEvents: CalendarEvent[] = [];
-    for (const mealDate of res.data) {
-      for (const recipe of mealDate.recipes as Array<RecipeRow & { eventID?: string }>) {
+    if (mealRes.data) {
+      for (const mealDate of mealRes.data) {
+        for (const recipe of mealDate.recipes as Array<RecipeRow & { eventID?: string }>) {
+          newEvents.push({
+            className: "recipe-event-div",
+            title: recipe.recipe_label,
+            start: mealDate.date,
+            eventID: recipe.eventID ?? "",
+            recipeID: recipe.recipe_id,
+            imageURL: recipe.image_url ?? "",
+            allDay: true,
+            editable: true,
+            eventType: "recipe",
+          });
+        }
+      }
+    }
+    if (tripsRes.data) {
+      for (const trip of tripsRes.data as Array<{ id: string; planned_date: string }>) {
         newEvents.push({
-          className: "recipe-event-div",
-          title: recipe.recipe_label,
-          start: mealDate.date,
-          eventID: recipe.eventID ?? "",
-          recipeID: recipe.recipe_id,
-          imageURL: recipe.image_url ?? "",
+          className: "grocery-trip-event",
+          title: "Grocery trip",
+          start: trip.planned_date,
+          eventID: trip.id,
+          recipeID: "",
+          imageURL: "",
           allDay: true,
-          editable: true,
+          editable: false,
+          eventType: "grocery",
         });
       }
     }
@@ -227,6 +246,7 @@ export default function CalendarPage() {
       eventID: uuidv4(),
       recipeID: "new",
       imageURL: "https://images.unsplash.com/photo-1485921325833-c519f76c4927?w=400",
+      eventType: "recipe",
     };
     setEvents((prev) => [...prev, newEvent]);
     setClickedEvent(newEvent);
@@ -261,7 +281,11 @@ export default function CalendarPage() {
 
   async function handleTrashEvent() {
     if (!clickedEvent) return;
-    await deleteMealDate(clickedEvent.eventID);
+    if (clickedEvent.eventType === "grocery") {
+      await deleteGroceryTrip(clickedEvent.eventID);
+    } else {
+      await deleteMealDate(clickedEvent.eventID);
+    }
     setEvents((prev) => prev.filter((e) => e.eventID !== clickedEvent.eventID));
     setIsEventClicked(false);
     setInputText("");
@@ -297,36 +321,82 @@ export default function CalendarPage() {
             allDay: e.allDay,
             editable: e.editable,
             className: e.className,
-            extendedProps: { eventID: e.eventID, recipeID: e.recipeID, imageURL: e.imageURL },
+            extendedProps: {
+              eventID: e.eventID,
+              recipeID: e.recipeID,
+              imageURL: e.imageURL,
+              eventType: e.eventType ?? "recipe",
+            },
           }))}
-          eventContent={(eventInfo) => (
-            <div
-              className={`tabcalendar-event-title-container ${
-                isEventClicked && clickedEvent?.eventID === eventInfo.event._def.extendedProps.eventID ? "active" : ""
-              }`}
-            >
-              <img
-                src={eventInfo.event._def.extendedProps.imageURL || "/images/recipe-placeholder.png"}
-                alt=""
-                style={eventInfo.event._def.title === "(New event)" ? { width: 0 } : {}}
-              />
-              <p>{eventInfo.event._def.title}</p>
-            </div>
-          )}
+          eventContent={(eventInfo) => {
+            const props = eventInfo.event._def.extendedProps as {
+              eventID?: string;
+              imageURL?: string;
+              eventType?: "recipe" | "grocery";
+            };
+            const isGrocery = props.eventType === "grocery";
+            const isActive =
+              isEventClicked && clickedEvent?.eventID === props.eventID;
+            return (
+              <div
+                className={`tabcalendar-event-title-container ${
+                  isGrocery ? "tabcalendar-grocery-event" : ""
+                } ${isActive ? "active" : ""}`}
+              >
+                {isGrocery ? (
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    style={{ flexShrink: 0 }}
+                    aria-hidden
+                  >
+                    <circle cx="9" cy="21" r="1" />
+                    <circle cx="20" cy="21" r="1" />
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                  </svg>
+                ) : (
+                  <img
+                    src={props.imageURL || "/images/recipe-placeholder.png"}
+                    alt=""
+                    style={
+                      eventInfo.event._def.title === "(New event)"
+                        ? { width: 0 }
+                        : {}
+                    }
+                  />
+                )}
+                <p>{eventInfo.event._def.title}</p>
+              </div>
+            );
+          }}
         />
       </div>
       {isEventClicked && clickedEvent && (
         <div className="event-popup-overlay" onClick={handleCancel} onKeyDown={handleKeyPress}>
           <div className="calendar-event-popup" onClick={(e) => e.stopPropagation()}>
             <div className="event-popup-header">
-              <h1 className="event-popup-title">Edit event</h1>
-              <button type="button" className="delete-event-bttn" onClick={handleTrashEvent}>
+              <h1 className="event-popup-title">
+                {clickedEvent.eventType === "grocery" ? "Grocery trip" : "Edit event"}
+              </h1>
+              <button type="button" className="delete-event-bttn" onClick={handleTrashEvent} aria-label="Delete event">
                 <svg width="58" height="64" viewBox="0 0 58 64" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M22.5556 51.2C23.4101 51.2 24.2297 50.8629 24.834 50.2627C25.4383 49.6626 25.7778 48.8487 25.7778 48V28.8C25.7778 27.9513 25.4383 27.1374 24.834 26.5373C24.2297 25.9371 23.4101 25.6 22.5556 25.6C21.701 25.6 20.8814 25.9371 20.2771 26.5373C19.6728 27.1374 19.3333 27.9513 19.3333 28.8V48C19.3333 48.8487 19.6728 49.6626 20.2771 50.2627C20.8814 50.8629 21.701 51.2 22.5556 51.2Z" fill="black" />
                 </svg>
               </button>
             </div>
-            {filteredOptions.length === 0 ? (
+            {clickedEvent.eventType === "grocery" ? (
+              <p className="event-popup-empty-state-text" style={{ marginBottom: "var(--space-4)" }}>
+                Planned grocery trip on {new Date(clickedEvent.start + "T12:00:00").toLocaleDateString(undefined, {
+                  weekday: "long",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </p>
+            ) : filteredOptions.length === 0 ? (
               <>
                 <div className="event-popup-empty-state">
                   <p className="event-popup-empty-state-text">
@@ -380,7 +450,8 @@ export default function CalendarPage() {
                   </div>
                 )}
               </>
-            ) : (
+            ) : null}
+            {clickedEvent.eventType !== "grocery" && filteredOptions.length > 0 && (
               <div className="event-popup-labels">
                 <select
                   className="event-popup-choices"
@@ -430,7 +501,7 @@ export default function CalendarPage() {
                 </div>
               </div>
             )}
-            {isEdamamEnabled && filteredOptions.length > 0 && (
+            {clickedEvent.eventType !== "grocery" && isEdamamEnabled && filteredOptions.length > 0 && (
               <div className="event-popup-edamam event-popup-edamam-inline">
                 <p className="event-popup-edamam-label">Search online</p>
                 <div className="event-popup-edamam-row">
@@ -474,11 +545,13 @@ export default function CalendarPage() {
             )}
             <div className="event-popup-bttns">
               <button type="button" className="cancel" onClick={handleCancel}>
-                Cancel
+                {clickedEvent.eventType === "grocery" ? "Close" : "Cancel"}
               </button>
-              <button type="button" className="confirm" onClick={handleConfirm}>
-                Confirm
-              </button>
+              {clickedEvent.eventType !== "grocery" && (
+                <button type="button" className="confirm" onClick={handleConfirm}>
+                  Confirm
+                </button>
+              )}
             </div>
           </div>
         </div>
