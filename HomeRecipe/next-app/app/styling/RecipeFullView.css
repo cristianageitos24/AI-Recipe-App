@@ -27,14 +27,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  line-height: 1;
   color: var(--color-bg);
   background: var(--overlay);
   border: none;
   border-radius: 50%;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
+}
+
+.recipe-fullview-close-btn svg {
+  flex-shrink: 0;
 }
 
 .recipe-fullview-close-btn:hover {

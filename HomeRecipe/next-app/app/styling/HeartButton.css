@@ -15,15 +15,29 @@
   align-items: center;
   background-size: cover;
 
+  /* Smaller ring on hover - closer to the heart shape */
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 26px;
+    height: 26px;
+    border: 2px solid #e53935;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  &:hover::after {
+    opacity: 1;
+  }
+
   &.heart-btn-is-active {
     transition-duration: 0.8s;
     background-position: -1400px 0;
-  }
-
-  &:hover {
-    outline: 2px solid #e53935;
-    outline-offset: 2px;
-    border-radius: 50%;
   }
 }
 
