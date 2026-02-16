@@ -1,152 +1,132 @@
 .dashboard-page {
   height: 100vh;
   display: grid;
-  grid-template-columns: 1fr 6fr;
+  grid-template-columns: 1fr;
 }
 
-.left-side-panel {
-  width: auto;
-  padding: var(--space-5);
-  padding-right: 0;
-  position: relative;
-  max-height: 100%;
-  overflow: hidden;
-  background-color: var(--gray-nav);
+/* Dock nav - MacBook dock style at bottom center */
+.dock-nav {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  pointer-events: none;
 }
 
-.top-title {
-  display: flex;
-  align-items: center;
-  margin-bottom: var(--space-7);
-  text-decoration: none;
+.dock-nav > * {
+  pointer-events: auto;
 }
 
-.top-title:focus {
-  outline: none;
-}
-
-.icon-text-main {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-}
-
-.menu-icon {
-  display: none;
-}
-
-.web-icon {
-  width: var(--space-8);
-  height: var(--space-10);
-}
-
-.top-title .icon-text-main p {
-  margin-left: var(--space-3);
-  color: var(--color-bg);
-  font-family: var(--font-display);
-  font-size: var(--text-lg);
-  font-style: normal;
-  font-weight: 400;
-  line-height: normal;
-}
-
-.side-tabs {
+.dock-tabs {
   list-style: none;
-  padding: 0;
+  padding: 12px 20px;
   margin: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 35px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(12px);
 }
 
-.side-tabs li {
+.dock-tabs li {
+  position: relative;
   display: flex;
   align-items: center;
-  margin-bottom: var(--space-3);
+  justify-content: center;
+}
+
+.dock-tabs li a.tab-square {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
   height: 44px;
-  width: 100%;
-  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
-  padding-left: 0;
-}
-
-.side-tabs li a {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  height: 100%;
-  padding-left: var(--space-5);
+  border-radius: 10px;
   text-decoration: none;
+  background-color: #fff;
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s;
 }
 
-.side-tabs li:hover {
-  background-color: var(--gray-nav-hover);
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.side-tabs li:active {
-  background-color: var(--gray-nav-active);
-}
-
-.side-tabs li p {
-  padding-left: var(--space-3);
-  margin: 0;
-  color: var(--color-bg);
-  font-family: var(--font-body);
+.dock-tabs .tab-tooltip {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  padding: 6px 12px;
+  background: #333;
+  color: #fff;
   font-size: var(--text-xs);
-  font-style: normal;
-  font-weight: 400;
-  line-height: normal;
+  font-family: var(--font-body);
+  white-space: nowrap;
+  border-radius: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  z-index: 1001;
 }
 
-.side-tabs li img,
-.side-tabs li svg {
-  width: var(--icon-size);
-  height: var(--icon-size);
+.dock-tabs li a.tab-square:hover .tab-tooltip {
+  opacity: 1;
+}
+
+.dock-tabs li a.tab-square:hover {
+  background-color: rgb(200, 200, 200);
+  cursor: pointer;
+}
+
+.dock-tabs li a.tab-square:active {
+  background-color: rgb(180, 180, 180);
+}
+
+.dock-tabs li img,
+.dock-tabs li svg {
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
 }
 
-.side-tabs li img {
+/* Inactive tab: light gray square, dark icon */
+.dock-tabs li img {
+  filter: brightness(0);
+}
+
+.dock-tabs li svg path {
+  fill: #333;
+}
+
+/* Active tab: black square, white icon, soft shadow */
+.dock-tabs .active a.tab-square {
+  background-color: #000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.dock-tabs .active img {
   filter: brightness(0) invert(1);
 }
 
-.side-tabs li svg path {
-  fill: var(--color-bg);
+.dock-tabs .active svg path {
+  fill: #fff;
 }
 
-.side-tabs li:hover img {
-  filter: brightness(0) invert(1);
+/* Account section - top right */
+.account-nav {
+  position: fixed;
+  top: var(--space-5);
+  right: var(--space-5);
+  z-index: 1000;
 }
 
-.side-tabs li:hover p {
-  color: var(--color-bg);
-}
-
-.side-tabs .active {
-  background-color: var(--accent-muted);
-  border-left: 3px solid var(--accent);
-  padding-left: 0;
-  box-sizing: border-box;
-}
-
-.side-tabs .active a {
-  padding-left: calc(var(--space-5) - 3px);
-}
-
-.side-tabs .active img {
-  filter: brightness(0) invert(1);
-}
-
-.side-tabs .active svg path {
-  fill: var(--color-bg);
-}
-
-.side-tabs .active p {
-  color: var(--color-bg);
-}
-
-.bottom-nav-content {
-  position: absolute;
-  bottom: var(--space-5);
-  width: -webkit-fill-available;
+/* Logo and label hidden for now */
+.top-title {
+  display: none;
 }
 
 .loggedin-username-label {
@@ -217,22 +197,24 @@
   min-height: 100%;
   display: flex;
   flex-direction: column;
+  padding-bottom: 90px; /* Space for dock at bottom */
 }
 
 /*=========== RIGHT SIDE CONTENT ===========*/
 
 .right-side-panel {
   background: var(--color-bg-muted);
-  box-shadow: -5px 0 var(--space-5) 0 var(--overlay-light);
+  /*box-shadow: -5px 0 var(--space-5) 0 var(--overlay-light);*/
   width: 100%;
   min-height: 100%;
   flex: 1;
   z-index: 1;
-  padding: var(--space-10);
   overflow-y: auto;
   box-sizing: border-box;
   position: relative;
-  padding-right: var(--space-10);
+
+  padding: var(--space-10);
+  padding: 40px 25px;
 }
 
 .right-side-panel::before {
@@ -249,13 +231,15 @@
     var(--color-bg-muted) 76.04%
   );
   pointer-events: none;
-  width: 83.2%;
-  margin-left: 16.8%;
   z-index: 1;
 }
 
 .hamburger-icon {
   position: absolute;
+  display: none;
+}
+
+.loggedin-username-label .signedin-label {
   display: none;
 }
 
@@ -270,24 +254,6 @@
       width: var(--space-7);
       height: var(--space-9);
     }
-    .side-tabs li p,
-    .side-tabs .active p {
-      font-size: var(--text-xs);
-    }
-  }
-
-  @media screen and (max-width: 1024px) {
-    .side-tabs li p,
-    .side-tabs .active p {
-      font-size: var(--text-xs);
-    }
-  }
-
-  @media screen and (max-width: 950px) {
-    .side-tabs .active p,
-    .side-tabs li p {
-      font-size: var(--text-xs);
-    }
   }
 
   @media screen and (max-width: 910px) {
@@ -297,17 +263,6 @@
     }
     .top-title .icon-text-main p {
       display: none;
-    }
-    .side-tabs li {
-      justify-content: center;
-      padding: 0;
-    }
-    .side-tabs li p,
-    .side-tabs .active p {
-      display: none;
-    }
-    .side-tabs li svg {
-      margin-right: var(--space-5);
     }
   }
 
@@ -333,68 +288,24 @@
     grid-template-rows: auto 1fr;
     grid-template-columns: 1fr;
   }
-  .left-side-panel {
-    width: auto;
-    padding: var(--space-3);
-    padding-right: var(--space-4);
-    padding-bottom: 0;
+  .dock-nav {
+    bottom: 12px;
+    padding: 0;
+  }
+  .dock-tabs {
+    padding: 10px 16px;
+    gap: 8px;
+  }
+  .dock-tabs li a.tab-square {
+    width: 40px;
+    height: 40px;
+  }
+  .account-nav {
+    top: var(--space-3);
+    right: var(--space-3);
   }
   .right-side-panel::before {
     display: none;
-  }
-  .top-title {
-    position: relative;
-    margin-bottom: var(--space-3);
-  }
-  .icon-text-main {
-    margin-right: auto;
-    margin-left: auto;
-  }
-  .hamburger-icon {
-    display: block;
-    position: absolute;
-    right: 0;
-  }
-  .side-tabs li {
-    width: 100%;
-    border-radius: 0;
-    padding: 0;
-    justify-content: center;
-  }
-  .side-tabs .active {
-    width: 100%;
-    border-radius: 0;
-    padding: 0;
-    justify-content: center;
-  }
-  .side-tabs li:hover {
-    width: 100%;
-    border-radius: 0;
-  }
-  .logout-button {
-    position: unset;
-    margin-top: var(--space-7);
-    margin-right: auto;
-    margin-left: auto;
-    margin-bottom: var(--space-7);
-  }
-  .loggedin-username-label {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  .side-tabs {
-    margin-top: 0;
-  }
-  .bottom-nav-content {
-    position: unset;
-    margin: var(--space-5) 0;
-  }
-  .signedin-label {
-    margin-right: var(--space-2);
-  }
-  .logout-button {
-    margin: var(--space-3) auto;
   }
   .right-side-panel {
     padding: var(--space-5);
