@@ -50,6 +50,7 @@ export default function DashboardHomePage() {
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionRequestIdRef = useRef(0);
+  const liveSearchRequestIdRef = useRef(0);
   const searchInProgressRef = useRef(false);
   const [searchSlowMessage, setSearchSlowMessage] = useState(false);
   const [recommendationsScroll, setRecommendationsScroll] = useState({
@@ -76,7 +77,8 @@ export default function DashboardHomePage() {
     []
   );
 
-  const debouncedText = useDebounce(text, 450);
+  const debouncedTextForSuggestions = useDebounce(text, 150);
+  const debouncedTextForSearch = useDebounce(text, 400);
 
   const updateRecommendationsScrollState = useCallback(() => {
     const el = recommendationsScrollRef.current;
@@ -154,7 +156,7 @@ export default function DashboardHomePage() {
 
   useEffect(() => {
     if (searchInProgressRef.current) return;
-    const trimmed = debouncedText.trim();
+    const trimmed = debouncedTextForSuggestions.trim();
     const isIngredientMode = searchMode === "ingredients";
     const minLength = isIngredientMode ? 1 : 2;
     if (trimmed.length < minLength) {
@@ -176,7 +178,7 @@ export default function DashboardHomePage() {
         if (res.data) setSuggestions(res.data);
       });
     }
-  }, [debouncedText, searchMode]);
+  }, [debouncedTextForSuggestions, searchMode]);
 
   const handleClickOutside = useCallback((e: MouseEvent) => {
     if (
@@ -193,6 +195,79 @@ export default function DashboardHomePage() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [handleClickOutside]);
+
+  useEffect(() => {
+    const trimmed = debouncedTextForSearch.trim();
+    const isIngredientMode = searchMode === "ingredients";
+    const ings =
+      selectedIngredients.length > 0
+        ? selectedIngredients
+        : trimmed
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+
+    if (isIngredientMode) {
+      if (ings.length === 0) {
+        setSearchResults(null);
+        setDisplayQuery("");
+        setSearchError(null);
+        return;
+      }
+    } else {
+      if (trimmed.length < 2) {
+        setSearchResults(null);
+        setDisplayQuery("");
+        setSearchError(null);
+        return;
+      }
+    }
+
+    setSearchError(null);
+    setSearchSlowMessage(false);
+    setSearchLoading(true);
+    const requestId = ++liveSearchRequestIdRef.current;
+
+    if (isIngredientMode) {
+      setDisplayQuery(ings.join(", "));
+      searchByIngredients(ings)
+        .then((res) => {
+          if (requestId !== liveSearchRequestIdRef.current) return;
+          setSearchResults(res.data ?? []);
+          if (res.error) setSearchError(res.error);
+        })
+        .catch(() => {
+          if (requestId !== liveSearchRequestIdRef.current) return;
+          setSearchResults([]);
+          setSearchError("Search failed. Try again.");
+        })
+        .finally(() => {
+          if (requestId === liveSearchRequestIdRef.current) {
+            setSearchLoading(false);
+            setSearchSlowMessage(false);
+          }
+        });
+    } else {
+      setDisplayQuery(trimmed);
+      searchRecipes(trimmed)
+        .then((res) => {
+          if (requestId !== liveSearchRequestIdRef.current) return;
+          setSearchResults(res.data ?? []);
+          if (res.error) setSearchError(res.error);
+        })
+        .catch(() => {
+          if (requestId !== liveSearchRequestIdRef.current) return;
+          setSearchResults([]);
+          setSearchError("Search failed. Try again.");
+        })
+        .finally(() => {
+          if (requestId === liveSearchRequestIdRef.current) {
+            setSearchLoading(false);
+            setSearchSlowMessage(false);
+          }
+        });
+    }
+  }, [debouncedTextForSearch, searchMode, selectedIngredients]);
 
   async function handleSearch() {
     if (searchLoading) return;
@@ -320,7 +395,7 @@ export default function DashboardHomePage() {
                 placeholder={
                   searchMode === "recipe"
                     ? "Search recipes by name..."
-                    : "Add ingredients (type or select)"
+                    : "Search by ingredient to find recipes"
                 }
                 value={text}
                 onChange={(e) => {
@@ -403,12 +478,9 @@ export default function DashboardHomePage() {
               </div>
             )}
           </div>
-          {searchMode === "ingredients" && (
-            <p className="search-autofill-hint">Type to see ingredients; click to add.</p>
-          )}
         </div>
 
-        {searchLoading && (
+        {searchLoading && searchResults === null && (
           <>
             <p className="search-loading">Searching...</p>
             {searchSlowMessage && (
@@ -421,11 +493,14 @@ export default function DashboardHomePage() {
         {searchError && !searchLoading && (
           <p className="search-empty" role="alert">{searchError}</p>
         )}
-        {searchResults !== null && !searchLoading && !searchError && (
+        {searchResults !== null && !searchError && (
           <div>
             <h1 className="search-looking">
               Searched: <span>{displayQuery}</span>
             </h1>
+            {searchLoading && searchResults !== null && (
+              <p className="search-updating" role="status">Updating results...</p>
+            )}
             {searchResults.length === 0 ? (
               <p className="search-empty">No recipes found. Try a different search.</p>
             ) : (
