@@ -7,6 +7,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { getFavorites } from "@/app/actions/favorites";
 import { getFolders } from "@/app/actions/folders";
 import { Cookbooks } from "@/components/Cookbooks";
+import { CuratedCookbooks } from "@/components/CuratedCookbooks";
 import { RecipeListCard } from "@/components/RecipeListCard";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/TabCookbook.css";
@@ -40,6 +41,7 @@ export default function CookbookPage() {
           <p className="p-6">Loading...</p>
         ) : likedRecipes.length > 0 ? (
           <div className="cookbook-content">
+            <CuratedCookbooks />
             <div className="tabcookbook-show-liked-recipes">
               <h1 className="sub-header-title">Liked Recipes</h1>
               <div className="tabcookbook-liked-scroll">
@@ -62,6 +64,7 @@ export default function CookbookPage() {
           </div>
         ) : (
           <div className="cookbook-content">
+            <CuratedCookbooks />
             <div className="tabcookbook-no-recipes-default">
               <h2>Looks like you haven&apos;t found any favorite recipes yet!</h2>
               <img src="/images/tabcookbook-default.png" alt="No recipes" />

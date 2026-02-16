@@ -1,0 +1,64 @@
+.curated-cookbooks-section {
+  padding: var(--space-14) var(--space-10) var(--space-10) 0;
+}
+
+.curated-cookbooks-section .cookbook-subtitle {
+  margin: 0;
+  margin-bottom: var(--space-4);
+  color: var(--color-fg);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+  text-transform: capitalize;
+}
+
+.curated-cookbooks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.curated-cookbook-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--gray-400);
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-align: center;
+  text-decoration: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.curated-cookbook-tile:hover {
+  border-color: var(--accent);
+  background: var(--accent-muted-bg);
+  color: var(--accent);
+}
+
+.curated-cookbook-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media screen and (max-width: 575px) {
+  .curated-cookbooks-section {
+    padding-right: 0;
+  }
+}
+
+@media screen and (max-width: 980px) {
+  .curated-cookbooks-section {
+    margin-right: 0;
+  }
+}

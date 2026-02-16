@@ -19,6 +19,12 @@
     transition-duration: 0.8s;
     background-position: -1400px 0;
   }
+
+  &:hover {
+    outline: 2px solid #e53935;
+    outline-offset: 2px;
+    border-radius: 50%;
+  }
 }
 
 .heart-btn-stage {
