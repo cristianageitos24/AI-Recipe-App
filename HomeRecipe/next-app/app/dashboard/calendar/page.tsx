@@ -10,8 +10,7 @@ import type { EventClickArg, EventDropArg } from "@fullcalendar/core";
 import { v4 as uuidv4 } from "uuid";
 import { getMealDates, createOrUpdateMealDate, deleteMealDate } from "@/app/actions/meal-dates";
 import { getGroceryTrips, deleteGroceryTrip } from "@/app/actions/grocery-trips";
-import { getFolders } from "@/app/actions/folders";
-import { getFavorites } from "@/app/actions/favorites";
+import { getCalendarBootstrap } from "@/app/actions/dashboard";
 import { getOrCreateRecipe } from "@/app/actions/recipes";
 import { processRecipeData, toRecipePayload } from "@/lib/processRecipeData";
 import type { RecipeRow } from "@/lib/types";
@@ -31,6 +30,68 @@ type CalendarEvent = {
   eventType?: "recipe" | "grocery";
 };
 
+function mapEvents(
+  mealDates: Array<{ date: string; recipes: Array<RecipeRow & { eventID?: string }> }>,
+  groceryTrips: Array<{ id: string; planned_date: string }>
+): CalendarEvent[] {
+  const mapped: CalendarEvent[] = [];
+  for (const mealDate of mealDates) {
+    for (const recipe of mealDate.recipes) {
+      mapped.push({
+        className: "recipe-event-div",
+        title: recipe.recipe_label,
+        start: mealDate.date,
+        eventID: recipe.eventID ?? "",
+        recipeID: recipe.recipe_id,
+        imageURL: recipe.image_url ?? "",
+        allDay: true,
+        editable: true,
+        eventType: "recipe",
+      });
+    }
+  }
+  for (const trip of groceryTrips) {
+    mapped.push({
+      className: "grocery-trip-event",
+      title: "Grocery trip",
+      start: trip.planned_date,
+      eventID: trip.id,
+      recipeID: "",
+      imageURL: "",
+      allDay: true,
+      editable: false,
+      eventType: "grocery",
+    });
+  }
+  return mapped;
+}
+
+function getOptionsForFolder(
+  selectedFolder: string,
+  folderList: string[],
+  folderResults: Record<string, RecipeRow[]>,
+  favorites: RecipeRow[]
+): RecipeRow[] {
+  if (selectedFolder !== "Any") {
+    return folderResults[selectedFolder] ?? [];
+  }
+  const seen = new Set<string>();
+  const options: RecipeRow[] = [];
+  for (const folder of folderList) {
+    for (const recipe of folderResults[folder] ?? []) {
+      if (seen.has(recipe.recipe_id)) continue;
+      seen.add(recipe.recipe_id);
+      options.push(recipe);
+    }
+  }
+  for (const recipe of favorites) {
+    if (seen.has(recipe.recipe_id)) continue;
+    seen.add(recipe.recipe_id);
+    options.push(recipe);
+  }
+  return options;
+}
+
 export default function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [clickedEvent, setClickedEvent] = useState<CalendarEvent | null>(null);
@@ -39,6 +100,8 @@ export default function CalendarPage() {
   const [filteredOptions, setFilteredOptions] = useState<RecipeRow[]>([]);
   const [selectedSearchOption, setSelectedSearchOption] = useState<RecipeRow | null>(null);
   const [folders, setFolders] = useState<string[]>([]);
+  const [folderResults, setFolderResults] = useState<Record<string, RecipeRow[]>>({});
+  const [favorites, setFavorites] = useState<RecipeRow[]>([]);
   const [isSearchOptionsVisible, setIsSearchOptionsVisible] = useState(false);
   const [inputText, setInputText] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -56,77 +119,37 @@ export default function CalendarPage() {
 
   const loadEvents = useCallback(async () => {
     const [mealRes, tripsRes] = await Promise.all([getMealDates(), getGroceryTrips()]);
-    const newEvents: CalendarEvent[] = [];
-    if (mealRes.data) {
-      for (const mealDate of mealRes.data) {
-        for (const recipe of mealDate.recipes as Array<RecipeRow & { eventID?: string }>) {
-          newEvents.push({
-            className: "recipe-event-div",
-            title: recipe.recipe_label,
-            start: mealDate.date,
-            eventID: recipe.eventID ?? "",
-            recipeID: recipe.recipe_id,
-            imageURL: recipe.image_url ?? "",
-            allDay: true,
-            editable: true,
-            eventType: "recipe",
-          });
-        }
-      }
-    }
-    if (tripsRes.data) {
-      for (const trip of tripsRes.data as Array<{ id: string; planned_date: string }>) {
-        newEvents.push({
-          className: "grocery-trip-event",
-          title: "Grocery trip",
-          start: trip.planned_date,
-          eventID: trip.id,
-          recipeID: "",
-          imageURL: "",
-          allDay: true,
-          editable: false,
-          eventType: "grocery",
-        });
-      }
-    }
-    setEvents(newEvents);
+    setEvents(
+      mapEvents(
+        (mealRes.data ?? []) as Array<{ date: string; recipes: Array<RecipeRow & { eventID?: string }> }>,
+        (tripsRes.data ?? []) as Array<{ id: string; planned_date: string }>
+      )
+    );
   }, []);
 
   useEffect(() => {
-    loadEvents();
-  }, [loadEvents]);
+    getCalendarBootstrap().then((res) => {
+      if (!res.data) return;
+      const folderList = res.data.folders;
+      const results = res.data.results;
+      const favoritesData = res.data.favorites;
+      setEvents(
+        mapEvents(
+          res.data.mealDates as Array<{ date: string; recipes: Array<RecipeRow & { eventID?: string }> }>,
+          res.data.groceryTrips as Array<{ id: string; planned_date: string }>
+        )
+      );
+      setFolders(["Any", ...folderList]);
+      setFolderResults(results);
+      setFavorites(favoritesData);
+      setFilteredOptions(getOptionsForFolder("Any", folderList, results, favoritesData));
+    });
+  }, []);
 
   useEffect(() => {
-    const run = async () => {
-      const [foldersRes, favoritesRes] = await Promise.all([getFolders(), getFavorites()]);
-      const folderList = foldersRes.data?.folders ?? [];
-      setFolders(["Any", ...folderList]);
-      const results = (foldersRes.data?.results ?? {}) as Record<string, RecipeRow[]>;
-      let options: RecipeRow[] = [];
-      if (selectedFolder === "Any") {
-        const seen = new Set<string>();
-        for (const folder of folderList) {
-          const list = results[folder] ?? [];
-          for (const r of list) {
-            if (!seen.has(r.recipe_id)) {
-              seen.add(r.recipe_id);
-              options.push(r);
-            }
-          }
-        }
-        for (const r of favoritesRes.data ?? []) {
-          if (!seen.has(r.recipe_id)) {
-            seen.add(r.recipe_id);
-            options.push(r);
-          }
-        }
-      } else {
-        options = results[selectedFolder] ?? [];
-      }
-      setFilteredOptions(options);
-    };
-    run();
-  }, [selectedFolder]);
+    const folderList = folders.filter((f) => f !== "Any");
+    setFilteredOptions(getOptionsForFolder(selectedFolder, folderList, folderResults, favorites));
+  }, [favorites, folderResults, folders, selectedFolder]);
 
   function handleUpdateEvents() {
     setCalendarKey((k) => (k >= 100 || k < 0 ? 1 : k + 1));

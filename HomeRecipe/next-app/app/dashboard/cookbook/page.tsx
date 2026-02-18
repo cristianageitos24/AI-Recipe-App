@@ -4,8 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { getFavorites } from "@/app/actions/favorites";
-import { getFolders } from "@/app/actions/folders";
+import { getCookbookBootstrap } from "@/app/actions/dashboard";
 import { Cookbooks } from "@/components/Cookbooks";
 import { CuratedCookbooks } from "@/components/CuratedCookbooks";
 import { RecipeListCard } from "@/components/RecipeListCard";
@@ -20,11 +19,13 @@ export default function CookbookPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getFavorites(), getFolders()]).then(([favRes, foldRes]) => {
-      if (favRes.data) setLikedRecipes([...favRes.data].reverse());
-      if (foldRes.data) setFoldersData({ folders: foldRes.data.folders, results: foldRes.data.results });
-      setIsLoading(false);
-    });
+    getCookbookBootstrap()
+      .then((res) => {
+        if (!res.data) return;
+        setLikedRecipes([...res.data.favorites].reverse());
+        setFoldersData({ folders: res.data.folders, results: res.data.results });
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   const handleFavoriteChange = useCallback((recipe: RecipeRow, isFavorited: boolean) => {

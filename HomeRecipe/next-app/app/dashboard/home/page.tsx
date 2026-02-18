@@ -4,14 +4,12 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { RecipeListCard } from "@/components/RecipeListCard";
-import { getFolders } from "@/app/actions/folders";
-import { getFavorites } from "@/app/actions/favorites";
+import { getHomeBootstrap } from "@/app/actions/dashboard";
 import {
   getSearchSuggestions,
   getIngredientSuggestions,
   searchRecipes,
   searchByIngredients,
-  getSuggestedRecipes,
 } from "@/app/actions/search";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/TabHome.css";
@@ -37,7 +35,6 @@ export default function DashboardHomePage() {
   const [searchResults, setSearchResults] = useState<RecipeRow[] | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [folderOptions, setFolderOptions] = useState<string[]>([]);
   const [favorites, setFavorites] = useState<RecipeRow[]>([]);
   const [foldersWithCounts, setFoldersWithCounts] = useState<FolderWithCount[]>([]);
   const [suggestedRecipes, setSuggestedRecipes] = useState<RecipeRow[]>([]);
@@ -117,38 +114,18 @@ export default function DashboardHomePage() {
   }, [suggestedRecipes.length, updateRecommendationsScrollState]);
 
   useEffect(() => {
-    getFolders().then((res) => {
-      if (res.data?.folders) setFolderOptions(res.data.folders);
-      if (res.data?.folders && res.data?.results) {
-        const folders = res.data.folders as string[];
-        const results = res.data.results as Record<string, unknown[]>;
-        setFoldersWithCounts(
-          folders.map((name) => ({ folderName: name, count: (results[name] ?? []).length }))
-        );
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    getFavorites().then((res) => {
-      if (res.data) setFavorites(res.data);
-    });
-  }, []);
-
-  useEffect(() => {
     setSuggestedLoading(true);
-    Promise.all([getFavorites(), getFolders()])
-      .then(([favRes, foldRes]) => {
-        const savedIds = new Set<string>();
-        (favRes.data ?? []).forEach((r: RecipeRow) => savedIds.add(r.recipe_id));
-        const results = (foldRes.data?.results ?? {}) as Record<string, RecipeRow[]>;
-        (foldRes.data?.folders ?? []).forEach((name: string) => {
-          (results[name] ?? []).forEach((r: RecipeRow) => savedIds.add(r.recipe_id));
-        });
-        return getSuggestedRecipes(Array.from(savedIds));
-      })
+    getHomeBootstrap()
       .then((res) => {
-        if (res.data) setSuggestedRecipes(res.data);
+        if (!res.data) return;
+        setFavorites(res.data.favorites);
+        setFoldersWithCounts(
+          res.data.folders.map((name) => ({
+            folderName: name,
+            count: (res.data.results[name] ?? []).length,
+          }))
+        );
+        setSuggestedRecipes(res.data.suggestedRecipes);
       })
       .catch(() => setSuggestedRecipes([]))
       .finally(() => setSuggestedLoading(false));
