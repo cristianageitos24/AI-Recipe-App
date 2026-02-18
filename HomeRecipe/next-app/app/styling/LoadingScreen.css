@@ -8,7 +8,19 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-6);
-  background: var(--color-bg);
+  background: #f8f9f7;
+  color: var(--color-fg);
+}
+
+.loading-screen-panel {
+  min-height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  background: #f8f9f7;
   color: var(--color-fg);
 }
 

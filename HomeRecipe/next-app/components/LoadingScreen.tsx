@@ -2,9 +2,17 @@
 
 import "@/app/styling/LoadingScreen.css";
 
-export function LoadingScreen() {
+type LoadingScreenProps = {
+  fullScreen?: boolean;
+};
+
+export function LoadingScreen({ fullScreen = true }: LoadingScreenProps) {
+  const containerClass = fullScreen
+    ? "loading-screen-overlay"
+    : "loading-screen-panel";
+
   return (
-    <div className="loading-screen-overlay" role="status" aria-live="polite" aria-label="Loading">
+    <div className={containerClass} role="status" aria-live="polite" aria-label="Loading">
       <div className="loading-screen-content">
         {/* Plain img to avoid next/image hydration issues in loading boundary */}
         <img

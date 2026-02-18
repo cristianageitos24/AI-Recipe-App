@@ -7,6 +7,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { getCookbookBootstrap } from "@/app/actions/dashboard";
 import { Cookbooks } from "@/components/Cookbooks";
 import { CuratedCookbooks } from "@/components/CuratedCookbooks";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import { RecipeListCard } from "@/components/RecipeListCard";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/TabCookbook.css";
@@ -39,7 +40,7 @@ export default function CookbookPage() {
       <DndProvider backend={HTML5Backend}>
         <div className="cookbook-canvas">
         {isLoading ? (
-          <p className="p-6">Loading...</p>
+          <LoadingScreen fullScreen={false} />
         ) : likedRecipes.length > 0 ? (
           <div className="cookbook-content">
             <CuratedCookbooks />

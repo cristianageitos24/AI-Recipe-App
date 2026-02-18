@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Work_Sans } from "next/font/google";
-import { NavigationLoadingOverlay } from "@/components/NavigationLoadingOverlay";
 import "./globals.css";
 
 const workSans = Work_Sans({
@@ -26,7 +25,6 @@ export default function RootLayout({
           className={`${workSans.variable} font-sans antialiased`}
         >
           {children}
-          <NavigationLoadingOverlay />
         </body>
       </html>
     </ClerkProvider>

@@ -24,8 +24,16 @@ export async function getMealDates() {
   const byDate: Record<string, { date: string; recipes: Array<{ eventID: string; [k: string]: unknown }> }> = {};
   for (const row of mealDates ?? []) {
     const date = row.date as string;
-    const mdr = (row as { meal_date_recipes?: Array<{ recipe_id: string; recipes: unknown }> }).meal_date_recipes ?? [];
-    const recipes = mdr.map((r: { recipe_id: string; recipes: unknown }) => ({
+    const rawMdr = (
+      row as {
+        meal_date_recipes?:
+          | Array<{ recipe_id: string; recipes: unknown }>
+          | { recipe_id: string; recipes: unknown }
+          | null;
+      }
+    ).meal_date_recipes;
+    const mdr = Array.isArray(rawMdr) ? rawMdr : rawMdr ? [rawMdr] : [];
+    const recipes = mdr.map((r) => ({
       ...(r.recipes as object),
       eventID: row.event_id,
     }));
