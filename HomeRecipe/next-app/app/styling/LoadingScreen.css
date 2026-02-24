@@ -31,28 +31,16 @@
   gap: var(--space-6);
 }
 
-/* Wrapper for the bowl SVG – applies pulse animation */
-.loading-screen-bowl-wrap {
-  animation: loadingPulse 2s ease-in-out infinite;
+.loading-screen-lottie-wrap {
+  width: clamp(160px, 24vw, 260px);
+  height: clamp(160px, 24vw, 260px);
 }
 
-@keyframes loadingPulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.06);
-    opacity: 0.92;
-  }
-}
-
-.loading-screen-bowl-wrap img {
+.loading-screen-lottie-wrap canvas,
+.loading-screen-lottie-wrap svg {
+  width: 100% !important;
+  height: 100% !important;
   display: block;
-  width: clamp(140px, 20vw, 220px);
-  height: auto;
-  object-fit: contain;
 }
 
 .loading-screen-logo {

@@ -1,5 +1,6 @@
 "use client";
 
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import "@/app/styling/LoadingScreen.css";
 
 type LoadingScreenProps = {
@@ -22,12 +23,11 @@ export function LoadingScreen({ fullScreen = true }: LoadingScreenProps) {
           height={50}
           className="loading-screen-logo"
         />
-        <div className="loading-screen-bowl-wrap">
-          <img
-            src="/Bowl-with-Fruit-Animated.svg"
-            alt=""
-            width={200}
-            height={200}
+        <div className="loading-screen-lottie-wrap" aria-hidden>
+          <DotLottieReact
+            src="/images/loading_animation.lottie"
+            loop
+            autoplay
           />
         </div>
         <p className="loading-screen-text">Preparing…</p>

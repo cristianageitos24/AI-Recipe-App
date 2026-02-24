@@ -40,9 +40,14 @@ export default function CookbookPage() {
       <DndProvider backend={HTML5Backend}>
         <div className="cookbook-canvas">
         {isLoading ? (
-          <LoadingScreen fullScreen={false} />
+          <LoadingScreen />
         ) : likedRecipes.length > 0 ? (
-          <div className="cookbook-content">
+          <motion.div
+            className="cookbook-content"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+          >
             <CuratedCookbooks />
             <div className="tabcookbook-show-liked-recipes">
               <h1 className="sub-header-title">Liked Recipes</h1>
@@ -63,9 +68,14 @@ export default function CookbookPage() {
               </div>
             </div>
             <Cookbooks initialFoldersData={foldersData} />
-          </div>
+          </motion.div>
         ) : (
-          <div className="cookbook-content">
+          <motion.div
+            className="cookbook-content"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+          >
             <CuratedCookbooks />
             <div className="tabcookbook-no-recipes-default">
               <h2>Looks like you haven&apos;t found any favorite recipes yet!</h2>
@@ -73,7 +83,7 @@ export default function CookbookPage() {
               <h2>Explore our dishes and start liking recipes to build your collection!</h2>
             </div>
             <Cookbooks initialFoldersData={foldersData} />
-          </div>
+          </motion.div>
         )}
         </div>
       </DndProvider>

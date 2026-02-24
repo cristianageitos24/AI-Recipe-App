@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { createFolder, getFolders } from "@/app/actions/folders";
 import { FolderTemplate } from "./FolderTemplate";
 import "@/app/styling/Cookbooks.css";
@@ -70,35 +71,48 @@ export function Cookbooks({ initialFoldersData }: CookbooksProps = {}) {
         >
           + Add new cookbook
         </button>
-        {showModal && (
-          <div
-            className="new-folder-modal-overlay"
-            onClick={handleCancel}
-            onKeyDown={handleKeyPress}
-            role="button"
-            tabIndex={0}
-          >
-            <div className="new-folder-info-modal-content" onClick={(e) => e.stopPropagation()}>
-              <h1 className="new-folder-title">New Folder</h1>
-              <input
-                className="new-folder-input"
-                placeholder="Enter folder name"
-                type="text"
-                value={folderName}
-                onChange={(e) => setFolderName(e.target.value)}
-                autoFocus
-              />
-              <div className="modal-folder-action-btns">
-                <button type="button" className="new-folder-cancel-btn" onClick={handleCancel}>
-                  Cancel
-                </button>
-                <button type="button" className="new-folder-create-btn" onClick={handleCreateFolder}>
-                  Create
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {showModal && (
+            <motion.div
+              className="new-folder-modal-overlay"
+              onClick={handleCancel}
+              onKeyDown={handleKeyPress}
+              role="button"
+              tabIndex={0}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+            >
+              <motion.div
+                className="new-folder-info-modal-content"
+                onClick={(e) => e.stopPropagation()}
+                initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+              >
+                <h1 className="new-folder-title">New Folder</h1>
+                <input
+                  className="new-folder-input"
+                  placeholder="Enter folder name"
+                  type="text"
+                  value={folderName}
+                  onChange={(e) => setFolderName(e.target.value)}
+                  autoFocus
+                />
+                <div className="modal-folder-action-btns">
+                  <button type="button" className="new-folder-cancel-btn" onClick={handleCancel}>
+                    Cancel
+                  </button>
+                  <button type="button" className="new-folder-create-btn" onClick={handleCreateFolder}>
+                    Create
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

@@ -4,13 +4,24 @@
   grid-template-columns: 1fr;
 }
 
+.dashboard-header {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5000;
+}
+
+.dashboard-header > * {
+  pointer-events: auto;
+}
+
 /* Dock nav - MacBook dock style at bottom center */
 .dock-nav {
   position: fixed;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 1000;
+  z-index: 5000;
   pointer-events: none;
 }
 
@@ -27,10 +38,17 @@
   align-items: center;
   justify-content: center;
   gap: 35px;
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(255, 255, 255, 0.72);
   border-radius: 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+}
+
+/* Keep dock background pure white when fullscreen overlays are active */
+.dashboard-page:has(.new-folder-modal-overlay) .dock-tabs,
+.dashboard-page:has(.loading-screen-overlay) .dock-tabs {
+  background-color: #fff;
+  backdrop-filter: none;
 }
 
 .dock-tabs li {
@@ -49,7 +67,7 @@
   height: 44px;
   border-radius: 10px;
   text-decoration: none;
-  background-color: #fff;
+  background-color: transparent;
   transition:
     background-color 0.2s,
     box-shadow 0.2s;
@@ -202,7 +220,12 @@
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  padding-bottom: 90px; /* Space for dock at bottom */
+}
+
+.route-transition-shell {
+  min-height: 100%;
+  display: flex;
+  flex: 1;
 }
 
 /*=========== RIGHT SIDE CONTENT ===========*/

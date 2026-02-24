@@ -67,121 +67,118 @@
 
 .new-folder-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
   background-color: var(--overlay);
-  z-index: 100;
+  z-index: 2000;
+  backdrop-filter: blur(2px);
 }
 
 .new-folder-info-modal-content {
-  position: absolute;
   background-color: var(--color-bg);
-  padding: var(--space-5);
+  border: 1px solid var(--gray-300);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
   border-radius: var(--radius-2xl);
-  width: 300px;
-  left: 15%;
-  right: 0;
-  top: 13%;
-  margin: auto;
+  width: min(460px, 100%);
+  padding: var(--space-7) var(--space-6);
 }
 
 .new-folder-title {
   margin: 0;
-  margin-bottom: var(--space-7);
-  font-family: var(--font-body);
-  font-style: normal;
+  margin-bottom: var(--space-5);
+  font-family: var(--font-display);
   font-weight: 500;
-  font-size: clamp(var(--text-sm), 4vw, var(--text-xl));
+  font-size: clamp(var(--text-base), 4vw, var(--text-xl));
+  line-height: 1.2;
   color: var(--color-fg);
 }
 
 .new-folder-input {
-  position: relative;
   width: 100%;
-  height: 100%;
+  height: 52px;
   box-sizing: border-box;
   background: var(--color-bg);
-  border: 1px solid var(--gray-500);
-  border-radius: var(--radius-2xl);
+  border: 1px solid var(--gray-400);
+  border-radius: var(--radius-xl);
   font-family: var(--font-body);
-  font-style: normal;
-  font-weight: 500;
+  font-weight: 400;
   font-size: var(--text-sm);
-  line-height: 16px;
-  display: flex;
-  align-items: center;
+  line-height: 1.3;
   color: var(--color-fg);
-  padding: var(--space-3);
-  margin-left: -1px;
+  padding: 0 var(--space-4);
+}
+
+.new-folder-input::placeholder {
+  color: var(--color-fg-muted);
 }
 
 .new-folder-input:focus {
-  outline: var(--space-2) solid var(--accent);
-  outline-offset: 2px;
+  outline: none;
+  border-color: #33658a;
+  box-shadow: 0 0 0 3px rgba(51, 101, 138, 0.2);
 }
 
 .modal-folder-action-btns {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: var(--space-2);
-  margin-top: var(--space-7);
+  gap: var(--space-3);
+  margin-top: var(--space-6);
 }
 
 .modal-folder-action-btns button {
-  padding: var(--space-2) var(--space-4);
+  min-height: 40px;
+  padding: 0 var(--space-4);
   cursor: pointer;
   font-family: var(--font-body);
-  font-style: normal;
   font-size: var(--text-xs);
-  line-height: 14px;
+  font-weight: 500;
+  line-height: 1;
   display: flex;
   align-items: center;
   text-align: center;
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-lg);
   outline: none;
-  border: none;
-  background: none;
+  border: 1px solid transparent;
+  transition: all 0.15s ease-in-out;
 }
 
 .new-folder-cancel-btn {
+  background: var(--gray-200);
   color: var(--color-fg);
-  transition: 0.1s ease-in-out;
 }
 
 .new-folder-cancel-btn:hover {
-  background: var(--gray-200);
-  transition: 0.1s ease-in-out;
+  background: var(--gray-300);
 }
 
 .new-folder-cancel-btn:active {
-  background: var(--gray-500);
-  transition: 0.1s ease-in-out;
+  background: var(--gray-400);
 }
 
 .new-folder-create-btn {
-  color: var(--accent);
+  background: #33658a;
+  border-color: #33658a;
+  color: var(--color-bg);
   font-weight: 600;
-  transition: 0.1s ease-in-out;
 }
 
 .new-folder-create-btn:hover {
-  background: var(--error-bg);
-  color: var(--color-fg);
-  transition: 0.1s ease-in-out;
+  background: #2b5373;
+  border-color: #2b5373;
 }
 
 .new-folder-create-btn:active {
-  background: var(--color-fg);
-  color: var(--color-bg);
-  transition: 0.1s ease-in-out;
+  background: #21435d;
+  border-color: #21435d;
 }
 
 @media screen and (max-width: 400px) {
-  .new-folder-input {
-    width: 250px;
+  .new-folder-info-modal-content {
+    padding: var(--space-6) var(--space-4);
   }
 }
 

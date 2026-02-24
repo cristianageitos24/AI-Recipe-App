@@ -56,7 +56,7 @@ export function NavigationLoadingOverlay() {
         timeoutRef.current = null;
       }
       if (previousPathnameRef.current !== null && showOverlay) {
-        hideAfterMinDelay();
+        queueMicrotask(() => hideAfterMinDelay());
       }
       previousPathnameRef.current = pathname;
     }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import { RecipeListCard } from "@/components/RecipeListCard";
 import { getHomeBootstrap } from "@/app/actions/dashboard";
 import {
@@ -38,6 +39,7 @@ export default function DashboardHomePage() {
   const [favorites, setFavorites] = useState<RecipeRow[]>([]);
   const [foldersWithCounts, setFoldersWithCounts] = useState<FolderWithCount[]>([]);
   const [suggestedRecipes, setSuggestedRecipes] = useState<RecipeRow[]>([]);
+  const [bootstrapLoading, setBootstrapLoading] = useState(true);
   const [suggestedLoading, setSuggestedLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<{
     ingredients: string[];
@@ -128,7 +130,10 @@ export default function DashboardHomePage() {
         setSuggestedRecipes(res.data.suggestedRecipes);
       })
       .catch(() => setSuggestedRecipes([]))
-      .finally(() => setSuggestedLoading(false));
+      .finally(() => {
+        setSuggestedLoading(false);
+        setBootstrapLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -329,7 +334,15 @@ export default function DashboardHomePage() {
 
   return (
     <div className="right-side-panel">
-      <div className="recipe-search-content">
+      {bootstrapLoading ? (
+        <LoadingScreen />
+      ) : (
+      <motion.div
+        className="recipe-search-content"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
+      >
         <div className="search-mode-tabs">
           <button
             type="button"
@@ -584,7 +597,8 @@ export default function DashboardHomePage() {
             </p>
           )}
         </section>
-      </div>
+      </motion.div>
+      )}
     </div>
   );
 }

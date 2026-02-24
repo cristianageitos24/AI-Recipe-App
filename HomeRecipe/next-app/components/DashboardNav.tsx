@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 
 const UserButton = dynamic(
   () => import("@clerk/nextjs").then((mod) => ({ default: mod.UserButton })),
@@ -42,19 +43,25 @@ export function DashboardNav() {
   const pathname = usePathname();
 
   return (
-    <>
+    <header className="dashboard-header">
       <nav className="dock-nav">
         <ul className="dock-tabs">
           {navItems.map(({ href, label, icon }) => {
             const isActive =
               pathname === href || pathname.startsWith(href + "/");
             return (
-              <li key={href} className={isActive ? "active" : ""}>
+              <motion.li
+                key={href}
+                className={isActive ? "active" : ""}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+              >
                 <Link href={href} className="tab-square">
                   <Image src={icon} alt={label} width={15} height={15} />
                   <span className="tab-tooltip">{label}</span>
                 </Link>
-              </li>
+              </motion.li>
             );
           })}
         </ul>
@@ -65,6 +72,6 @@ export function DashboardNav() {
           <span className="signedin-label">Account</span>
         </div>
       </div>
-    </>
+    </header>
   );
 }

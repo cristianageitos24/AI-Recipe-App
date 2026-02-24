@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { DashboardNav } from "@/components/DashboardNav";
 import { EnsureProfileOnMount } from "@/components/EnsureProfileOnMount";
+import { RouteTransition } from "@/components/RouteTransition";
 import "@/app/styling/Nav.css";
 
 export default async function DashboardLayout({
@@ -18,7 +19,9 @@ export default async function DashboardLayout({
     <div className="dashboard-page">
       <EnsureProfileOnMount />
       <DashboardNav />
-      <main className="dashboard-main overflow-auto">{children}</main>
+      <main className="dashboard-main overflow-auto">
+        <RouteTransition>{children}</RouteTransition>
+      </main>
     </div>
   );
 }
