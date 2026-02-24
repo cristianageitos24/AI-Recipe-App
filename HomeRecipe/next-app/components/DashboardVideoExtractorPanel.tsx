@@ -23,6 +23,24 @@ export function DashboardVideoExtractorPanel() {
             Paste a TikTok link and upload the clip to extract ingredients, steps, and save it
             straight into the cookbook that fits best.
           </p>
+          <div className="home-extractor-steps">
+            <div className="home-extractor-step">
+              <span className="home-extractor-step-number">1</span>
+              <p className="home-extractor-step-text">Paste a TikTok or short-form video link.</p>
+            </div>
+            <div className="home-extractor-step">
+              <span className="home-extractor-step-number">2</span>
+              <p className="home-extractor-step-text">
+                We extract ingredients, steps, and key cooking details.
+              </p>
+            </div>
+            <div className="home-extractor-step">
+              <span className="home-extractor-step-number">3</span>
+              <p className="home-extractor-step-text">
+                Save the finished recipe straight into your cookbooks.
+              </p>
+            </div>
+          </div>
           <Link href="/dashboard/video-upload" className="home-extractor-link">
             Open full video tools
           </Link>
