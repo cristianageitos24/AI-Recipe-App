@@ -509,8 +509,46 @@ export default function DashboardHomePage() {
           </div>
         )}
 
-        {favorites.length > 0 && (
+        {foldersWithCounts.length > 0 && (
           <section className="home-section">
+            <h2 className="home-section-title">Your Cookbooks</h2>
+            <div className="home-section-scroll home-cookbooks-row">
+              {foldersWithCounts.map((f) => (
+                <Link
+                  key={f.folderName}
+                  href={`/dashboard/cookbook/${encodeURIComponent(f.folderName)}`}
+                  className="home-cookbook-card"
+                >
+                  <div className="home-cookbook-header">
+                    <svg
+                      className="home-cookbook-icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden
+                    >
+                      <path
+                        d="M3 6.5C3 5.67157 3.67157 5 4.5 5H10.4C10.7984 5 11.1806 5.15804 11.4621 5.43934L12.5607 6.53782C12.8421 6.81916 13.2243 6.9772 13.6228 6.9772H19.5C20.3284 6.9772 21 7.6488 21 8.4772V17.5C21 18.3284 20.3284 19 19.5 19H4.5C3.67157 19 3 18.3284 3 17.5V6.5Z"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <span className="home-cookbook-name">{f.folderName}</span>
+                  </div>
+                  <div className="home-cookbook-meta-row">
+                    <span className="home-cookbook-meta-label">Recipes</span>
+                    <span className="home-cookbook-meta-divider" />
+                    <span className="home-cookbook-meta-value">{f.count}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {favorites.length > 0 && (
+          <section className="home-section home-section-no-top-margin">
             <h2 className="home-section-title">Favorites</h2>
             <div className="home-section-scroll">
               {favorites.map((recipe) => (
@@ -530,28 +568,8 @@ export default function DashboardHomePage() {
           </section>
         )}
 
-        {foldersWithCounts.length > 0 && (
-          <section className="home-section">
-            <h2 className="home-section-title">Your Cookbooks</h2>
-            <div className="home-section-scroll home-cookbooks-row">
-              {foldersWithCounts.map((f) => (
-                <Link
-                  key={f.folderName}
-                  href={`/dashboard/cookbook/${encodeURIComponent(f.folderName)}`}
-                  className="home-cookbook-card"
-                >
-                  <span className="home-cookbook-name">{f.folderName}</span>
-                  <span className="home-cookbook-count">
-                    {f.count} recipe{f.count !== 1 ? "s" : ""}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section className="home-section">
-          <h2 className="home-section-title">Recommended for you</h2>
+        <section className="home-section home-section-no-top-margin">
+          <h2 className="home-section-title">Recommended For You</h2>
           {suggestedLoading ? (
             <p className="home-section-loading">Loading recommendations...</p>
           ) : suggestedRecipes.length > 0 ? (
