@@ -17,6 +17,7 @@ export interface VideoJob {
   ocr_text: string | null;
   transcript_text: string | null;
   extracted_recipe: ExtractedRecipe | null;
+  thumbnail_url: string | null;
   error_message: string | null;
   attempts: number;
   started_at: string | null;

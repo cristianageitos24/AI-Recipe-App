@@ -11,11 +11,12 @@ import * as dotenv from "dotenv";
 import { resolve } from "path";
 import { hostname } from "os";
 import { existsSync, readdirSync } from "fs";
-import { writeFile, unlink, mkdir } from "fs/promises";
+import { writeFile, unlink, mkdir, readFile } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 import {
   createOCRProvider,
+  extractThumbnailFrame,
   getVideoDuration,
   processVideo,
   withTimeout,
@@ -212,20 +213,22 @@ async function updateJobTranscript(jobId: string, transcriptText: string | null)
 }
 
 /**
- * Mark job as completed (with optional extracted recipe from AI reasoning)
+ * Mark job as completed (with optional extracted recipe and thumbnail URL)
  */
 async function markJobCompleted(
   jobId: string,
   ocrText: string,
   processingMs: number,
   transcriptText: string | null,
-  extractedRecipe: ExtractedRecipe | null
+  extractedRecipe: ExtractedRecipe | null,
+  thumbnailUrl: string | null = null
 ) {
   log("INFO", "Job completed", {
     jobId,
     processingMs,
     textLength: ocrText.length,
     hasExtractedRecipe: extractedRecipe != null,
+    hasThumbnail: thumbnailUrl != null,
   });
 
   const { error } = await supabase
@@ -235,6 +238,7 @@ async function markJobCompleted(
       ocr_text: ocrText,
       transcript_text: transcriptText,
       extracted_recipe: extractedRecipe,
+      thumbnail_url: thumbnailUrl,
       processing_ms: processingMs,
       finished_at: new Date().toISOString(),
       locked_at: null,
@@ -247,6 +251,53 @@ async function markJobCompleted(
       jobId,
       error: error.message,
     });
+  }
+}
+
+const VIDEO_THUMBNAIL_TIME_SEC = parseInt(
+  process.env.VIDEO_THUMBNAIL_TIME_SEC || "1",
+  10
+);
+
+/**
+ * Extract one color frame, upload to recipe-covers bucket, return public URL or null on failure.
+ */
+async function extractAndUploadThumbnail(
+  videoPath: string,
+  jobId: string,
+  userId: string,
+  durationSeconds: number
+): Promise<string | null> {
+  const timeSec = Math.min(
+    Math.max(VIDEO_THUMBNAIL_TIME_SEC, 0),
+    Math.max(0, durationSeconds - 0.5)
+  );
+  const thumbPath = join(tmpdir(), `thumb-${jobId}-${Date.now()}.png`);
+  try {
+    await extractThumbnailFrame(videoPath, thumbPath, timeSec);
+    const storagePath = `${userId}/${jobId}/cover.png`;
+    const { error: uploadError } = await supabase.storage
+      .from("recipe-covers")
+      .upload(storagePath, await readFile(thumbPath), {
+        contentType: "image/png",
+        upsert: true,
+      });
+    await unlink(thumbPath);
+    if (uploadError) {
+      log("ERROR", "Thumbnail upload failed", { jobId, error: uploadError.message });
+      return null;
+    }
+    const { data } = supabase.storage.from("recipe-covers").getPublicUrl(storagePath);
+    return data.publicUrl;
+  } catch (err: any) {
+    log("ERROR", "Thumbnail extraction/upload failed", {
+      jobId,
+      error: err?.message ?? String(err),
+    });
+    try {
+      await unlink(thumbPath);
+    } catch (_) {}
+    return null;
   }
 }
 
@@ -362,6 +413,19 @@ async function processJob(job: VideoJob): Promise<void> {
       );
     }
 
+    // Thumbnail: extract one color frame and upload to recipe-covers (non-fatal on failure)
+    let thumbnailUrl: string | null = null;
+    try {
+      thumbnailUrl = await extractAndUploadThumbnail(
+        videoPath,
+        job.id,
+        job.user_id,
+        duration
+      );
+    } catch (thumbErr: any) {
+      log("ERROR", "Thumbnail failed", { jobId: job.id, error: thumbErr?.message ?? thumbErr });
+    }
+
     // Transcription: extract audio and transcribe (non-fatal on failure)
     const audioTranscriptionKey = process.env.OPENAI_AUDIO_TRANSCRIPTION_KEY;
     if (audioTranscriptionKey) {
@@ -434,7 +498,14 @@ async function processJob(job: VideoJob): Promise<void> {
     }
 
     // Mark as completed
-    await markJobCompleted(job.id, ocrText, processingMs, transcriptText, extractedRecipe);
+    await markJobCompleted(
+      job.id,
+      ocrText,
+      processingMs,
+      transcriptText,
+      extractedRecipe,
+      thumbnailUrl
+    );
   } catch (error: any) {
     const errorMessage = error.message || "Unknown error";
     log("ERROR", "Job processing error", {

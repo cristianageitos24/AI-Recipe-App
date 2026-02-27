@@ -21,6 +21,7 @@ type EditedRecipeState = {
   cookTimeMinutes: number;
   servings: number | null;
   steps: string[];
+  imageUrl: string;
 };
 
 function formatIngredientLine(ing: ExtractedRecipeIngredient): string {
@@ -32,7 +33,10 @@ function formatIngredientLine(ing: ExtractedRecipeIngredient): string {
   return parts.join(" ");
 }
 
-function initialEditedFromExtracted(extracted: ExtractedRecipe): EditedRecipeState {
+function initialEditedFromExtracted(
+  extracted: ExtractedRecipe,
+  thumbnailUrl?: string | null
+): EditedRecipeState {
   return {
     title: extracted.title.trim() || "Untitled Recipe",
     ingredientLines:
@@ -45,6 +49,7 @@ function initialEditedFromExtracted(extracted: ExtractedRecipe): EditedRecipeSta
       extracted.steps.length > 0
         ? [...extracted.steps]
         : [""],
+    imageUrl: thumbnailUrl?.trim() ?? "",
   };
 }
 
@@ -162,9 +167,15 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
       jobStatus?.status === "done" &&
       jobStatus?.extracted_recipe
     ) {
-      setEditedRecipe((prev) => prev ?? initialEditedFromExtracted(jobStatus.extracted_recipe!));
+      setEditedRecipe((prev) =>
+        prev ??
+        initialEditedFromExtracted(
+          jobStatus!.extracted_recipe!,
+          jobStatus?.thumbnail_url
+        )
+      );
     }
-  }, [jobId, jobStatus?.status, jobStatus?.extracted_recipe]);
+  }, [jobId, jobStatus?.status, jobStatus?.extracted_recipe, jobStatus?.thumbnail_url]);
 
   // Fetch folders when save modal opens
   useEffect(() => {
@@ -188,6 +199,10 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
 
   function getPayloadFromEdited() {
     if (!jobId || !editedRecipe) return null;
+    const imageUrl =
+      editedRecipe.imageUrl?.trim() ||
+      jobStatus?.thumbnail_url?.trim() ||
+      null;
     return buildVideoRecipePayload(
       {
         title: editedRecipe.title,
@@ -198,6 +213,7 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
       jobId,
       {
         sourceUrl: jobStatus?.tiktok_url ?? null,
+        imageUrl,
       }
     );
   }
@@ -409,6 +425,21 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
                         <p className="video-recipe-servings-display">{editedRecipe.servings}</p>
                       </div>
                     )}
+                    <div className="form-group">
+                      <label htmlFor="video-recipe-image-url">Image URL (optional)</label>
+                      <input
+                        id="video-recipe-image-url"
+                        type="url"
+                        className="form-input"
+                        value={editedRecipe.imageUrl}
+                        onChange={(e) =>
+                          setEditedRecipe((prev) =>
+                            prev ? { ...prev, imageUrl: e.target.value } : null
+                          )
+                        }
+                        placeholder="https://... or leave blank to use video frame"
+                      />
+                    </div>
                   </div>
                 )}
                 {activeTab === "steps" && (

@@ -174,10 +174,12 @@ function formatIngredientLine(ing: ExtractedRecipeIngredient): string {
 /**
  * Convert ExtractedRecipe (from video job) to RecipePayload for getOrCreateRecipe / addRecipeToFolder.
  * Use a stable recipe_id so the same video job always maps to the same recipe row.
+ * Pass options.imageUrl (e.g. job thumbnail_url) to set the recipe's default image.
  */
 export function extractedRecipeToPayload(
   extracted: ExtractedRecipe,
-  jobId: string
+  jobId: string,
+  options?: { imageUrl?: string | null }
 ): RecipePayload {
   const recipe_id = `video-recipe-${jobId}`;
   const ingredient_lines =
@@ -196,13 +198,14 @@ export function extractedRecipeToPayload(
     ingredient_lines,
     steps,
     website_url: null,
-    image_url: null,
+    image_url: options?.imageUrl?.trim() || null,
   };
 }
 
 /**
  * Build RecipePayload from the user's edited recipe state (video upload flow).
  * Use when saving after the user has edited title, ingredients, cook time, or steps.
+ * Pass options.imageUrl (e.g. job thumbnail or user-entered URL) for the recipe card image.
  */
 export function buildVideoRecipePayload(
   edited: {
@@ -214,6 +217,7 @@ export function buildVideoRecipePayload(
   jobId: string,
   options?: {
     sourceUrl?: string | null;
+    imageUrl?: string | null;
   }
 ): RecipePayload {
   const recipe_id = `video-recipe-${jobId}`;
@@ -244,6 +248,6 @@ export function buildVideoRecipePayload(
     ingredient_lines,
     steps,
     website_url: options?.sourceUrl?.trim() || null,
-    image_url: null,
+    image_url: options?.imageUrl?.trim() || null,
   };
 }
