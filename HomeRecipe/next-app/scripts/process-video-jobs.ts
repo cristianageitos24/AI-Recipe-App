@@ -10,6 +10,7 @@ import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
 import { resolve } from "path";
 import { hostname } from "os";
+import { existsSync, readdirSync } from "fs";
 import { writeFile, unlink, mkdir } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
@@ -85,6 +86,9 @@ interface VideoJob {
   user_id: string;
   status: string;
   video_url: string;
+  source_type?: "upload" | "url";
+  source_url?: string | null;
+  source_platform?: string | null;
   tiktok_url: string | null;
   attempts: number;
   locked_at: string | null;
@@ -247,7 +251,7 @@ async function markJobCompleted(
 }
 
 /**
- * Download video from Supabase Storage
+ * Download video from Supabase Storage (upload-based jobs)
  */
 async function downloadVideo(videoPath: string): Promise<string> {
   const tempPath = join(tmpdir(), `video-${Date.now()}-${Math.random().toString(36).substring(7)}.mp4`);
@@ -270,6 +274,58 @@ async function downloadVideo(videoPath: string): Promise<string> {
 }
 
 /**
+ * Resolve path to yt-dlp executable so the worker finds it even when PATH is not set
+ * (e.g. when run from a background process that didn't inherit updated user PATH).
+ */
+function getYtDlpExecutable(): string {
+  const envPath = process.env.YT_DLP_PATH || process.env.YT_DLP_EXECUTABLE;
+  if (envPath && existsSync(envPath)) return envPath;
+  if (process.platform === "win32" && process.env.APPDATA) {
+    const base = join(process.env.APPDATA, "Python");
+    try {
+      const dirs = readdirSync(base, { withFileTypes: true }).filter((d: { isDirectory: () => boolean; name: string }) => d.isDirectory() && d.name.startsWith("Python"));
+      for (const d of dirs) {
+        const exe = join(base, d.name, "Scripts", "yt-dlp.exe");
+        if (existsSync(exe)) return exe;
+      }
+    } catch (_) {}
+  }
+  return "yt-dlp";
+}
+
+/**
+ * Download a TikTok video for URL-based jobs.
+ * Uses yt-dlp (from YT_DLP_PATH, common install locations, or PATH).
+ */
+async function downloadTikTokVideo(tiktokUrl: string, jobId: string): Promise<string> {
+  const tempDir = tmpdir();
+  const tempPath = join(
+    tempDir,
+    `tiktok-${jobId}-${Date.now()}-${Math.random().toString(36).substring(7)}.mp4`
+  );
+
+  const ytDlp = getYtDlpExecutable();
+  log("INFO", "Downloading TikTok video", { jobId, tiktokUrl, tempPath, ytDlp });
+
+  const { execa } = await import("execa");
+
+  try {
+    await execa(ytDlp, ["-f", "mp4", "-o", tempPath, tiktokUrl], {
+      timeout: PROCESSING_TIMEOUT_MS,
+    });
+  } catch (error: any) {
+    log("ERROR", "Failed to download TikTok video", {
+      jobId,
+      tiktokUrl,
+      error: error?.message ?? String(error),
+    });
+    throw new Error("Failed to download TikTok video. The video may be private or unsupported.");
+  }
+
+  return tempPath;
+}
+
+/**
  * Process a single job
  */
 async function processJob(job: VideoJob): Promise<void> {
@@ -285,8 +341,16 @@ async function processJob(job: VideoJob): Promise<void> {
       attempts: job.attempts,
     });
 
-    // Download video
-    videoPath = await downloadVideo(job.video_url);
+    // Choose video source: direct upload vs URL-based TikTok job
+    if (job.source_type === "url" || (!job.video_url && job.tiktok_url)) {
+      if (!job.tiktok_url) {
+        throw new Error("No TikTok URL provided for URL-based job");
+      }
+      videoPath = await downloadTikTokVideo(job.tiktok_url, job.id);
+    } else {
+      // Legacy upload-based flow: download from Supabase Storage
+      videoPath = await downloadVideo(job.video_url);
+    }
 
     // Check video duration
     const duration = await getVideoDuration(videoPath);

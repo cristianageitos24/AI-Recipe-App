@@ -20,8 +20,8 @@ export function DashboardVideoExtractorPanel() {
             Turn any cooking clip into a saved recipe in your cookbooks.
           </p>
           <p className="home-extractor-body">
-            Paste a TikTok link and upload the clip to extract ingredients, steps, and save it
-            straight into the cookbook that fits best.
+            Paste a TikTok link to extract ingredients, steps, and save it straight into the
+            cookbook that fits best.
           </p>
           <div className="home-extractor-steps">
             <div className="home-extractor-step">

@@ -6,12 +6,18 @@ This guide explains how to set up and run the video upload and OCR processing fe
 
 ### System Dependencies
 
-You need to install `ffmpeg` and `tesseract` on your system:
+You need to install `ffmpeg`, `tesseract`, and **yt-dlp** on your system. yt-dlp is required for the **TikTok URL** flow (paste link → extract recipe); ffmpeg and tesseract are used for all video processing (OCR, audio extraction).
 
 #### Windows (Chocolatey - Recommended)
 
 ```powershell
 choco install ffmpeg tesseract -y
+```
+
+Install **yt-dlp** (for TikTok URL downloads) via pip (ensure Python Scripts is on PATH):
+
+```powershell
+pip install yt-dlp
 ```
 
 #### Windows (Manual)
@@ -26,10 +32,15 @@ choco install ffmpeg tesseract -y
    - Run installer, ensure "Add to PATH" is checked
    - Verify: `tesseract --version`
 
-3. **Verify PATH:**
+3. **Install yt-dlp (TikTok URL flow):**
+   - **Option A:** `pip install yt-dlp` then add the Python Scripts folder to PATH (e.g. `%APPDATA%\Python\Python314\Scripts`).
+   - **Option B:** Download `yt-dlp.exe` from [yt-dlp releases](https://github.com/yt-dlp/yt-dlp/releases) and add its folder to PATH.
+
+4. **Verify PATH:**
    ```powershell
-   $env:PATH -split ';' | Select-String -Pattern 'ffmpeg|tesseract'
+   $env:PATH -split ';' | Select-String -Pattern 'ffmpeg|tesseract|yt-dlp'
    ```
+   Confirm: `yt-dlp --version`
 
 #### macOS
 
@@ -45,6 +56,8 @@ sudo apt-get install ffmpeg tesseract-ocr
 sudo yum install ffmpeg tesseract
 ```
 
+Install **yt-dlp**: `pip install yt-dlp` or use your package manager (e.g. `apt install yt-dlp` if available).
+
 ### npm Dependencies
 
 Install npm packages:
@@ -56,6 +69,7 @@ npm install
 This will install:
 - `fluent-ffmpeg` - Node.js wrapper for ffmpeg
 - `tesseract.js` - OCR library (fallback if CLI not available)
+- `execa` - Used by the worker to run yt-dlp for TikTok downloads
 - `openai` - Whisper API for audio transcription
 - `@types/fluent-ffmpeg` - TypeScript types
 
@@ -160,12 +174,10 @@ pm2 start npm --name "video-worker" -- run worker:video
 
 ## Usage
 
-1. Navigate to `/dashboard/video-upload` in the app
-2. Optionally enter a TikTok URL for reference
-3. Select an MP4 video file (max 50MB)
-4. Click "Upload Video"
-5. Wait for processing to complete
-6. View extracted OCR text and transcript when done
+1. Navigate to `/dashboard/video-upload` (or use the Recipe Clip Studio panel on the dashboard).
+2. **TikTok URL flow (recommended):** Paste a TikTok cooking video URL and click "Extract recipe from TikTok". The worker will download the video with yt-dlp, then run OCR and transcription. Ensure **yt-dlp** is installed and on PATH.
+3. Wait for processing to complete.
+4. View or edit the extracted recipe and save it to a cookbook.
 
 ## How It Works
 
@@ -185,9 +197,8 @@ Transcription runs first; if it fails, OCR still runs and `transcript_text` stay
 
 ### Worker fails to download videos
 
-- Check `SUPABASE_SECRET_KEY` is set
-- Verify Storage bucket exists and is named `videos`
-- Check Storage RLS policies allow service role access
+- **TikTok URL jobs:** Ensure **yt-dlp** is installed and on PATH (`yt-dlp --version`). Restart the worker after installing so it picks up PATH. If the video is private or region-locked, the download may still fail.
+- **Upload jobs:** Check `SUPABASE_SECRET_KEY` is set; verify Storage bucket exists and is named `videos`; check Storage RLS policies allow service role access.
 
 ### OCR not working
 
@@ -215,7 +226,7 @@ Transcription runs first; if it fails, OCR still runs and `transcript_text` stay
 
 ## Architecture
 
-- **API Route:** `/api/video/upload` - Handles uploads
+- **API Routes:** `/api/video/upload` - File uploads; `/api/video/url` - TikTok URL job creation
 - **Server Actions:** `app/actions/video-jobs.ts` - Fetch job status
 - **Worker:** `scripts/process-video-jobs.ts` - Processes videos
 - **Processing:** `lib/video-processing.ts` - Core OCR logic

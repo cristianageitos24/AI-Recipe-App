@@ -211,7 +211,10 @@ export function buildVideoRecipePayload(
     cookTimeMinutes: number;
     steps: string[];
   },
-  jobId: string
+  jobId: string,
+  options?: {
+    sourceUrl?: string | null;
+  }
 ): RecipePayload {
   const recipe_id = `video-recipe-${jobId}`;
   const ingredient_lines =
@@ -240,7 +243,7 @@ export function buildVideoRecipePayload(
     time_in_minutes,
     ingredient_lines,
     steps,
-    website_url: null,
+    website_url: options?.sourceUrl?.trim() || null,
     image_url: null,
   };
 }

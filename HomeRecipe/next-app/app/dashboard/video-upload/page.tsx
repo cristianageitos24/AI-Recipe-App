@@ -7,10 +7,10 @@ export default function VideoUploadPage() {
   return (
     <div className="video-upload-page">
       <div className="video-upload-header">
-        <h1>Upload Cooking Video</h1>
+        <h1>Paste a TikTok Cooking Clip</h1>
         <p className="subtitle">
-          Upload a cooking video (MP4) to extract ingredients and instructions using OCR.
-          The video will be processed automatically.
+          Paste a TikTok cooking video URL and we&apos;ll extract ingredients and instructions
+          automatically for you.
         </p>
       </div>
 

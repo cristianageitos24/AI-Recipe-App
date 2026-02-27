@@ -33,7 +33,8 @@
     "react-dom": "19.2.3",
     "sharp": "^0.34.5",
     "tesseract.js": "^5.1.0",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "execa": "^9.5.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

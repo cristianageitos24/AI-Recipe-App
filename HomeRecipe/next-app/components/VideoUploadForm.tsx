@@ -51,7 +51,6 @@ function initialEditedFromExtracted(extracted: ExtractedRecipe): EditedRecipeSta
 export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
   const router = useRouter();
   const [tiktokUrl, setTiktokUrl] = useState("");
-  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -64,29 +63,25 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.type !== "video/mp4" && !file.name.endsWith(".mp4")) {
-        setError("Only MP4 files are supported");
-        return;
-      }
-      if (file.size > 50 * 1024 * 1024) {
-        setError("File size must be less than 50MB");
-        return;
-      }
-      setVideoFile(file);
-      setError(null);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!videoFile) {
-      setError("Please select a video file");
+
+    const trimmedUrl = tiktokUrl.trim();
+    if (!trimmedUrl) {
+      setError("Please enter a TikTok URL");
+      return;
+    }
+
+    try {
+      const url = new URL(trimmedUrl);
+      if (!/^https?:$/.test(url.protocol) || !url.hostname.includes("tiktok.com")) {
+        setError("Please enter a valid TikTok URL");
+        return;
+      }
+    } catch {
+      setError("Please enter a valid TikTok URL");
       return;
     }
 
@@ -94,15 +89,12 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
     setError(null);
 
     try {
-      const formData = new FormData();
-      formData.append("video", videoFile);
-      if (tiktokUrl.trim()) {
-        formData.append("tiktokUrl", tiktokUrl.trim());
-      }
-
-      const response = await fetch("/api/video/upload", {
+      const response = await fetch("/api/video/url", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url: trimmedUrl }),
       });
 
       const data = await response.json();
@@ -125,15 +117,11 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
       startPolling(data.jobId);
 
       // Reset form
-      setVideoFile(null);
       setTiktokUrl("");
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
 
       onJobCreated?.(data.jobId);
     } catch (err: any) {
-      setError(err.message || "Upload failed");
+      setError(err.message || "URL processing failed");
     } finally {
       setUploading(false);
     }
@@ -207,7 +195,10 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
         cookTimeMinutes: editedRecipe.cookTimeMinutes,
         steps: editedRecipe.steps,
       },
-      jobId
+      jobId,
+      {
+        sourceUrl: jobStatus?.tiktok_url ?? null,
+      }
     );
   }
 
@@ -276,7 +267,7 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
     <div className="video-upload-form">
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="tiktok-url">TikTok URL (optional)</label>
+          <label htmlFor="tiktok-url">TikTok URL</label>
           <input
             id="tiktok-url"
             type="url"
@@ -288,33 +279,14 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="video-file">Video File (MP4, max 50MB)</label>
-          <input
-            id="video-file"
-            ref={fileInputRef}
-            type="file"
-            accept="video/mp4"
-            onChange={handleFileChange}
-            className="form-input"
-            disabled={uploading}
-            required
-          />
-          {videoFile && (
-            <p className="file-info">
-              Selected: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(2)} MB)
-            </p>
-          )}
-        </div>
-
         {error && <div className="error-message">{error}</div>}
 
         <button
           type="submit"
           className="submit-button"
-          disabled={uploading || !videoFile}
+          disabled={uploading || !tiktokUrl.trim()}
         >
-          {uploading ? "Uploading..." : "Upload Video"}
+          {uploading ? "Processing..." : "Extract recipe from TikTok"}
         </button>
       </form>
 
