@@ -333,7 +333,7 @@ export default function DashboardHomePage() {
     suggestions.ingredients.length > 0 || suggestions.recipes.length > 0;
 
   return (
-    <div className="right-side-panel">
+    <div className="main-panel">
       {bootstrapLoading ? (
         <LoadingScreen />
       ) : (

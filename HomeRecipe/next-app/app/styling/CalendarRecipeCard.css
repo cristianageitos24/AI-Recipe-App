@@ -10,7 +10,6 @@
   border-radius: 10px;
 
   width: 335px;
-  height: 100px;
   gap: 10px;
 }
 
@@ -50,16 +49,18 @@
 
   border: none;
 
+}
+
+.calendar-upcoming-recipe-card
+  .calendar-upcoming-recipe-image:hover
+  .image-hover-bttn
   p {
-    font-family: var(--font-body);
-    font-style: normal;
-    font-weight: 500;
-    font-size: 10px;
-
-    color: #ffffff;
-
-    margin: 0;
-  }
+  font-family: var(--font-body);
+  font-style: normal;
+  font-weight: 500;
+  font-size: 10px;
+  color: #ffffff;
+  margin: 0;
 }
 
 /*    CARDS CONTENT   */
@@ -72,6 +73,8 @@
   align-items: center;
 
   gap: 15px;
+  padding: 5px 0;
+  box-sizing: border-box;
 }
 .calendar-upcoming-recipe-content h1 {
   font-family: var(--font-body);
@@ -83,9 +86,13 @@
 
   margin: 0;
   width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
+  line-height: 1.25;
+  padding: 0 5px;
+  box-sizing: border-box;
 }
 
 .calendar-upcoming-recipe-subcontent {
@@ -95,6 +102,8 @@
   width: 100%;
 
   gap: 50px;
+  padding: 0 5px;
+  box-sizing: border-box;
 }
 .calendar-upcoming-recipe-subcontent p {
   font-family: var(--font-body);
@@ -116,6 +125,8 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  padding: 0 5px;
+  box-sizing: border-box;
 }
 
 .calendar-upcoming-recipe-content .small-labels p {
@@ -150,4 +161,19 @@
 
   border-radius: 7px;
   padding: 5px 8px;
+}
+
+.calendar-upcoming-recipe-content .small-labels .calendar-card-minutes--fast {
+  background: var(--success-bg);
+  color: var(--success-fg);
+}
+
+.calendar-upcoming-recipe-content .small-labels .calendar-card-minutes--medium {
+  background: var(--warning-bg);
+  color: var(--warning-fg);
+}
+
+.calendar-upcoming-recipe-content .small-labels .calendar-card-minutes--slow {
+  background: var(--error-bg);
+  color: var(--error-fg);
 }

@@ -1,23 +1,33 @@
 /*    USER FOLDERS STYLING    */
 .cookbook-icon {
-  min-width: 18px;
-  max-width: 18px;
+  min-width: 20px;
+  max-width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--gray-700);
 }
 
 .cookbook-user-folder {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 
-  min-height: 52px;
-  padding: 12px 18px;
+  min-height: 58px;
+  padding: var(--space-3) var(--space-4);
 
-  border-radius: 10px;
-  border: 1px solid transparent;
-  background-color: #e7ecef;
+  border-radius: 14px;
+  border: 1px solid #dce3e8;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+  backdrop-filter: blur(10px);
 
   cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
 }
 
 .cookbook-active-content-link {
@@ -25,34 +35,27 @@
   min-width: 0;
   display: flex;
 }
-/*  FOLDER IS HOVERED   */
 
 .cookbook-user-folder:hover {
-  background-color: #e7ecef;
-  border: 1px solid #000;
+  background: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 var(--space-2) var(--space-5) var(--overlay-light);
+  transform: translateY(-2px);
+}
 
-  transition: background-color ease-in 0.2s;
+.cookbook-user-folder:hover .cookbook-icon {
+  color: #000;
+}
 
-  .cookbook-icon path {
-    fill: #fff;
-    fill: #000;
-  }
-
-  .cookbook-user-foldername {
-    color: #fff;
-    color: #000;
-  }
-
-  .cookbook-user-dots path {
-    fill: #fff;
-    fill: #000;
-  }
+.cookbook-user-folder:active {
+  transform: translateY(1px);
 }
 
 .cookbook-active-content {
   display: flex;
   justify-content: flex-start;
   align-items: center;
+  gap: var(--space-3);
   width: 100%;
   min-width: 0;
 
@@ -63,17 +66,16 @@
   flex: 1;
   min-width: 0;
 
-  color: #000;
+  color: var(--gray-900);
   text-align: left;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-style: normal;
-  font-weight: 400;
+  font-weight: 500;
   line-height: normal;
 
   margin: 0;
-  margin-left: 15px;
-  margin-right: 8px;
+  margin-right: var(--space-2);
 
   white-space: nowrap;
   overflow: hidden;
@@ -83,8 +85,8 @@
 /* .cookbook-user-folder:hover .cookbook-user-complete-foldername { */
 .cookbook-user-complete-foldername {
   position: absolute;
-  left: 15%;
-  top: 100%;
+  left: var(--space-11);
+  top: calc(100% + var(--space-1));
   z-index: 2;
 
   margin: 0;
@@ -94,25 +96,28 @@
   justify-content: center;
   align-items: center;
   overflow-wrap: anywhere;
-  padding: 5px;
-  background: rgba(0, 0, 0, 0.7);
+  padding: 6px 10px;
+  background: rgba(26, 26, 26, 0.94);
   color: #fff;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   white-space: pre-wrap;
-  font-size: 12px;
+  font-size: var(--text-xs);
 
   transition: 0.3s ease;
 }
 
 .cookbook-user-items-count {
   flex-shrink: 0;
-
-  color: #ababab;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--gray-700);
   text-align: right;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: var(--text-xs);
   font-style: normal;
-  font-weight: 400;
+  font-weight: 600;
   line-height: normal;
   text-transform: capitalize;
 
@@ -123,23 +128,33 @@
 
 .cookbook-favorite-star {
   flex-shrink: 0;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
-  padding: 4px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
   margin: 0;
   border: none;
+  border-radius: var(--radius-md);
   background: none;
   cursor: pointer;
 
-  color: #ababab;
-  transition: color 0.15s ease;
+  color: var(--gray-600);
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .cookbook-favorite-star:hover {
-  color: #4a4a4a;
+  color: #f5c518;
+  background: transparent;
+}
+
+.cookbook-favorite-star:focus,
+.cookbook-favorite-star:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
 .cookbook-favorite-star .star-icon {
@@ -148,36 +163,38 @@
 }
 
 .cookbook-favorite-star .star-icon.filled {
-  color: #dc2100;
+  color: var(--accent);
 }
 
 .cookbook-favorite-star:hover .star-icon.filled {
-  color: #b01b00;
+  color: #f5c518;
 }
 
-.cookbook-user-dots {
-  margin: 0;
-  margin-left: 20px;
-  padding: 5px;
-
-  cursor: pointer;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: none;
-  background: none;
+.cookbook-favorite-star:hover .star-icon.star-outline {
+  fill: #f5c518;
+  stroke: #f5c518;
 }
 
-.cookbook-user-dots svg {
-  width: 4px;
-  height: 19px;
+.cookbook-user-folder .etc-button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: var(--radius-md);
+  color: var(--gray-700);
 }
 
-.cookbook-user-dots:hover {
-  background-color: #beccd4;
-  border-radius: 5px;
-  transition: background-color ease-in 0.1s;
+.cookbook-user-folder .etc-button:hover {
+  background: var(--gray-200);
+  color: var(--gray-900);
+}
+
+.cookbook-user-folder .etc-content .etc-options {
+  left: auto;
+  right: 0;
+  top: calc(100% + var(--space-1));
+  min-width: 170px;
+  border: 1px solid var(--gray-300);
+  box-shadow: 0 14px 30px rgba(17, 24, 39, 0.12);
 }
 
 /*  DOTS IS CLICKED   */

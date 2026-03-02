@@ -53,7 +53,7 @@ export async function addGroceryItem(itemText: string) {
 
 export async function addGroceryItems(itemTexts: string[]) {
   const { userId } = await auth();
-  if (!userId) return { error: "Unauthorized", added: 0, skipped: 0 };
+  if (!userId) return { error: "Unauthorized", added: 0, skipped: 0, addedItems: [] as string[] };
 
   const supabase = await createClient();
   const { data: existing } = await supabase
@@ -76,12 +76,57 @@ export async function addGroceryItems(itemTexts: string[]) {
   }
 
   if (toInsert.length === 0) {
-    return { error: null, added: 0, skipped: itemTexts.filter((t) => t.trim()).length };
+    return {
+      error: null,
+      added: 0,
+      skipped: itemTexts.filter((t) => t.trim()).length,
+      addedItems: [] as string[],
+    };
   }
 
   const { error } = await supabase.from("grocery_items").insert(toInsert);
-  if (error) return { error: error.message, added: 0, skipped: 0 };
-  return { error: null, added: toInsert.length, skipped: itemTexts.filter((t) => t.trim()).length - toInsert.length };
+  if (error) return { error: error.message, added: 0, skipped: 0, addedItems: [] as string[] };
+  return {
+    error: null,
+    added: toInsert.length,
+    skipped: itemTexts.filter((t) => t.trim()).length - toInsert.length,
+    addedItems: toInsert.map((i) => i.item_text),
+  };
+}
+
+export async function removeGroceryItems(itemTexts: string[]) {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized", removed: 0 };
+
+  const normalizedToRemove = new Set(
+    itemTexts.map((t) => normalizeItemText(t)).filter(Boolean)
+  );
+  if (normalizedToRemove.size === 0) return { error: null, removed: 0 };
+
+  const supabase = await createClient();
+  const { data, error: fetchError } = await supabase
+    .from("grocery_items")
+    .select("id, item_text")
+    .eq("user_id", userId);
+
+  if (fetchError) return { error: fetchError.message, removed: 0 };
+
+  const idsToDelete = (data ?? [])
+    .filter((row) =>
+      normalizedToRemove.has(normalizeItemText((row as { item_text: string }).item_text ?? ""))
+    )
+    .map((row) => (row as { id: string }).id);
+
+  if (idsToDelete.length === 0) return { error: null, removed: 0 };
+
+  const { error } = await supabase
+    .from("grocery_items")
+    .delete()
+    .eq("user_id", userId)
+    .in("id", idsToDelete);
+
+  if (error) return { error: error.message, removed: 0 };
+  return { error: null, removed: idsToDelete.length };
 }
 
 export async function toggleGroceryItemChecked(id: string) {
@@ -121,6 +166,58 @@ export async function clearCheckedGroceryItems() {
 
   if (error) return { error: error.message };
   return { error: null };
+}
+
+export async function checkAllGroceryItems() {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized", updated: 0 };
+
+  const supabase = await createClient();
+  const { data, error: fetchError } = await supabase
+    .from("grocery_items")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("checked", false);
+
+  if (fetchError) return { error: fetchError.message, updated: 0 };
+
+  const ids = (data ?? []).map((row) => (row as { id: string }).id);
+  if (ids.length === 0) return { error: null, updated: 0 };
+
+  const { error } = await supabase
+    .from("grocery_items")
+    .update({ checked: true })
+    .eq("user_id", userId)
+    .in("id", ids);
+
+  if (error) return { error: error.message, updated: 0 };
+  return { error: null, updated: ids.length };
+}
+
+export async function uncheckAllGroceryItems() {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized", updated: 0 };
+
+  const supabase = await createClient();
+  const { data, error: fetchError } = await supabase
+    .from("grocery_items")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("checked", true);
+
+  if (fetchError) return { error: fetchError.message, updated: 0 };
+
+  const ids = (data ?? []).map((row) => (row as { id: string }).id);
+  if (ids.length === 0) return { error: null, updated: 0 };
+
+  const { error } = await supabase
+    .from("grocery_items")
+    .update({ checked: false })
+    .eq("user_id", userId)
+    .in("id", ids);
+
+  if (error) return { error: error.message, updated: 0 };
+  return { error: null, updated: ids.length };
 }
 
 export async function deleteGroceryItem(id: string) {

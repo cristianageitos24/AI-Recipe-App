@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { RecipeRow } from "@/lib/types";
-import { addGroceryItem, addGroceryItems } from "@/app/actions/grocery-items";
+import { addGroceryItem, addGroceryItems, removeGroceryItems } from "@/app/actions/grocery-items";
 import "@/app/styling/RecipeFullView.css";
 
 function capitalizeFirstLetter(string: string): string {
@@ -29,13 +29,32 @@ function AddToGroceryIcon() {
   );
 }
 
+function ViewSourceIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M14 3h7v7" />
+      <path d="M10 14 21 3" />
+      <path d="M21 14v7h-7" />
+      <path d="M3 10V3h7" />
+      <path d="M3 21h7v-7" />
+      <path d="M3 3l7 7" />
+    </svg>
+  );
+}
+
 export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
   const [activeTab, setActiveTab] = useState<"ingredients" | "steps">("ingredients");
   const [groceryFeedback, setGroceryFeedback] = useState<string | null>(null);
+  const [addAllBusy, setAddAllBusy] = useState(false);
+  const [addAllDone, setAddAllDone] = useState(false);
+  const [lastAddedItems, setLastAddedItems] = useState<string[]>([]);
   const ingredientLines = (recipeData.ingredient_lines ?? "").split("***").map((s) => s.trim()).filter(Boolean);
   const stepsLines = (recipeData.steps ?? "").trim()
     ? (recipeData.steps ?? "").split("***").map((s) => s.trim()).filter(Boolean)
     : [];
+  const cookMinutes = recipeData.time_in_minutes < 1 ? 1 : recipeData.time_in_minutes;
+  const cookTimeTone =
+    cookMinutes < 10 ? "fast" : cookMinutes > 30 ? "slow" : "medium";
 
   async function handleAddIngredient(item: string) {
     const res = await addGroceryItem(item);
@@ -50,15 +69,35 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
   }
 
   async function handleAddAllIngredients() {
+    if (addAllDone || addAllBusy) return;
+    setAddAllBusy(true);
     const res = await addGroceryItems(ingredientLines);
     if (res.error) {
       setGroceryFeedback(res.error);
     } else if (res.added === 0 && res.skipped > 0) {
       setGroceryFeedback("All already in list");
     } else if (res.added > 0) {
-      setGroceryFeedback(`Added ${res.added} item${res.added === 1 ? "" : "s"}`);
+      setAddAllDone(true);
+      setLastAddedItems(res.addedItems ?? []);
+      setGroceryFeedback(null);
     }
+    setAddAllBusy(false);
     setTimeout(() => setGroceryFeedback(null), 2000);
+  }
+
+  async function handleUndoAddAll() {
+    if (addAllBusy || lastAddedItems.length === 0) return;
+    setAddAllBusy(true);
+    const res = await removeGroceryItems(lastAddedItems);
+    if (res.error) {
+      setGroceryFeedback(res.error);
+      setTimeout(() => setGroceryFeedback(null), 2000);
+      setAddAllBusy(false);
+      return;
+    }
+    setAddAllDone(false);
+    setLastAddedItems([]);
+    setAddAllBusy(false);
   }
 
   return (
@@ -93,9 +132,14 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
       </div>
       <div className="full-information">
         <div className="bubble-content">
-          {recipeData.cuisine_type && <p>{capitalizeFirstLetter(recipeData.cuisine_type)}</p>}
-          {recipeData.meal_type && <p>{capitalizeFirstLetter(recipeData.meal_type)}</p>}
-          <p>{recipeData.calories} cal</p>
+          <div className="recipe-fullview-pill-row">
+            {recipeData.cuisine_type && <p>{capitalizeFirstLetter(recipeData.cuisine_type)}</p>}
+            {recipeData.meal_type && <p>{capitalizeFirstLetter(recipeData.meal_type)}</p>}
+            <p>{recipeData.calories} cal</p>
+            <p className={`recipe-fullview-cooktime-pill recipe-fullview-cooktime-pill--${cookTimeTone}`}>
+              {cookMinutes} min
+            </p>
+          </div>
           {recipeData.website_url && (
             <a
               href={recipeData.website_url}
@@ -104,13 +148,9 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
               className="recipe-fullview-view-source"
               onClick={(e) => e.stopPropagation()}
             >
+              <ViewSourceIcon />
               View source
             </a>
-          )}
-          {recipeData.time_in_minutes < 1 ? (
-            <p>1 min</p>
-          ) : (
-            <p>{recipeData.time_in_minutes} min</p>
           )}
         </div>
         <div className="recipe-fullview-tabs">
@@ -133,16 +173,32 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
           {activeTab === "ingredients" && (
             <section className="recipe-section recipe-section-ingredients">
               {ingredientLines.length > 0 && (
-                <button
-                  type="button"
-                  className="recipe-fullview-add-all-grocery"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAddAllIngredients();
-                  }}
-                >
-                  Add all to grocery list
-                </button>
+                <div className="recipe-fullview-grocery-actions">
+                  <button
+                    type="button"
+                    className={`recipe-fullview-add-all-grocery ${addAllDone ? "is-done" : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddAllIngredients();
+                    }}
+                    disabled={addAllDone || addAllBusy}
+                  >
+                    {addAllDone ? "Added to grocery list" : addAllBusy ? "Adding..." : "Add all to grocery list"}
+                  </button>
+                  {addAllDone && (
+                    <button
+                      type="button"
+                      className="recipe-fullview-undo-grocery"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUndoAddAll();
+                      }}
+                      disabled={addAllBusy}
+                    >
+                      Undo
+                    </button>
+                  )}
+                </div>
               )}
               {groceryFeedback && (
                 <p role="status" className="recipe-fullview-grocery-feedback">

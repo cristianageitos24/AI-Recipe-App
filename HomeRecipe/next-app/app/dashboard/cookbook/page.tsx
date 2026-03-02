@@ -36,7 +36,7 @@ export default function CookbookPage() {
   }, []);
 
   return (
-    <div className="right-side-panel">
+    <div className="main-panel">
       <DndProvider backend={HTML5Backend}>
         <div className="cookbook-canvas">
         {isLoading ? (
@@ -49,6 +49,7 @@ export default function CookbookPage() {
             transition={{ duration: 0.2, ease: "easeOut" }}
           >
             <CuratedCookbooks />
+            <Cookbooks initialFoldersData={foldersData} />
             <div className="tabcookbook-show-liked-recipes">
               <h1 className="sub-header-title">Liked Recipes</h1>
               <div className="tabcookbook-liked-scroll">
@@ -56,7 +57,11 @@ export default function CookbookPage() {
                   <motion.div
                     key={recipe.id ?? index}
                     className="tabcookbook-liked-card-wrap"
-                    whileHover={{ scale: 1.02 }}
+                    whileHover={{
+                      y: -4,
+                      boxShadow: "0 10px 24px rgba(0, 0, 0, 0.12)",
+                    }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
                   >
                     <RecipeListCard
                       recipe={recipe}
@@ -67,7 +72,6 @@ export default function CookbookPage() {
                 ))}
               </div>
             </div>
-            <Cookbooks initialFoldersData={foldersData} />
           </motion.div>
         ) : (
           <motion.div
@@ -77,12 +81,12 @@ export default function CookbookPage() {
             transition={{ duration: 0.2, ease: "easeOut" }}
           >
             <CuratedCookbooks />
+            <Cookbooks initialFoldersData={foldersData} />
             <div className="tabcookbook-no-recipes-default">
               <h2>Looks like you haven&apos;t found any favorite recipes yet!</h2>
               <img src="/images/tabcookbook-default.png" alt="No recipes" />
               <h2>Explore our dishes and start liking recipes to build your collection!</h2>
             </div>
-            <Cookbooks initialFoldersData={foldersData} />
           </motion.div>
         )}
         </div>
