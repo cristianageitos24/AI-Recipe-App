@@ -10,11 +10,13 @@ import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
 import { resolve } from "path";
 import { hostname } from "os";
-import { writeFile, unlink, mkdir } from "fs/promises";
+import { existsSync, readdirSync } from "fs";
+import { writeFile, unlink, mkdir, readFile } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 import {
   createOCRProvider,
+  extractThumbnailFrame,
   getVideoDuration,
   processVideo,
   withTimeout,
@@ -39,6 +41,15 @@ if (!supabaseUrl || !supabaseSecretKey) {
   console.error("  SUPABASE_SECRET_KEY or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:", supabaseSecretKey ? "✓" : "✗");
   process.exit(1);
 }
+
+const supabaseHost =
+  (() => {
+    try {
+      return new URL(supabaseUrl).host;
+    } catch {
+      return "invalid-supabase-url";
+    }
+  })();
 
 // Configuration
 const MAX_ATTEMPTS = 3;
@@ -85,6 +96,9 @@ interface VideoJob {
   user_id: string;
   status: string;
   video_url: string;
+  source_type?: "upload" | "url";
+  source_url?: string | null;
+  source_platform?: string | null;
   tiktok_url: string | null;
   attempts: number;
   locked_at: string | null;
@@ -208,20 +222,22 @@ async function updateJobTranscript(jobId: string, transcriptText: string | null)
 }
 
 /**
- * Mark job as completed (with optional extracted recipe from AI reasoning)
+ * Mark job as completed (with optional extracted recipe and thumbnail URL)
  */
 async function markJobCompleted(
   jobId: string,
   ocrText: string,
   processingMs: number,
   transcriptText: string | null,
-  extractedRecipe: ExtractedRecipe | null
+  extractedRecipe: ExtractedRecipe | null,
+  thumbnailUrl: string | null = null
 ) {
   log("INFO", "Job completed", {
     jobId,
     processingMs,
     textLength: ocrText.length,
     hasExtractedRecipe: extractedRecipe != null,
+    hasThumbnail: thumbnailUrl != null,
   });
 
   const { error } = await supabase
@@ -231,6 +247,7 @@ async function markJobCompleted(
       ocr_text: ocrText,
       transcript_text: transcriptText,
       extracted_recipe: extractedRecipe,
+      thumbnail_url: thumbnailUrl,
       processing_ms: processingMs,
       finished_at: new Date().toISOString(),
       locked_at: null,
@@ -246,8 +263,65 @@ async function markJobCompleted(
   }
 }
 
+const VIDEO_THUMBNAIL_TIME_SEC = parseInt(
+  process.env.VIDEO_THUMBNAIL_TIME_SEC || "1",
+  10
+);
+
 /**
- * Download video from Supabase Storage
+ * Extract one color frame, upload to recipe-covers bucket, return public URL or null on failure.
+ */
+async function extractAndUploadThumbnail(
+  videoPath: string,
+  jobId: string,
+  userId: string,
+  durationSeconds: number
+): Promise<string | null> {
+  const timeSec = Math.min(
+    Math.max(VIDEO_THUMBNAIL_TIME_SEC, 0),
+    Math.max(0, durationSeconds - 0.5)
+  );
+  const thumbPath = join(tmpdir(), `thumb-${jobId}-${Date.now()}.png`);
+  try {
+    await extractThumbnailFrame(videoPath, thumbPath, timeSec);
+    const storagePath = `${userId}/${jobId}/cover.png`;
+    const { error: uploadError } = await supabase.storage
+      .from("recipe-covers")
+      .upload(storagePath, await readFile(thumbPath), {
+        contentType: "image/png",
+        upsert: true,
+      });
+    await unlink(thumbPath);
+    if (uploadError) {
+      log("ERROR", "Thumbnail upload failed", {
+        jobId,
+        bucket: "recipe-covers",
+        storagePath,
+        timeSec,
+        supabaseHost,
+        error: uploadError.message,
+      });
+      return null;
+    }
+    const { data } = supabase.storage.from("recipe-covers").getPublicUrl(storagePath);
+    return data.publicUrl;
+  } catch (err: any) {
+    log("ERROR", "Thumbnail extraction/upload failed", {
+      jobId,
+      bucket: "recipe-covers",
+      timeSec,
+      supabaseHost,
+      error: err?.message ?? String(err),
+    });
+    try {
+      await unlink(thumbPath);
+    } catch (_) {}
+    return null;
+  }
+}
+
+/**
+ * Download video from Supabase Storage (upload-based jobs)
  */
 async function downloadVideo(videoPath: string): Promise<string> {
   const tempPath = join(tmpdir(), `video-${Date.now()}-${Math.random().toString(36).substring(7)}.mp4`);
@@ -270,6 +344,58 @@ async function downloadVideo(videoPath: string): Promise<string> {
 }
 
 /**
+ * Resolve path to yt-dlp executable so the worker finds it even when PATH is not set
+ * (e.g. when run from a background process that didn't inherit updated user PATH).
+ */
+function getYtDlpExecutable(): string {
+  const envPath = process.env.YT_DLP_PATH || process.env.YT_DLP_EXECUTABLE;
+  if (envPath && existsSync(envPath)) return envPath;
+  if (process.platform === "win32" && process.env.APPDATA) {
+    const base = join(process.env.APPDATA, "Python");
+    try {
+      const dirs = readdirSync(base, { withFileTypes: true }).filter((d: { isDirectory: () => boolean; name: string }) => d.isDirectory() && d.name.startsWith("Python"));
+      for (const d of dirs) {
+        const exe = join(base, d.name, "Scripts", "yt-dlp.exe");
+        if (existsSync(exe)) return exe;
+      }
+    } catch (_) {}
+  }
+  return "yt-dlp";
+}
+
+/**
+ * Download a TikTok video for URL-based jobs.
+ * Uses yt-dlp (from YT_DLP_PATH, common install locations, or PATH).
+ */
+async function downloadTikTokVideo(tiktokUrl: string, jobId: string): Promise<string> {
+  const tempDir = tmpdir();
+  const tempPath = join(
+    tempDir,
+    `tiktok-${jobId}-${Date.now()}-${Math.random().toString(36).substring(7)}.mp4`
+  );
+
+  const ytDlp = getYtDlpExecutable();
+  log("INFO", "Downloading TikTok video", { jobId, tiktokUrl, tempPath, ytDlp });
+
+  const { execa } = await import("execa");
+
+  try {
+    await execa(ytDlp, ["-f", "mp4", "-o", tempPath, tiktokUrl], {
+      timeout: PROCESSING_TIMEOUT_MS,
+    });
+  } catch (error: any) {
+    log("ERROR", "Failed to download TikTok video", {
+      jobId,
+      tiktokUrl,
+      error: error?.message ?? String(error),
+    });
+    throw new Error("Failed to download TikTok video. The video may be private or unsupported.");
+  }
+
+  return tempPath;
+}
+
+/**
  * Process a single job
  */
 async function processJob(job: VideoJob): Promise<void> {
@@ -285,8 +411,16 @@ async function processJob(job: VideoJob): Promise<void> {
       attempts: job.attempts,
     });
 
-    // Download video
-    videoPath = await downloadVideo(job.video_url);
+    // Choose video source: direct upload vs URL-based TikTok job
+    if (job.source_type === "url" || (!job.video_url && job.tiktok_url)) {
+      if (!job.tiktok_url) {
+        throw new Error("No TikTok URL provided for URL-based job");
+      }
+      videoPath = await downloadTikTokVideo(job.tiktok_url, job.id);
+    } else {
+      // Legacy upload-based flow: download from Supabase Storage
+      videoPath = await downloadVideo(job.video_url);
+    }
 
     // Check video duration
     const duration = await getVideoDuration(videoPath);
@@ -296,6 +430,19 @@ async function processJob(job: VideoJob): Promise<void> {
       throw new Error(
         `Video duration (${duration}s) exceeds maximum (${MAX_DURATION_SECONDS}s)`
       );
+    }
+
+    // Thumbnail: extract one color frame and upload to recipe-covers (non-fatal on failure)
+    let thumbnailUrl: string | null = null;
+    try {
+      thumbnailUrl = await extractAndUploadThumbnail(
+        videoPath,
+        job.id,
+        job.user_id,
+        duration
+      );
+    } catch (thumbErr: any) {
+      log("ERROR", "Thumbnail failed", { jobId: job.id, error: thumbErr?.message ?? thumbErr });
     }
 
     // Transcription: extract audio and transcribe (non-fatal on failure)
@@ -370,7 +517,14 @@ async function processJob(job: VideoJob): Promise<void> {
     }
 
     // Mark as completed
-    await markJobCompleted(job.id, ocrText, processingMs, transcriptText, extractedRecipe);
+    await markJobCompleted(
+      job.id,
+      ocrText,
+      processingMs,
+      transcriptText,
+      extractedRecipe,
+      thumbnailUrl
+    );
   } catch (error: any) {
     const errorMessage = error.message || "Unknown error";
     log("ERROR", "Job processing error", {
