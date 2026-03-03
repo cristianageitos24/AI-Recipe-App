@@ -5,7 +5,7 @@ DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM storage.buckets WHERE name = 'recipe-covers') THEN
     INSERT INTO storage.buckets (id, name, public)
-    VALUES (gen_random_uuid(), 'recipe-covers', true);
+    VALUES ('recipe-covers', 'recipe-covers', true);
   ELSE
     UPDATE storage.buckets SET public = true WHERE name = 'recipe-covers';
   END IF;

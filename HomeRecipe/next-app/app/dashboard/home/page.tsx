@@ -15,6 +15,7 @@ import {
 } from "@/app/actions/search";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/TabHome.css";
+import "@/app/styling/VideoUpload.css";
 
 type FolderWithCount = { folderName: string; count: number };
 

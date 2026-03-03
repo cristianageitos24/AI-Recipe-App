@@ -42,6 +42,15 @@ if (!supabaseUrl || !supabaseSecretKey) {
   process.exit(1);
 }
 
+const supabaseHost =
+  (() => {
+    try {
+      return new URL(supabaseUrl).host;
+    } catch {
+      return "invalid-supabase-url";
+    }
+  })();
+
 // Configuration
 const MAX_ATTEMPTS = 3;
 const MAX_DURATION_SECONDS = parseInt(
@@ -284,7 +293,14 @@ async function extractAndUploadThumbnail(
       });
     await unlink(thumbPath);
     if (uploadError) {
-      log("ERROR", "Thumbnail upload failed", { jobId, error: uploadError.message });
+      log("ERROR", "Thumbnail upload failed", {
+        jobId,
+        bucket: "recipe-covers",
+        storagePath,
+        timeSec,
+        supabaseHost,
+        error: uploadError.message,
+      });
       return null;
     }
     const { data } = supabase.storage.from("recipe-covers").getPublicUrl(storagePath);
@@ -292,6 +308,9 @@ async function extractAndUploadThumbnail(
   } catch (err: any) {
     log("ERROR", "Thumbnail extraction/upload failed", {
       jobId,
+      bucket: "recipe-covers",
+      timeSec,
+      supabaseHost,
       error: err?.message ?? String(err),
     });
     try {
