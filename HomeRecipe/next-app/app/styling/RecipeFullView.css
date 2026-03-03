@@ -6,10 +6,12 @@
   left: 0;
   right: 0;
   margin: 0 auto;
-  width: 390px;
-  max-height: 88vh;
-  overflow-y: auto;
-  overflow-x: hidden;
+  width: min(94vw, 980px);
+  height: min(60vh, 620px);
+  max-height: 60vh;
+  display: grid;
+  grid-template-columns: minmax(320px, 44%) minmax(0, 56%);
+  overflow: hidden;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   background: var(--gray-200);
@@ -52,13 +54,13 @@
 .more-information-image-box {
   position: relative;
   margin: 0;
-
-  height: 230px;
+  height: 100%;
+  min-height: 0;
   width: 100%;
 
   cursor: auto;
   border: 1px solid transparent;
-  border-radius: 10px 10px 0px 0px;
+  border-radius: 10px 0 0 10px;
 
   display: flex;
   justify-content: center;
@@ -74,7 +76,7 @@
   width: 100%;
 
   background: rgba(0, 0, 0, 0.4);
-  border-radius: 10px 10px 0px 0px;
+  border-radius: 10px 0 0 10px;
 }
 
 .more-information-image-box .more-info-image,
@@ -85,7 +87,7 @@
   height: 100%;
   width: 100%;
 
-  border-radius: 10px 10px 0px 0px;
+  border-radius: 10px 0 0 10px;
 }
 
 .more-information-image-box .more-info-image {
@@ -122,16 +124,27 @@
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
 
   background: #e7ecef;
-  border-radius: 0px 0px 10px 10px;
-
+  border-radius: 0 10px 10px 0;
+  min-height: 0;
+  overflow-y: auto;
   padding-bottom: 10px;
 }
 
 .full-information .bubble-content {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
+  gap: var(--space-2);
   padding: 10px;
+  position: relative;
+  min-height: 42px;
+}
+
+.recipe-fullview-pill-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
 .full-information .bubble-content p {
@@ -156,23 +169,43 @@
 }
 
 .full-information .bubble-content .recipe-fullview-view-source {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   margin: 0;
-  background: var(--accent-muted-bg);
-  border-radius: 5px;
+  background: var(--gray-950);
+  border-radius: var(--radius-sm);
   padding: 8px 10px;
   font-family: var(--font-body);
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 500;
   line-height: 11px;
-  color: var(--accent);
-  text-decoration: underline;
+  color: var(--color-bg);
+  text-decoration: none;
   cursor: pointer;
   display: flex;
   align-items: center;
+  gap: 6px;
 }
 
 .full-information .bubble-content .recipe-fullview-view-source:hover {
-  color: var(--gray-900);
+  background: var(--gray-800);
+  color: var(--color-bg);
+}
+
+.recipe-fullview-cooktime-pill--fast {
+  background: var(--success-bg) !important;
+  color: var(--success-fg) !important;
+}
+
+.recipe-fullview-cooktime-pill--medium {
+  background: var(--warning-bg) !important;
+  color: var(--warning-fg) !important;
+}
+
+.recipe-fullview-cooktime-pill--slow {
+  background: var(--error-bg) !important;
+  color: var(--error-fg) !important;
 }
 
 /* Tabs: Ingredients (left) | Steps (right) */
@@ -243,7 +276,7 @@
   display: block;
   width: 100%;
   padding: var(--space-2) var(--space-4);
-  margin-bottom: var(--space-3);
+  margin-bottom: 0;
   background: var(--accent-muted-bg);
   color: var(--accent);
   border: none;
@@ -257,6 +290,43 @@
 .recipe-fullview-add-all-grocery:hover {
   background: var(--gray-200);
   color: var(--gray-900);
+}
+
+.recipe-fullview-grocery-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.recipe-fullview-add-all-grocery.is-done {
+  background: var(--gray-300);
+  color: var(--gray-700);
+}
+
+.recipe-fullview-add-all-grocery:disabled {
+  cursor: default;
+}
+
+.recipe-fullview-undo-grocery {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-bg);
+  color: var(--gray-900);
+  border: 1px solid var(--gray-400);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.recipe-fullview-undo-grocery:hover:not(:disabled) {
+  background: var(--gray-200);
+}
+
+.recipe-fullview-undo-grocery:disabled {
+  opacity: 0.7;
+  cursor: default;
 }
 
 .recipe-fullview-grocery-feedback {
@@ -416,6 +486,34 @@
   width: 12px;
   height: 12px;
   margin-top: -1px;
+}
+
+@media screen and (max-width: 900px) {
+  .more-information-container {
+    width: min(96vw, 390px);
+    height: auto;
+    max-height: 88vh;
+    display: block;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .more-information-image-box {
+    min-height: 230px;
+    height: 230px;
+    border-radius: 10px 10px 0 0;
+  }
+
+  .more-information-image-box .more-info-image-blur,
+  .more-information-image-box .more-info-image,
+  .more-information-image-box .more-info-image-placeholder {
+    border-radius: 10px 10px 0 0;
+  }
+
+  .full-information {
+    border-radius: 0 0 10px 10px;
+    overflow: visible;
+  }
 }
 
 .recipe-fullview-openlink-btn:hover {

@@ -59,6 +59,31 @@
   flex-wrap: wrap;
 }
 
+.grocery-check-all-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-fg);
+  cursor: pointer;
+  user-select: none;
+}
+
+.grocery-check-all-row.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.grocery-check-all-checkbox {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
 .grocery-btn-secondary {
   padding: var(--space-2) var(--space-4);
   background: var(--gray-200);

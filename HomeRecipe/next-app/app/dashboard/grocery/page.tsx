@@ -7,6 +7,8 @@ import {
   addGroceryItem,
   toggleGroceryItemChecked,
   clearCheckedGroceryItems,
+  checkAllGroceryItems,
+  uncheckAllGroceryItems,
 } from "@/app/actions/grocery-items";
 import { createGroceryTrip } from "@/app/actions/grocery-trips";
 import "@/app/styling/GroceryList.css";
@@ -96,6 +98,18 @@ export default function GroceryPage() {
     setItems((prev) => prev.filter((i) => !i.checked));
   }
 
+  async function handleToggleAll() {
+    if (items.length === 0) return;
+    const allChecked = items.every((i) => i.checked);
+    const res = allChecked ? await uncheckAllGroceryItems() : await checkAllGroceryItems();
+    if (res.error) {
+      setFeedback(res.error);
+      setTimeout(() => setFeedback(null), 3000);
+      return;
+    }
+    setItems((prev) => prev.map((i) => ({ ...i, checked: !allChecked })));
+  }
+
   function getPlannedDate(): string | null {
     if (calendarMode === "date") {
       return calendarDate || null;
@@ -122,9 +136,10 @@ export default function GroceryPage() {
   const uncheckedItems = items.filter((i) => !i.checked);
   const checkedItems = items.filter((i) => i.checked);
   const hasChecked = checkedItems.length > 0;
+  const allChecked = items.length > 0 && uncheckedItems.length === 0;
 
   return (
-    <div className="right-side-panel">
+    <div className="main-panel">
       <div className="grocery-page">
         <h1>Grocery List</h1>
         <div className="grocery-add-row">
@@ -167,6 +182,17 @@ export default function GroceryPage() {
             Clear checked
           </button>
         </div>
+        <label className={`grocery-check-all-row ${items.length === 0 ? "disabled" : ""}`}>
+          <input
+            type="checkbox"
+            className="grocery-check-all-checkbox"
+            checked={allChecked}
+            onChange={handleToggleAll}
+            disabled={items.length === 0}
+            aria-label={allChecked ? "Uncheck all grocery items" : "Check all grocery items"}
+          />
+          <span>{allChecked ? "Uncheck all" : "Check all"}</span>
+        </label>
         {isLoading ? (
           <p className="grocery-empty">Loading...</p>
         ) : items.length === 0 ? (

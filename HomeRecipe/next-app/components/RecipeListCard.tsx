@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { createPortal } from "react-dom";
 import { HeartButton } from "@/components/HeartButton";
 import { RecipeFullView } from "@/components/RecipeFullView";
 import { recipeRowToProcessed } from "@/lib/processRecipeData";
@@ -17,11 +18,10 @@ function RecipeImage({
   imageUrl: string | null | undefined;
   alt: string;
 }) {
-  const [imageError, setImageError] = useState(false);
-  useEffect(() => {
-    setImageError(false);
-  }, [imageUrl]);
-  if (!imageUrl || imageError) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const src = imageUrl ?? null;
+
+  if (!src || failedUrl === src) {
     return (
       <img
         className="image image-placeholder"
@@ -34,9 +34,9 @@ function RecipeImage({
   return (
     <img
       className="image"
-      src={imageUrl}
+      src={src}
       alt={alt}
-      onError={() => setImageError(true)}
+      onError={() => setFailedUrl(src)}
     />
   );
 }
@@ -56,6 +56,7 @@ export function RecipeListCard({
 }: RecipeListCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const info = recipeRowToProcessed(recipe);
+  const canUseDOM = typeof window !== "undefined";
 
   const handleOpen = () => setIsModalOpen(true);
 
@@ -92,7 +93,7 @@ export function RecipeListCard({
           {recipe.time_in_minutes < 1 ? "1" : recipe.time_in_minutes} min
         </p>
       </div>
-      {isModalOpen && (
+      {canUseDOM && isModalOpen && createPortal(
         <div
           className="recipe-full-view-overlay"
           onClick={() => setIsModalOpen(false)}
@@ -103,7 +104,8 @@ export function RecipeListCard({
           <div className="recipe-full-view-scroll-wrapper" onClick={(e) => e.stopPropagation()}>
             <RecipeFullView recipeData={recipe} onClose={() => setIsModalOpen(false)} />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

@@ -245,7 +245,7 @@ export default function CookbookFolderPage() {
   }
 
   return (
-    <div className="right-side-panel">
+    <div className="main-panel">
       <div className="bttn-titles">
         <button type="button" className="back-bttn" onClick={() => router.push("/dashboard/cookbook")}>
           Cookbooks

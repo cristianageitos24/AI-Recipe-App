@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -15,6 +15,8 @@ import { getOrCreateRecipe } from "@/app/actions/recipes";
 import { processRecipeData, toRecipePayload } from "@/lib/processRecipeData";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/TabCalendar.css";
+import "@/app/styling/TabCalendarHeader.css";
+import "@/app/styling/CalendarRecipeCard.css";
 import "@/app/styling/EventPopup.css";
 import "@/app/styling/EventSearchOptions.css";
 
@@ -28,7 +30,21 @@ type CalendarEvent = {
   allDay: boolean;
   editable: boolean;
   eventType?: "recipe" | "grocery";
+  calories?: number | null;
+  cuisineType?: string | null;
+  mealType?: string | null;
+  timeInMinutes?: number | null;
 };
+
+function capitalizeForCard(input?: string | null): string {
+  if (!input) return "";
+  return input
+    .split("/")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("/");
+}
 
 function mapEvents(
   mealDates: Array<{ date: string; recipes: Array<RecipeRow & { eventID?: string }> }>,
@@ -47,6 +63,10 @@ function mapEvents(
         allDay: true,
         editable: true,
         eventType: "recipe",
+        calories: recipe.calories,
+        cuisineType: recipe.cuisine_type,
+        mealType: recipe.meal_type,
+        timeInMinutes: recipe.time_in_minutes,
       });
     }
   }
@@ -61,6 +81,10 @@ function mapEvents(
       allDay: true,
       editable: false,
       eventType: "grocery",
+      calories: null,
+      cuisineType: null,
+      mealType: null,
+      timeInMinutes: null,
     });
   }
   return mapped;
@@ -182,6 +206,10 @@ export default function CalendarPage() {
           title: selectedSearchOption.recipe_label,
           recipeID: selectedSearchOption.recipe_id,
           imageURL: selectedSearchOption.image_url ?? "",
+          calories: selectedSearchOption.calories,
+          cuisineType: selectedSearchOption.cuisine_type,
+          mealType: selectedSearchOption.meal_type,
+          timeInMinutes: selectedSearchOption.time_in_minutes,
         };
         setEvents(next);
       }
@@ -245,6 +273,10 @@ export default function CalendarPage() {
         title: processed.recipeLabel,
         recipeID: payload.recipeID,
         imageURL: processed.imageURL,
+        calories: processed.calories,
+        cuisineType: processed.cuisineType,
+        mealType: processed.mealType,
+        timeInMinutes: processed.timeInMinutes,
       };
       setEvents(next);
     }
@@ -270,6 +302,10 @@ export default function CalendarPage() {
       recipeID: "new",
       imageURL: "https://images.unsplash.com/photo-1485921325833-c519f76c4927?w=400",
       eventType: "recipe",
+      calories: 0,
+      cuisineType: "",
+      mealType: "",
+      timeInMinutes: 0,
     };
     setEvents((prev) => [...prev, newEvent]);
     setClickedEvent(newEvent);
@@ -321,9 +357,114 @@ export default function CalendarPage() {
   const visibleOptions = filteredOptions.filter((r) =>
     r.recipe_label.toLowerCase().includes(inputText.toLowerCase())
   );
+  const upcomingMeals = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return events
+      .filter((event) => event.eventType !== "grocery" && event.title !== "(New event)")
+      .map((event) => ({
+        ...event,
+        dateObj: new Date(`${event.start}T12:00:00`),
+      }))
+      .filter((event) => !Number.isNaN(event.dateObj.getTime()) && event.dateObj >= today)
+      .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
+      .slice(0, 2);
+  }, [events]);
+  const upcomingByDate = useMemo(() => {
+    const grouped: Record<string, Array<(typeof upcomingMeals)[number]>> = {};
+    for (const event of upcomingMeals) {
+      if (!grouped[event.start]) grouped[event.start] = [];
+      grouped[event.start].push(event);
+    }
+    return grouped;
+  }, [upcomingMeals]);
 
   return (
-    <div className="right-side-panel" style={{ position: "relative" }}>
+    <div className="main-panel" style={{ position: "relative" }}>
+      {upcomingMeals.length === 0 ? (
+        <div className="emptycalendar">
+          <p className="tabcalendar-start-title">
+            Embark on your culinary adventure by clicking on any day on the calendar!
+          </p>
+          <img
+            className="tabcalendar-empty-calendar-svg"
+            src="/images/dashboard/empty-calendar.svg"
+            alt="No upcoming meals yet"
+          />
+          <p className="tabcalendar-start-subtitle">
+            Effortlessly organize and select recipes, and your upcoming culinary delights will show right here.
+          </p>
+        </div>
+      ) : (
+        <>
+          <h2 className="calendar-upcoming-title">Upcoming Dishes</h2>
+          <div className="calendar-upcoming-events-container">
+            {Object.entries(upcomingByDate).map(([dateKey, dateEvents]) => {
+              const d = new Date(`${dateKey}T12:00:00`);
+              const day = d.toLocaleDateString(undefined, { day: "2-digit" });
+              const month = d.toLocaleDateString(undefined, { month: "short" }).toUpperCase();
+              return (
+                <div key={dateKey} className="calendar-event-slide">
+                  <div className="calendar-event-date">
+                    <p className="calendar-upcoming-day">{day}</p>
+                    <p className="calendar-upcoming-month">{month}</p>
+                    <hr className="calendar-upcoming-hr" />
+                  </div>
+                  <div className="cards-container">
+                    <div className="scrollable-wrapper">
+                      <ul className="upcoming-meals-container">
+                        {dateEvents.map((event) => {
+                          const minutes = event.timeInMinutes && event.timeInMinutes > 0 ? event.timeInMinutes : 1;
+                          const minutesTone = minutes < 10 ? "fast" : minutes > 30 ? "slow" : "medium";
+                          return (
+                            <li key={event.eventID}>
+                              <article className="calendar-upcoming-recipe-card">
+                                <div
+                                  className="calendar-upcoming-recipe-image"
+                                  style={{
+                                    backgroundImage: `url(${event.imageURL || "/images/recipe-placeholder.png"})`,
+                                  }}
+                                >
+                                  <button
+                                    type="button"
+                                    className="image-hover-bttn"
+                                    onClick={() => {
+                                      setClickedEvent(event);
+                                      setIsEventClicked(true);
+                                      setInputText(event.title === "(New event)" ? "" : event.title);
+                                    }}
+                                  >
+                                    <p>Open Recipe</p>
+                                  </button>
+                                </div>
+                                <div className="calendar-upcoming-recipe-content">
+                                  <h1>{event.title}</h1>
+                                  <div className="calendar-upcoming-recipe-subcontent">
+                                    <p>{capitalizeForCard(event.cuisineType)}</p>
+                                    <p>{capitalizeForCard(event.mealType)}</p>
+                                  </div>
+                                  <div className="small-labels">
+                                    <p>
+                                      <span>{Math.round(event.calories ?? 0)}</span> calories
+                                    </p>
+                                    <p className={`calendar-card-minutes calendar-card-minutes--${minutesTone}`}>
+                                      {minutes} {minutes === 1 ? "minute" : "minutes"}
+                                    </p>
+                                  </div>
+                                </div>
+                              </article>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
       <div className="calendar-app">
         <FullCalendar
           key={calendarKey}

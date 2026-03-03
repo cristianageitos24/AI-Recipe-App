@@ -230,7 +230,7 @@
 
 /*=========== RIGHT SIDE CONTENT ===========*/
 
-.right-side-panel {
+.main-panel {
   background: var(--color-bg-muted);
   /*box-shadow: -5px 0 var(--space-5) 0 var(--overlay-light);*/
   width: 100%;
@@ -244,10 +244,10 @@
   position: relative;
 
   padding: var(--space-10);
-  padding: 40px 25px;
+  padding: 40px 25px 80px;
 }
 
-.right-side-panel::before {
+.main-panel::before {
   content: "";
   position: fixed;
   top: 0;
@@ -334,11 +334,12 @@
     top: var(--space-3);
     right: var(--space-3);
   }
-  .right-side-panel::before {
+  .main-panel::before {
     display: none;
   }
-  .right-side-panel {
+  .main-panel {
     padding: var(--space-5);
+    padding-bottom: 80px;
     border-radius: 0;
   }
 }

@@ -51,7 +51,7 @@ export default function CollectionPage() {
 
   if (!collection) {
     return (
-      <div className="right-side-panel">
+      <div className="main-panel">
         <button
           type="button"
           className="back-bttn"
@@ -65,7 +65,7 @@ export default function CollectionPage() {
   }
 
   return (
-    <div className="right-side-panel">
+    <div className="main-panel">
       <div className="bttn-titles">
         <button
           type="button"
