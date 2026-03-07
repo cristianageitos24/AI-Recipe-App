@@ -1,0 +1,8 @@
+services:
+  recipe-url-import:
+    build:
+      context: ./services/recipe-url-import
+    container_name: recipe-url-import
+    ports:
+      - "8000:8000"
+    restart: unless-stopped

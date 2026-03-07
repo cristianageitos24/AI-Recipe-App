@@ -37,6 +37,11 @@ const navItems = [
     label: "Video Upload",
     icon: "/images/dashboard/videouploadicon.svg",
   },
+  {
+    href: "/dashboard/import-url",
+    label: "Import URL",
+    icon: "/images/dashboard/openrecipe.svg",
+  },
 ];
 
 export function DashboardNav() {
