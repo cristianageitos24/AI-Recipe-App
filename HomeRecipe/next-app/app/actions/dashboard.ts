@@ -13,7 +13,11 @@ type FolderResults = {
 };
 
 export async function getHomeBootstrap() {
-  const [favRes, folderRes] = await Promise.all([getFavorites(), getFolders()]);
+  const [favRes, folderRes, mealRes] = await Promise.all([
+    getFavorites(),
+    getFolders(),
+    getMealDates(),
+  ]);
 
   const favorites = (favRes.data ?? []) as RecipeRow[];
   const folderResults = (folderRes.data ?? { folders: [], results: {} }) as FolderResults;
@@ -29,11 +33,12 @@ export async function getHomeBootstrap() {
   const suggestedRes = await getSuggestedRecipes(Array.from(savedIds));
 
   return {
-    error: favRes.error ?? folderRes.error ?? suggestedRes.error,
+    error: favRes.error ?? folderRes.error ?? mealRes.error ?? suggestedRes.error,
     data: {
       favorites,
       folders: folderResults.folders,
       results: folderResults.results,
+      mealDates: mealRes.data ?? [],
       suggestedRecipes: (suggestedRes.data ?? []) as RecipeRow[],
     },
   };
