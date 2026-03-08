@@ -172,16 +172,16 @@ export default function ImportRecipeUrlPage() {
 
           <h3>Ingredients</h3>
           <ul>
-            {result.ingredients.map((item) => (
-              <li key={item}>{item}</li>
+            {result.ingredients.map((item, index) => (
+              <li key={`${index}-${item}`}>{item}</li>
             ))}
           </ul>
 
           <hr></hr>
           <h3>Instructions</h3>
           <ol>
-            {steps.map((step) => (
-              <li key={step}>{step}</li>
+            {steps.map((step, index) => (
+              <li key={`${index}-${step}`}>{step}</li>
             ))}
           </ol>
         </article>
