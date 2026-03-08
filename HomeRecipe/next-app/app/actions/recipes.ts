@@ -10,6 +10,9 @@ export async function getOrCreateRecipe(payload: RecipePayload) {
 
   const supabase = await createClient();
 
+  const isUserOwned =
+    payload.recipeID.startsWith("manual-") || payload.recipeID.startsWith("video-recipe-");
+
   const { data: existing } = await supabase
     .from("recipes")
     .select("id")
@@ -17,11 +20,25 @@ export async function getOrCreateRecipe(payload: RecipePayload) {
     .single();
 
   if (existing) {
+    if (isUserOwned) {
+      await supabase
+        .from("recipes")
+        .update({
+          recipe_label: payload.recipe_label,
+          calories: payload.calories,
+          cuisine_type: payload.cuisine_type,
+          meal_type: payload.meal_type,
+          time_in_minutes: payload.time_in_minutes,
+          ingredient_lines: payload.ingredient_lines,
+          steps: payload.steps ?? null,
+          website_url: payload.website_url,
+          image_url: payload.image_url,
+        })
+        .eq("id", existing.id);
+    }
     return { error: null, data: existing };
   }
 
-  const isUserOwned =
-    payload.recipeID.startsWith("manual-") || payload.recipeID.startsWith("video-recipe-");
   const user_id = isUserOwned ? userId : null;
 
   const { data: inserted, error } = await supabase

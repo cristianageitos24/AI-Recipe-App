@@ -2,6 +2,14 @@
 
 This is the main application: Next.js (App Router + TypeScript) with Supabase (Auth + Postgres) and Open Recipes for recipe search.
 
+## Prerequisites
+
+- **Node.js** and **npm** – to run the app and install dependencies.
+- **Video Recipe Extractor (TikTok URL flow):** The video worker needs **yt-dlp** installed and on your PATH so it can download TikTok videos. Install with:
+  - **pip:** `pip install yt-dlp` (ensure the Python Scripts folder is on PATH, e.g. `%APPDATA%\Python\Python*\Scripts` on Windows).
+  - **Standalone:** [yt-dlp releases](https://github.com/yt-dlp/yt-dlp/releases) – download the Windows executable and add it to PATH.
+- **Video processing (OCR, transcription):** ffmpeg and Tesseract are required for the worker. See [VIDEO_UPLOAD_SETUP.md](VIDEO_UPLOAD_SETUP.md) for install steps.
+
 ## Development
 
 ```bash

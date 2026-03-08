@@ -25,11 +25,12 @@ npm run worker:video
 ```
 
 The worker polls for video jobs and processes them with:
+- **Download (TikTok URL jobs)** – Uses **yt-dlp** to download the video (must be installed and on PATH). Install: `pip install yt-dlp` or download from [yt-dlp releases](https://github.com/yt-dlp/yt-dlp/releases).
 - **OCR** – Extracts text from video frames (Tesseract, ffmpeg preprocessing)
 - **Transcription** – Speech-to-text from audio (OpenAI Whisper) → stored in `transcript_text` (uses `OPENAI_AUDIO_TRANSCRIPTION_KEY`)
 - **Recipe extraction** – AI combines OCR + transcript into structured recipe JSON (GPT-4.1 nano) → stored in `extracted_recipe` (uses `OPENAI_REASONING_API_KEY`)
 
-It uses `.env.local` (e.g. `OPENAI_AUDIO_TRANSCRIPTION_KEY`, `OPENAI_REASONING_API_KEY`). See `.env.local.example`.
+It uses `.env.local` (e.g. `OPENAI_AUDIO_TRANSCRIPTION_KEY`, `OPENAI_REASONING_API_KEY`). See `.env.local.example`. For full system dependencies (ffmpeg, Tesseract, yt-dlp), see [VIDEO_UPLOAD_SETUP.md](VIDEO_UPLOAD_SETUP.md).
 
 ---
 

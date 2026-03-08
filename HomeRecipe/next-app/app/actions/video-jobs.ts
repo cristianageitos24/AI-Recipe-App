@@ -9,10 +9,15 @@ export interface VideoJob {
   user_id: string;
   status: "uploaded" | "processing" | "done" | "error";
   video_url: string;
+  source_type?: "upload" | "url";
+  source_url?: string | null;
+  source_platform?: string | null;
+  video_deleted_at?: string | null;
   tiktok_url: string | null;
   ocr_text: string | null;
   transcript_text: string | null;
   extracted_recipe: ExtractedRecipe | null;
+  thumbnail_url: string | null;
   error_message: string | null;
   attempts: number;
   started_at: string | null;

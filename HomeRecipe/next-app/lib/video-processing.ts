@@ -139,6 +139,32 @@ export async function getVideoDuration(videoPath: string): Promise<number> {
 }
 
 /**
+ * Extract a single color frame from video for use as recipe thumbnail/cover.
+ * Uses full color (no grayscale). Default time 1s to skip possible black intro.
+ * @param videoPath Path to video file
+ * @param outputPath Full path for the output PNG file
+ * @param timeSeconds Time in seconds (default 1)
+ * @returns Path to the written file
+ */
+export function extractThumbnailFrame(
+  videoPath: string,
+  outputPath: string,
+  timeSeconds: number = 1
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    ffmpeg(videoPath)
+      .seekInput(timeSeconds)
+      .outputOptions(["-frames:v", "1"])
+      .output(outputPath)
+      .on("end", () => resolve(outputPath))
+      .on("error", (err) =>
+        reject(new Error(`Thumbnail extraction failed: ${err.message}`))
+      )
+      .run();
+  });
+}
+
+/**
  * Preprocess a frame for OCR. Frames are already preprocessed by extractFrames (ffmpeg:
  * grayscale, contrast, sharpening). This is a no-op pass-through for compatibility.
  */

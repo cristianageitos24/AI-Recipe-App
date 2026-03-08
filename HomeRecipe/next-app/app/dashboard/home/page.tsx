@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { RecipeListCard } from "@/components/RecipeListCard";
+import { DashboardVideoExtractorPanel } from "@/components/DashboardVideoExtractorPanel";
 import { getHomeBootstrap } from "@/app/actions/dashboard";
 import {
   getSearchSuggestions,
@@ -14,6 +15,7 @@ import {
 } from "@/app/actions/search";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/TabHome.css";
+import "@/app/styling/VideoUpload.css";
 
 type FolderWithCount = { folderName: string; count: number };
 
@@ -546,6 +548,8 @@ export default function DashboardHomePage() {
             </div>
           </section>
         )}
+
+        <DashboardVideoExtractorPanel />
 
         {favorites.length > 0 && (
           <section className="home-section home-section-no-top-margin">

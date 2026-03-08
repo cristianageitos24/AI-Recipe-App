@@ -24,7 +24,7 @@ In your browser go to: **http://localhost:3000**
 
 ## Video worker (optional)
 
-To process video jobs (e.g. OCR from TikTok), run the worker in a **second terminal**. In that terminal, from the same `next-app` folder:
+To process video jobs (e.g. TikTok URL → recipe), run the worker in a **second terminal**. The worker requires **yt-dlp** (and ffmpeg/Tesseract) to be installed and on PATH—see [VIDEO_UPLOAD_SETUP.md](VIDEO_UPLOAD_SETUP.md). In that terminal, from the same `next-app` folder:
 
 ```cmd
 npm run worker:video
