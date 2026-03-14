@@ -97,6 +97,7 @@ export function recipeRowToProcessed(r: RecipeRow): ProcessedRecipe {
     mealType: r.meal_type ?? "",
     timeMin: r.time_in_minutes,
     ingredients: r.ingredient_lines ?? "",
+    steps: r.steps ?? null,
     imageURL: r.image_url ?? "",
     websiteURL: r.website_url ?? "",
   };
