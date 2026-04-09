@@ -117,8 +117,8 @@
 
 .new-folder-input:focus {
   outline: none;
-  border-color: #33658a;
-  box-shadow: 0 0 0 3px rgba(51, 101, 138, 0.2);
+  border-color: var(--brand-blue);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-blue) 20%, transparent);
 }
 
 .modal-folder-action-btns {
@@ -160,20 +160,20 @@
 }
 
 .new-folder-create-btn {
-  background: #33658a;
-  border-color: #33658a;
+  background: var(--brand-blue);
+  border-color: var(--brand-blue);
   color: var(--color-bg);
   font-weight: 600;
 }
 
 .new-folder-create-btn:hover {
-  background: #2b5373;
-  border-color: #2b5373;
+  background: var(--brand-blue-hover);
+  border-color: var(--brand-blue-hover);
 }
 
 .new-folder-create-btn:active {
-  background: #21435d;
-  border-color: #21435d;
+  background: var(--brand-blue-active);
+  border-color: var(--brand-blue-active);
 }
 
 @media screen and (max-width: 400px) {

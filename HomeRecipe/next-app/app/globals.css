@@ -82,6 +82,14 @@
   /* Alias: matches --error-fg (defined after semantic colors) */
   --color-error: var(--error-fg);
 
+  /* Feature brand (home tab, cookbooks — not global UI; avoid for errors/generic chrome) */
+  --brand-blue: #33658a;
+  --brand-blue-hover: #2b5373;
+  --brand-blue-active: #21435d;
+  --brand-lime: #95c623;
+  --brand-lime-hover: #83ad1f;
+  --brand-lime-fg: #4a6a12;
+
   /* Border radius (from spacing scale) */
   --radius-sm: 4px;
   --radius-md: 8px;

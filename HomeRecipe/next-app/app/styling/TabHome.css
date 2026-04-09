@@ -612,11 +612,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  --home-red: var(--accent);
-  --home-black: var(--color-fg);
-  --home-white: var(--color-bg);
-  --home-blue: #33658a;
-  --home-green: #95c623;
 }
 
 .home-surface-card {
@@ -646,8 +641,8 @@
   min-height: 50px;
   padding: 8px 18px;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--home-green);
-  background: var(--home-green);
+  border: 1px solid var(--brand-lime);
+  background: var(--brand-lime);
   color: var(--gray-950);
   text-decoration: none;
   font-family: var(--font-body);
@@ -658,8 +653,8 @@
 }
 
 .home-create-recipe-btn:hover {
-  background: #83ad1f;
-  border-color: #83ad1f;
+  background: var(--brand-lime-hover);
+  border-color: var(--brand-lime-hover);
 }
 
 .home-create-recipe-btn span {
@@ -690,8 +685,8 @@
   position: relative;
   z-index: 230;
   border-radius: 999px;
-  background: var(--home-white);
-  border-color: rgba(51, 101, 138, 0.25);
+  background: var(--color-bg);
+  border-color: color-mix(in srgb, var(--brand-blue) 25%, transparent);
 }
 
 .search-input-row {
@@ -724,7 +719,7 @@
   min-height: 36px;
   margin-right: 4px;
   border-radius: 999px;
-  background: rgba(51, 101, 138, 0.14);
+  background: color-mix(in srgb, var(--brand-blue) 14%, transparent);
   border-left: none;
   padding: 0;
 }
@@ -734,11 +729,11 @@
 }
 
 .search-btn svg path {
-  fill: var(--home-blue);
+  fill: var(--brand-blue);
 }
 
 .search-btn:hover {
-  background: rgba(51, 101, 138, 0.24);
+  background: color-mix(in srgb, var(--brand-blue) 24%, transparent);
 }
 
 .search-btn-close {
@@ -966,14 +961,14 @@
   font-family: var(--font-body);
   font-size: var(--text-sm);
   font-weight: 600;
-  background: var(--home-blue);
-  border-color: var(--home-blue);
-  color: var(--home-white);
+  background: var(--brand-blue);
+  border-color: var(--brand-blue);
+  color: var(--color-bg);
 }
 
 .home-primary-cta:hover {
-  background: #2b5373;
-  border-color: #2b5373;
+  background: var(--brand-blue-hover);
+  border-color: var(--brand-blue-hover);
 }
 
 .home-primary-cta:disabled {
@@ -1006,8 +1001,8 @@
   min-width: 24px;
   text-align: center;
   border-radius: 999px;
-  background: rgba(149, 198, 35, 0.2);
-  color: #4a6a12;
+  background: color-mix(in srgb, var(--brand-lime) 20%, transparent);
+  color: var(--brand-lime-fg);
   font-size: 11px;
   padding: 2px 6px;
 }
@@ -1035,10 +1030,10 @@
 }
 
 .home-upcoming-day-group {
-  border: 1px solid rgba(149, 198, 35, 0.45);
+  border: 1px solid color-mix(in srgb, var(--brand-lime) 45%, transparent);
   border-radius: var(--radius-lg);
   padding: var(--space-3);
-  background: rgba(149, 198, 35, 0.08);
+  background: color-mix(in srgb, var(--brand-lime) 8%, transparent);
 }
 
 .home-upcoming-list {
@@ -1060,7 +1055,7 @@
   height: 44px;
   object-fit: cover;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(51, 101, 138, 0.3);
+  border: 1px solid color-mix(in srgb, var(--brand-blue) 30%, transparent);
   flex-shrink: 0;
 }
 
@@ -1085,7 +1080,7 @@
 }
 
 .home-success-text {
-  color: #4a6a12;
+  color: var(--brand-lime-fg);
 }
 
 .home-url-modal-backdrop {
@@ -1273,19 +1268,19 @@
 }
 
 .home-stat-box:nth-child(1) {
-  border-top: 4px solid var(--home-red);
+  border-top: 4px solid var(--accent);
 }
 
 .home-stat-box:nth-child(2) {
-  border-top: 4px solid var(--home-black);
+  border-top: 4px solid var(--color-fg);
 }
 
 .home-stat-box:nth-child(3) {
-  border-top: 4px solid var(--home-blue);
+  border-top: 4px solid var(--brand-blue);
 }
 
 .home-stat-box:nth-child(4) {
-  border-top: 4px solid var(--home-green);
+  border-top: 4px solid var(--brand-lime);
 }
 
 .home-stat-label {
@@ -1299,7 +1294,7 @@
   font-family: var(--font-body);
   font-size: 28px;
   font-weight: 700;
-  color: var(--home-black);
+  color: var(--color-fg);
   line-height: 1.1;
 }
 
