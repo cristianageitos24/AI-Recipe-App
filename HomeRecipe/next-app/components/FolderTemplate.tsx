@@ -84,7 +84,7 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
             ? {
                 backgroundColor: "var(--accent-muted-bg)",
                 borderColor: "var(--accent-muted)",
-                boxShadow: "0 0 0 3px rgba(220, 33, 0, 0.12)",
+                boxShadow: "0 0 0 3px var(--accent-muted)",
               }
             : undefined
       }

@@ -5,7 +5,7 @@ import { SignIn } from "@clerk/nextjs";
 const clerkAppearance = {
   variables: {
     colorPrimary: "#000",
-    colorDanger: "#dc2100",
+    colorDanger: "#ba3523",
     borderRadius: "20px",
   },
   elements: {
@@ -20,7 +20,7 @@ const clerkAppearance = {
     dividerLine: "bg-[rgba(171,171,171,0.3)]",
     dividerText: "text-[#4a4a4a]",
     footer: "hidden",
-    footerActionLink: "text-[#dc2100] underline",
+    footerActionLink: "text-[var(--accent)] underline",
   },
 };
 

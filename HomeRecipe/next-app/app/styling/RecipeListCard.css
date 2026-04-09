@@ -62,7 +62,7 @@
 }
 
 .recipe-full-view-error {
-  color: var(--color-error, #b91c1c);
+  color: var(--color-error);
 }
 
 .recipe-full-view-close-btn {
@@ -99,7 +99,7 @@
 
 .recipe-full-view-try-again-btn {
   padding: var(--space-2) var(--space-4);
-  background: var(--color-accent, #dc2626);
+  background: var(--color-accent);
   color: var(--color-bg);
   border: none;
   border-radius: 8px;

@@ -52,6 +52,10 @@
   --accent-hover: #a01800;
   --accent-muted: rgba(220, 33, 0, 0.2);
   --accent-muted-bg: rgba(220, 33, 0, 0.06);
+  /* For rgba(var(--accent-rgb), a) in focus rings etc. */
+  --accent-rgb: 220, 33, 0;
+  /* Alias: some components use this name */
+  --color-accent: var(--accent);
 
   /* Colors: grays */
   --gray-100: #f5f5f5;
@@ -75,6 +79,8 @@
   --warning-fg: #d9a112;
   --error-bg: #f7dbd7;
   --error-fg: #ba3523;
+  /* Alias: matches --error-fg (defined after semantic colors) */
+  --color-error: var(--error-fg);
 
   /* Border radius (from spacing scale) */
   --radius-sm: 4px;

@@ -68,7 +68,7 @@ ul {
 }
 
 .error-input {
-  color: #eb4335;
+  color: var(--error-fg);
   font-family: var(--font-body);
   font-size: 14px;
   font-style: italic;
@@ -79,7 +79,7 @@ ul {
 }
 
 .error-input-span {
-  color: #eb4335;
+  color: var(--error-fg);
   font-family: var(--font-body);
   font-size: 14px;
   font-style: italic;

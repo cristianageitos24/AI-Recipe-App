@@ -320,7 +320,7 @@
 }
 
 .rename-popup-bttns .confirm:hover {
-  background: #fae0e4;
+  background: var(--accent-muted-bg);
 
   color: #000000;
 
@@ -465,7 +465,7 @@
 }
 
 .add-recipe-list-item:hover {
-  background: #fae0e4;
+  background: var(--accent-muted-bg);
   border-color: var(--accent);
 }
 
@@ -557,7 +557,7 @@
 }
 
 .add-recipe-search-result-item:hover {
-  background: #fae0e4;
+  background: var(--accent-muted-bg);
   border-color: var(--accent);
 }
 
@@ -601,7 +601,7 @@
 .add-recipe-manual-error {
   font-family: var(--font-body);
   font-size: 13px;
-  color: #c00;
+  color: var(--error-fg);
   margin: 0;
   padding: 8px 0;
 }
@@ -744,8 +744,8 @@
 }
 
 .manual-recipe-remove-btn:hover {
-  color: #c33;
-  background: #fee;
+  color: var(--error-fg);
+  background: var(--error-bg);
 }
 
 .manual-recipe-add-btn {
@@ -761,7 +761,7 @@
 }
 
 .manual-recipe-add-btn:hover {
-  background: #fae0e4;
+  background: var(--accent-muted-bg);
 }
 
 .manual-recipe-cooktime .add-recipe-manual-label {

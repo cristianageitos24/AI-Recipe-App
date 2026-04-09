@@ -171,7 +171,7 @@
 }
 
 .event-popup-edamam-item:hover {
-  background: #fae0e4;
+  background: var(--accent-muted-bg);
   border-color: var(--accent);
 }
 
@@ -212,12 +212,12 @@
 }
 
 .delete-event-bttn:hover {
-  background: #ffe6d8;
+  background: var(--error-bg);
   transition: 0.1s ease-in-out;
 }
 
 .delete-event-bttn:active {
-  background: #dc2100;
+  background: var(--accent);
   transition: 0.1s ease-in-out;
 }
 
@@ -349,7 +349,7 @@
 }
 
 .event-popup-bttns .confirm:hover {
-  background: #fae0e4;
+  background: var(--accent-muted-bg);
 
   color: #000000;
 

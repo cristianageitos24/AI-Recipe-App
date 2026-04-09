@@ -107,7 +107,7 @@ export default function ImportRecipeUrlPage() {
       </form>
 
       {error ? (
-        <p style={{ color: "#b91c1c", marginTop: 14 }}>{error}</p>
+        <p style={{ color: "var(--error-fg)", marginTop: 14 }}>{error}</p>
       ) : null}
 
       {result ? (

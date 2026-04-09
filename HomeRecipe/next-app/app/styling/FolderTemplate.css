@@ -389,7 +389,7 @@
 }
 
 .rename-popup-bttns .confirm:hover {
-  background: #fae0e4;
+  background: var(--accent-muted-bg);
 
   color: #000000;
 
