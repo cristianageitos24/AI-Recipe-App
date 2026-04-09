@@ -28,7 +28,7 @@
   min-height: 200px;
   background: var(--gray-200);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 32px var(--shadow-black-20);
   padding: var(--space-6);
 }
 
@@ -86,7 +86,7 @@
 }
 
 .recipe-full-view-close-btn:hover {
-  background: rgba(0, 0, 0, 0.75);
+  background: var(--overlay-strong);
   color: var(--color-bg);
 }
 

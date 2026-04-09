@@ -98,6 +98,23 @@
   /* Overlay */
   --overlay: rgba(0, 0, 0, 0.35);
   --overlay-light: rgba(0, 0, 0, 0.1);
+  --overlay-medium: rgba(0, 0, 0, 0.4);
+  --overlay-strong: rgba(0, 0, 0, 0.75);
+  --overlay-faint: rgba(0, 0, 0, 0.08);
+
+  /* Subtle gray borders (~ rgba(171,171,171,0.3)) */
+  --border-subtle: color-mix(in srgb, var(--gray-500) 30%, transparent);
+
+  /* Shadow color stops (pair offsets/blur in components; avoids scattered rgba) */
+  --shadow-black-03: rgba(0, 0, 0, 0.03);
+  --shadow-black-04: rgba(0, 0, 0, 0.04);
+  --shadow-black-15: rgba(0, 0, 0, 0.15);
+  --shadow-black-20: rgba(0, 0, 0, 0.2);
+  --shadow-black-25: rgba(0, 0, 0, 0.25);
+  --shadow-slate-12: rgba(17, 24, 39, 0.12);
+  --shadow-slate-20: rgba(15, 23, 42, 0.2);
+  --shadow-slate-22: rgba(15, 23, 42, 0.22);
+  --shadow-slate-28: rgba(15, 23, 42, 0.28);
 
   /* Placeholder image gradient (reuse everywhere) */
   --placeholder-bg: linear-gradient(135deg, #e8ecf0 0%, #d2dce1 100%);

@@ -13,7 +13,7 @@
   grid-template-columns: minmax(320px, 44%) minmax(0, 56%);
   overflow: hidden;
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 32px var(--shadow-black-20);
   background: var(--gray-200);
 }
 
@@ -42,7 +42,7 @@
 }
 
 .recipe-fullview-close-btn:hover {
-  background: rgba(0, 0, 0, 0.75);
+  background: var(--overlay-strong);
   color: var(--color-bg);
 }
 
@@ -75,7 +75,7 @@
   height: 100%;
   width: 100%;
 
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--overlay-medium);
   border-radius: 10px 0 0 10px;
 }
 
@@ -93,7 +93,7 @@
 .more-information-image-box .more-info-image {
   object-fit: cover;
   background-position: center;
-  filter: drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.25));
+  filter: drop-shadow(0px 4px 4px var(--shadow-black-25));
 }
 
 .more-information-image-box .more-info-image-placeholder {
@@ -121,7 +121,7 @@
 
 .full-information {
   cursor: auto;
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  box-shadow: 0px 4px 4px var(--shadow-black-25);
 
   background: var(--gray-200);
   border-radius: 0 10px 10px 0;
@@ -213,7 +213,7 @@
   display: flex;
   gap: 0;
   margin: 0 20px 16px;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 2px solid var(--overlay-light);
 }
 
 .recipe-fullview-tab {
@@ -253,7 +253,7 @@
   color: var(--gray-950);
   margin: 0 0 var(--space-3) 0;
   padding: 0 0 6px 0;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 2px solid var(--overlay-faint);
   letter-spacing: 0.02em;
 }
 
@@ -347,7 +347,7 @@
   background: var(--color-bg);
   border-radius: var(--radius-md);
   border-left: 3px solid var(--accent);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 2px var(--shadow-black-04);
 }
 
 .recipe-ingredient-item-with-add {
