@@ -9,7 +9,7 @@
 
 /*       WHEN FOLDER IS EMPTY       */
 .isLoading {
-  color: #000;
+  color: var(--color-fg);
   text-align: start;
   font-family: var(--font-body);
   font-size: clamp(10px, 8vw, 16px);
@@ -45,7 +45,7 @@
   align-items: center;
   text-align: center;
 
-  color: #000000;
+  color: var(--color-fg);
 
   margin: 0;
   margin-top: -20px;
@@ -66,7 +66,7 @@
   font-weight: 500;
   font-size: 18px;
 
-  color: #000000;
+  color: var(--color-fg);
 
   margin: 0;
 
@@ -81,12 +81,12 @@
 }
 
 .bttn-titles .back-bttn:hover {
-  background-color: #d2dce1;
+  background-color: var(--gray-400);
   transition: background-color ease-in 0.2s;
 }
 
 .bttn-titles .folder-bttn:hover {
-  background-color: #d2dce1;
+  background-color: var(--gray-400);
   transition: background-color ease-in 0.2s;
 }
 
@@ -99,7 +99,7 @@
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
-  color: #fff;
+  color: var(--color-bg);
   background: var(--accent);
   border: none;
   border-radius: 10px;
@@ -130,7 +130,7 @@
 }
 
 .bttn-titles .folder-bttn:hover {
-  background-color: #beccd4;
+  background-color: var(--gray-400);
   transition: background-color ease-in 0.1s;
 }
 
@@ -151,12 +151,12 @@
   cursor: auto;
   padding: 4px;
 
-  background: #ffffff;
+  background: var(--color-bg);
   border-radius: 6px;
 }
 
 .folder-bttn .folder-options li {
-  color: #000;
+  color: var(--color-fg);
   text-align: center;
   font-family: var(--font-body);
   font-size: 14px;
@@ -172,7 +172,7 @@
   cursor: pointer;
   white-space: nowrap;
 
-  background: #fff;
+  background: var(--color-bg);
   border: none;
 
   border-radius: 5px;
@@ -181,11 +181,11 @@
 }
 
 .folder-bttn .folder-options li:hover {
-  background: #d2dce1;
+  background: var(--gray-400);
 }
 
 .folder-bttn .folder-options li:active {
-  background: #ababab;
+  background: var(--gray-500);
 }
 
 /*     RENAME FOLDER BTTN IS CLICKED       */
@@ -202,7 +202,7 @@
 .rename-folder-popup {
   padding: 20px;
 
-  background: #ffffff;
+  background: var(--color-bg);
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.25);
   border-radius: 10px;
 
@@ -222,7 +222,7 @@
   font-weight: 500;
   font-size: clamp(14px, 4vw, 20px);
 
-  color: #000000;
+  color: var(--color-fg);
 
   margin: 0;
   margin-bottom: 30px;
@@ -237,8 +237,8 @@
 
   box-sizing: border-box;
 
-  background: #ffffff;
-  border: 1px solid #ababab;
+  background: var(--color-bg);
+  border: 1px solid var(--gray-500);
   border-radius: 10px;
 
   font-family: var(--font-body);
@@ -249,7 +249,7 @@
   display: flex;
   align-items: center;
 
-  color: #000000;
+  color: var(--color-fg);
 
   padding: 10px;
 
@@ -260,7 +260,7 @@
   outline: 5px auto var(--accent);
 }
 .rename-input::placeholder {
-  color: #808080;
+  color: var(--gray-600);
 }
 
 /*     BUTTONS CONTENT     */
@@ -276,7 +276,7 @@
 .rename-popup-bttns button {
   cursor: pointer;
 
-  color: #000;
+  color: var(--color-fg);
   font-family: var(--font-body);
   font-style: normal;
   font-weight: 400;
@@ -297,17 +297,17 @@
 
 /*       CANCEL BUTTON     */
 .rename-popup-bttns .cancel {
-  color: #000000;
+  color: var(--color-fg);
   transition: 0.1s ease-in-out;
 }
 
 .rename-popup-bttns .cancel:hover {
-  background: #e6e6e6;
+  background: var(--gray-200);
   transition: 0.1s ease-in-out;
 }
 
 .rename-popup-bttns .cancel:active {
-  background: #ababab;
+  background: var(--gray-500);
   transition: 0.1s ease-in-out;
 }
 
@@ -322,15 +322,15 @@
 .rename-popup-bttns .confirm:hover {
   background: var(--accent-muted-bg);
 
-  color: #000000;
+  color: var(--color-fg);
 
   transition: 0.1s ease-in-out;
 }
 
 .rename-popup-bttns .confirm:active {
-  background: #000;
+  background: var(--gray-950);
 
-  color: #fff;
+  color: var(--color-bg);
 
   transition: 0.1s ease-in-out;
 }
@@ -378,7 +378,7 @@
 
 .add-recipe-modal {
   padding: 20px;
-  background: #fff;
+  background: var(--color-bg);
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
   border-radius: 10px;
   position: relative;
@@ -401,22 +401,22 @@
   font-size: 14px;
   font-weight: 500;
   padding: 8px 16px;
-  border: 1px solid #ababab;
+  border: 1px solid var(--gray-500);
   border-radius: 8px;
-  background: #fff;
-  color: #333;
+  background: var(--color-bg);
+  color: var(--gray-900);
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
 }
 
 .add-recipe-tab:hover {
-  background: #f5f5f5;
+  background: var(--gray-100);
 }
 
 .add-recipe-tab.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--color-bg);
 }
 
 .add-recipe-list-container,
@@ -429,7 +429,7 @@
 .add-recipe-empty-msg {
   font-family: var(--font-body);
   font-size: 14px;
-  color: #666;
+  color: var(--gray-700);
   margin: 16px 0;
   padding: 0;
 }
@@ -454,9 +454,9 @@
   gap: 12px;
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--gray-300);
   border-radius: 8px;
-  background: #fff;
+  background: var(--color-bg);
   cursor: pointer;
   font-family: var(--font-body);
   font-size: 14px;
@@ -483,7 +483,7 @@
   height: 48px;
   border-radius: 6px;
   flex-shrink: 0;
-  background: #d2dce1;
+  background: var(--gray-400);
 }
 
 .add-recipe-list-item-label {
@@ -502,7 +502,7 @@
 .add-recipe-search-input {
   flex: 1;
   padding: 10px 12px;
-  border: 1px solid #ababab;
+  border: 1px solid var(--gray-500);
   border-radius: 8px;
   font-family: var(--font-body);
   font-size: 14px;
@@ -517,8 +517,8 @@
   padding: 10px 16px;
   border: none;
   border-radius: 8px;
-  background: #000;
-  color: #fff;
+  background: var(--gray-950);
+  color: var(--color-bg);
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
@@ -526,7 +526,7 @@
 }
 
 .add-recipe-search-btn:hover:not(:disabled) {
-  background: #333;
+  background: var(--gray-900);
 }
 
 .add-recipe-search-btn:disabled {
@@ -546,9 +546,9 @@
   gap: 12px;
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--gray-300);
   border-radius: 8px;
-  background: #fff;
+  background: var(--color-bg);
   cursor: pointer;
   font-family: var(--font-body);
   font-size: 14px;
@@ -573,22 +573,22 @@
   font-size: 14px;
   font-weight: 500;
   padding: 8px 16px;
-  border: 1px solid #ababab;
+  border: 1px solid var(--gray-500);
   border-radius: 8px;
-  background: #fff;
-  color: #333;
+  background: var(--color-bg);
+  color: var(--gray-900);
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
 }
 
 .add-recipe-mode-toggle-btn:hover {
-  background: #f5f5f5;
+  background: var(--gray-100);
 }
 
 .add-recipe-mode-toggle-btn.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--color-bg);
 }
 
 /* Manual entry form */
@@ -610,7 +610,7 @@
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: var(--gray-900);
   margin: 0;
 }
 
@@ -623,11 +623,11 @@
   width: 100%;
   box-sizing: border-box;
   padding: 10px 12px;
-  border: 1px solid #ababab;
+  border: 1px solid var(--gray-500);
   border-radius: 8px;
   font-family: var(--font-body);
   font-size: 14px;
-  color: #000;
+  color: var(--color-fg);
 }
 
 .add-recipe-manual-input:focus,
@@ -647,7 +647,7 @@
   border: none;
   border-radius: 8px;
   background: var(--accent);
-  color: #fff;
+  color: var(--color-bg);
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
@@ -673,7 +673,7 @@
   display: flex;
   gap: 4px;
   margin-bottom: 16px;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--gray-300);
 }
 
 .manual-recipe-tab {
@@ -681,7 +681,7 @@
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
-  color: #666;
+  color: var(--gray-700);
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -690,7 +690,7 @@
 }
 
 .manual-recipe-tab:hover {
-  color: #000;
+  color: var(--color-fg);
 }
 
 .manual-recipe-tab.active {
@@ -725,7 +725,7 @@
 .manual-recipe-step-num {
   flex-shrink: 0;
   font-weight: 600;
-  color: #666;
+  color: var(--gray-700);
   padding-top: 12px;
 }
 
@@ -736,8 +736,8 @@
   padding: 0;
   font-size: 20px;
   line-height: 1;
-  color: #999;
-  background: #eee;
+  color: var(--gray-600);
+  background: var(--gray-200);
   border: none;
   border-radius: 4px;
   cursor: pointer;

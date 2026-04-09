@@ -9,7 +9,7 @@ export default function SSOCallbackPage() {
         signInForceRedirectUrl="/dashboard"
         signUpForceRedirectUrl="/dashboard"
       />
-      <p className="text-sm text-gray-500">Completing sign in...</p>
+      <p className="text-sm text-[var(--color-fg-muted)]">Completing sign in...</p>
     </div>
   );
 }

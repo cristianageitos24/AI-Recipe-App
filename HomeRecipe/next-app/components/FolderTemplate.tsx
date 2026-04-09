@@ -153,7 +153,14 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
           {isEtcActive && (
             <ul className="etc-options">
               <li onClick={() => handleFolderOption("Rename")}>Rename</li>
-              <hr style={{ height: "1px", background: "#D2DCE1", border: "none", width: "100%" }} />
+              <hr
+                style={{
+                  height: "1px",
+                  background: "var(--gray-400)",
+                  border: "none",
+                  width: "100%",
+                }}
+              />
               <li onClick={() => handleFolderOption("Move to trash")}>Move to trash</li>
             </ul>
           )}

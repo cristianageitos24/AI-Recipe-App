@@ -63,8 +63,10 @@ export default function ImportRecipeUrlPage() {
 
   return (
     <section className="main-panel" style={{ maxWidth: 960, margin: "0 auto" }}>
-      <h1 style={{ margin: 0, fontSize: 28 }}>Import Recipe By URL</h1>
-      <p style={{ marginTop: 8, marginBottom: 24, color: "#5a5a5a" }}>
+      <h1 style={{ margin: 0, fontSize: 28, color: "var(--color-fg)" }}>
+        Import Recipe By URL
+      </h1>
+      <p style={{ marginTop: 8, marginBottom: 24, color: "var(--color-fg-muted)" }}>
         Paste a recipe link and fetch title, image, ingredients, and
         instructions.
       </p>
@@ -78,12 +80,12 @@ export default function ImportRecipeUrlPage() {
           onChange={(e) => setUrl(e.target.value)}
           style={{
             width: "100%",
-            border: "1px solid #d4d4d8",
+            border: "1px solid var(--gray-300)",
             borderRadius: 10,
             padding: "12px 14px",
             fontSize: 14,
             outline: "none",
-            background: "white",
+            background: "var(--color-bg)",
           }}
         />
 
@@ -95,8 +97,8 @@ export default function ImportRecipeUrlPage() {
             padding: "10px 14px",
             borderRadius: 10,
             border: "none",
-            background: "#111827",
-            color: "#fff",
+            background: "var(--gray-950)",
+            color: "var(--color-bg)",
             fontWeight: 600,
             cursor: loading ? "not-allowed" : "pointer",
             opacity: loading ? 0.7 : 1,
@@ -114,9 +116,9 @@ export default function ImportRecipeUrlPage() {
         <article
           style={{
             marginTop: 24,
-            border: "1px solid #e4e4e7",
+            border: "1px solid var(--gray-300)",
             borderRadius: 14,
-            background: "#fff",
+            background: "var(--color-bg)",
             padding: 16,
           }}
         >
@@ -138,7 +140,7 @@ export default function ImportRecipeUrlPage() {
           <h2 style={{ marginTop: 0, marginBottom: 8 }}>
             {result.title || "Untitled Recipe"}
           </h2>
-          <p style={{ marginTop: 0, color: "#52525b", fontSize: 13 }}>
+          <p style={{ marginTop: 0, color: "var(--color-fg-muted)", fontSize: 13 }}>
             Source:{" "}
             <a href={result.source_url} target="_blank" rel="noreferrer">
               {result.source_url}
@@ -154,17 +156,17 @@ export default function ImportRecipeUrlPage() {
             }}
           >
             {result.total_time_minutes ? (
-              <span style={{ fontSize: 13, color: "#3f3f46" }}>
+              <span style={{ fontSize: 13, color: "var(--gray-800)" }}>
                 Total: {result.total_time_minutes} min
               </span>
             ) : null}
             {result.calories ? (
-              <span style={{ fontSize: 13, color: "#3f3f46" }}>
+              <span style={{ fontSize: 13, color: "var(--gray-800)" }}>
                 {result.calories}
               </span>
             ) : null}
             {result.yields ? (
-              <span style={{ fontSize: 13, color: "#3f3f46" }}>
+              <span style={{ fontSize: 13, color: "var(--gray-800)" }}>
                 {result.yields}
               </span>
             ) : null}

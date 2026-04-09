@@ -9,7 +9,7 @@
 }
 
 .isLoading {
-  color: #000;
+  color: var(--color-fg);
   text-align: center;
   font-family: var(--font-body);
   font-size: clamp(10px, 8vw, 16px);
@@ -22,7 +22,7 @@
 }
 
 .tabcalendar-start-title {
-  color: #000;
+  color: var(--color-fg);
   text-align: center;
   font-family: var(--font-body);
   font-size: clamp(10px, 8vw, 16px);
@@ -40,7 +40,7 @@
 }
 
 .tabcalendar-start-subtitle {
-  color: #000;
+  color: var(--color-fg);
   text-align: center;
   font-family: var(--font-body);
   font-size: clamp(10px, 8vw, 16px);
@@ -60,7 +60,7 @@
   display: flex;
   align-items: center;
 
-  color: #000000;
+  color: var(--color-fg);
 
   margin: 0;
   padding-left: 60px;
@@ -106,7 +106,7 @@
   align-items: center;
   text-align: center;
 
-  color: rgba(214, 148, 129, 0.5);
+  color: color-mix(in srgb, var(--color-fg-muted) 50%, transparent);
 
   margin: 0;
 
@@ -126,7 +126,7 @@
   align-items: center;
   text-align: center;
 
-  color: #808080;
+  color: var(--gray-600);
 
   margin: 0;
   margin-bottom: -2px;
@@ -141,7 +141,7 @@
   align-items: center;
   text-align: center;
 
-  color: #808080;
+  color: var(--gray-600);
 
   margin: 0;
 }
@@ -149,7 +149,7 @@
 .calendar-upcoming-hr {
   height: 1px;
   width: 60%;
-  background-color: #808080;
+  background-color: var(--gray-600);
   border: none;
 
   margin: 0;

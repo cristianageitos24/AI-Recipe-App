@@ -260,7 +260,10 @@ export default function CookbookFolderPage() {
           onBlur={() => setIsFolderOptionsOpen(false)}
           style={
             isFolderOptionsOpen
-              ? { backgroundColor: "#D2DCE1", borderRadius: "10px 10px 0px 0px" }
+              ? {
+                  backgroundColor: "var(--gray-400)",
+                  borderRadius: "10px 10px 0px 0px",
+                }
               : {}
           }
         >
@@ -268,7 +271,14 @@ export default function CookbookFolderPage() {
           {isFolderOptionsOpen && (
             <ul className="folder-options">
               <li onClick={() => handleFolderOption("rename")}>Rename</li>
-              <hr style={{ height: "1px", background: "#C8C8C8", width: "100%", border: "none" }} />
+              <hr
+                style={{
+                  height: "1px",
+                  background: "var(--gray-400)",
+                  width: "100%",
+                  border: "none",
+                }}
+              />
               <li onClick={() => handleFolderOption("trash")}>Move to trash</li>
             </ul>
           )}

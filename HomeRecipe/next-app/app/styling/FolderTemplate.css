@@ -17,7 +17,7 @@
   padding: var(--space-3) var(--space-4);
 
   border-radius: 14px;
-  border: 1px solid #dce3e8;
+  border: 1px solid var(--gray-300);
   background: rgba(255, 255, 255, 0.82);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
   backdrop-filter: blur(10px);
@@ -37,14 +37,14 @@
 }
 
 .cookbook-user-folder:hover {
-  background: #fff;
+  background: var(--color-bg);
   border-color: var(--accent);
   box-shadow: 0 var(--space-2) var(--space-5) var(--overlay-light);
   transform: translateY(-2px);
 }
 
 .cookbook-user-folder:hover .cookbook-icon {
-  color: #000;
+  color: var(--color-fg);
 }
 
 .cookbook-user-folder:active {
@@ -98,7 +98,7 @@
   overflow-wrap: anywhere;
   padding: 6px 10px;
   background: rgba(26, 26, 26, 0.94);
-  color: #fff;
+  color: var(--color-bg);
   border-radius: var(--radius-md);
   white-space: pre-wrap;
   font-size: var(--text-xs);
@@ -220,11 +220,11 @@
 
   margin: 0;
 
-  background: #ffffff;
+  background: var(--color-bg);
 }
 
 .cookbook-user-dots-content .folder-options li {
-  color: #000;
+  color: var(--color-fg);
   text-align: center;
   font-family: var(--font-body);
   font-size: 14px;
@@ -240,7 +240,7 @@
   cursor: pointer;
   white-space: nowrap;
 
-  background: #fff;
+  background: var(--color-bg);
   border: none;
 
   border-radius: 5px;
@@ -249,11 +249,11 @@
 }
 
 .cookbook-user-dots-content .folder-options li:hover {
-  background: #d2dce1;
+  background: var(--gray-400);
 }
 
 .cookbook-user-dots-content .folder-options li:active {
-  background: #ababab;
+  background: var(--gray-500);
 }
 
 /*     RENAME FOLDER BTTN IS CLICKED       */
@@ -271,7 +271,7 @@
 .rename-folder-popup {
   padding: 20px;
 
-  background: #ffffff;
+  background: var(--color-bg);
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.25);
   border-radius: 10px;
 
@@ -291,7 +291,7 @@
   font-weight: 500;
   font-size: clamp(14px, 4vw, 20px);
 
-  color: #000000;
+  color: var(--color-fg);
 
   margin: 0;
   margin-bottom: 30px;
@@ -306,8 +306,8 @@
 
   box-sizing: border-box;
 
-  background: #ffffff;
-  border: 1px solid #ababab;
+  background: var(--color-bg);
+  border: 1px solid var(--gray-500);
   border-radius: 10px;
 
   font-family: var(--font-body);
@@ -318,7 +318,7 @@
   display: flex;
   align-items: center;
 
-  color: #000000;
+  color: var(--color-fg);
 
   padding: 10px;
 
@@ -329,7 +329,7 @@
   outline: 5px auto var(--accent);
 }
 .rename-input::placeholder {
-  color: #808080;
+  color: var(--gray-600);
 }
 
 /*     BUTTONS CONTENT     */
@@ -345,7 +345,7 @@
 .rename-popup-bttns button {
   cursor: pointer;
 
-  color: #000;
+  color: var(--color-fg);
   font-family: var(--font-body);
   font-style: normal;
   font-weight: 400;
@@ -366,17 +366,17 @@
 
 /*       CANCEL BUTTON     */
 .rename-popup-bttns .cancel {
-  color: #000000;
+  color: var(--color-fg);
   transition: 0.1s ease-in-out;
 }
 
 .rename-popup-bttns .cancel:hover {
-  background: #e6e6e6;
+  background: var(--gray-200);
   transition: 0.1s ease-in-out;
 }
 
 .rename-popup-bttns .cancel:active {
-  background: #ababab;
+  background: var(--gray-500);
   transition: 0.1s ease-in-out;
 }
 
@@ -391,15 +391,15 @@
 .rename-popup-bttns .confirm:hover {
   background: var(--accent-muted-bg);
 
-  color: #000000;
+  color: var(--color-fg);
 
   transition: 0.1s ease-in-out;
 }
 
 .rename-popup-bttns .confirm:active {
-  background: #000;
+  background: var(--gray-950);
 
-  color: #fff;
+  color: var(--color-bg);
 
   transition: 0.1s ease-in-out;
 }

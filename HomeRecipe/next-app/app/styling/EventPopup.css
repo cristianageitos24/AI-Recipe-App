@@ -10,7 +10,7 @@
 .calendar-event-popup {
   padding: 20px;
 
-  background: #ffffff;
+  background: var(--color-bg);
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.25);
   border-radius: 10px;
 
@@ -37,7 +37,7 @@
   font-weight: 500;
   font-size: clamp(14px, 4vw, 20px);
 
-  color: #000000;
+  color: var(--color-fg);
 
   margin: 0;
 }
@@ -46,7 +46,7 @@
 .event-popup-empty-state {
   margin: 16px 0;
   padding: 16px;
-  background: #f5f5f5;
+  background: var(--gray-100);
   border-radius: 10px;
 }
 
@@ -54,7 +54,7 @@
   font-family: var(--font-body);
   font-size: 14px;
   line-height: 1.5;
-  color: #333;
+  color: var(--gray-900);
   margin: 0;
 }
 
@@ -71,7 +71,7 @@
 .event-popup-no-match {
   font-family: var(--font-body);
   font-size: 14px;
-  color: #808080;
+  color: var(--gray-600);
   margin: 12px;
   padding: 0;
 }
@@ -87,7 +87,7 @@
 .event-popup-edamam {
   margin-top: 20px;
   padding-top: 16px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--gray-300);
 }
 
 .event-popup-edamam-inline {
@@ -98,7 +98,7 @@
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 500;
-  color: #333;
+  color: var(--gray-900);
   margin: 0 0 10px 0;
 }
 
@@ -111,7 +111,7 @@
 .event-popup-edamam-input {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid #ababab;
+  border: 1px solid var(--gray-500);
   border-radius: 8px;
   font-family: var(--font-body);
   font-size: 14px;
@@ -126,8 +126,8 @@
   padding: 8px 14px;
   border: none;
   border-radius: 8px;
-  background: #000;
-  color: #fff;
+  background: var(--gray-950);
+  color: var(--color-bg);
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 500;
@@ -135,7 +135,7 @@
 }
 
 .event-popup-edamam-btn:hover:not(:disabled) {
-  background: #333;
+  background: var(--gray-900);
 }
 
 .event-popup-edamam-btn:disabled {
@@ -160,9 +160,9 @@
   gap: 10px;
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--gray-300);
   border-radius: 8px;
-  background: #fff;
+  background: var(--color-bg);
   cursor: pointer;
   font-family: var(--font-body);
   font-size: 13px;
@@ -226,8 +226,8 @@
   height: 100%;
   width: 30%;
 
-  background: #ffffff;
-  border: 1px solid #ababab;
+  background: var(--color-bg);
+  border: 1px solid var(--gray-500);
   border-radius: 10px 0px 0px 10px;
 
   font-family: var(--font-body);
@@ -238,7 +238,7 @@
   display: flex;
   align-items: center;
 
-  color: #ababab;
+  color: var(--gray-500);
 
   padding: 5px;
 
@@ -267,8 +267,8 @@
 
   box-sizing: border-box;
 
-  background: #ffffff;
-  border: 1px solid #ababab;
+  background: var(--color-bg);
+  border: 1px solid var(--gray-500);
   border-radius: 0px 10px 10px 0px;
 
   font-family: var(--font-body);
@@ -279,7 +279,7 @@
   display: flex;
   align-items: center;
 
-  color: #000000;
+  color: var(--color-fg);
 
   padding: 5px 10px 5px 20px;
 
@@ -290,7 +290,7 @@
   outline: none;
 }
 .event-popup-input::placeholder {
-  color: #808080;
+  color: var(--gray-600);
 }
 
 /*       BUTTONS CONTENT     */
@@ -326,17 +326,17 @@
 
 /*       CANCEL BUTTON     */
 .event-popup-bttns .cancel {
-  color: #000000;
+  color: var(--color-fg);
   transition: 0.1s ease-in-out;
 }
 
 .event-popup-bttns .cancel:hover {
-  background: #e6e6e6;
+  background: var(--gray-200);
   transition: 0.1s ease-in-out;
 }
 
 .event-popup-bttns .cancel:active {
-  background: #ababab;
+  background: var(--gray-500);
   transition: 0.1s ease-in-out;
 }
 
@@ -351,15 +351,15 @@
 .event-popup-bttns .confirm:hover {
   background: var(--accent-muted-bg);
 
-  color: #000000;
+  color: var(--color-fg);
 
   transition: 0.1s ease-in-out;
 }
 
 .event-popup-bttns .confirm:active {
-  background: #000;
+  background: var(--gray-950);
 
-  color: #fff;
+  color: var(--color-bg);
 
   transition: 0.1s ease-in-out;
 }
