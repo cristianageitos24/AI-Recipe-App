@@ -6,6 +6,8 @@ import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { RecipeListCard } from "@/components/RecipeListCard";
+import { RecipeFullView } from "@/components/RecipeFullView";
+import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
 import { getHomeBootstrap } from "@/app/actions/dashboard";
 import {
   getSearchSuggestions,
@@ -13,24 +15,20 @@ import {
   searchRecipes,
   searchByIngredients,
 } from "@/app/actions/search";
-import type { RecipeRow } from "@/lib/types";
+import {
+  buildUrlImportRecipePayload,
+  isUrlImportSaveable,
+  urlImportToDraftRecipeRow,
+} from "@/lib/processRecipeData";
+import type { RecipeRow, UrlImportedRecipe } from "@/lib/types";
 import "@/app/styling/TabHome.css";
 import "@/app/styling/VideoUpload.css";
+import "@/app/styling/CookbookFolderPage.css";
+import "@/app/styling/CookbookPageRecipeCard.css";
 
 type FolderWithCount = { folderName: string; count: number };
 type SearchMode = "recipe" | "ingredients";
 type MealDay = { date: string; recipes: Array<RecipeRow & { eventID: string }> };
-type ImportedRecipePreview = {
-  source_url: string;
-  title: string | null;
-  image: string | null;
-  ingredients: string[];
-  instructions: string | null;
-  instructions_list: string[];
-  total_time_minutes: number | null;
-  calories: string | null;
-  yields: string | null;
-};
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -74,8 +72,9 @@ export default function DashboardHomePage() {
   const [urlInput, setUrlInput] = useState("");
   const [urlImportLoading, setUrlImportLoading] = useState(false);
   const [urlImportError, setUrlImportError] = useState<string | null>(null);
-  const [urlPreview, setUrlPreview] = useState<ImportedRecipePreview | null>(null);
+  const [urlPreview, setUrlPreview] = useState<UrlImportedRecipe | null>(null);
   const [showUrlPreviewModal, setShowUrlPreviewModal] = useState(false);
+  const [urlSaveModalOpen, setUrlSaveModalOpen] = useState(false);
   const [favorites, setFavorites] = useState<RecipeRow[]>([]);
   const [mealDates, setMealDates] = useState<MealDay[]>([]);
   const [folderRecipesByName, setFolderRecipesByName] = useState<Record<string, RecipeRow[]>>({});
@@ -101,6 +100,16 @@ export default function DashboardHomePage() {
   const recommendationsScrollRef = useRef<HTMLDivElement>(null);
 
   const favoriteIds = useMemo(() => new Set(favorites.map((r) => r.recipe_id)), [favorites]);
+
+  const urlImportPayload = useMemo(
+    () => (urlPreview ? buildUrlImportRecipePayload(urlPreview) : null),
+    [urlPreview]
+  );
+  const urlDraftRecipeRow = useMemo(
+    () => (urlImportPayload ? urlImportToDraftRecipeRow(urlImportPayload) : null),
+    [urlImportPayload]
+  );
+  const urlImportCanSave = isUrlImportSaveable(urlPreview);
 
   const homeStats = useMemo(() => {
     const savedMap = new Map<string, RecipeRow>();
@@ -488,11 +497,12 @@ export default function DashboardHomePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: urlInput.trim() }),
       });
-      const data = (await res.json()) as ImportedRecipePreview | { error?: string };
+      const data = (await res.json()) as UrlImportedRecipe | { error?: string };
       if (!res.ok) {
         throw new Error("error" in data && data.error ? data.error : "Failed to import recipe URL");
       }
-      setUrlPreview(data as ImportedRecipePreview);
+      setUrlPreview(data as UrlImportedRecipe);
+      setUrlSaveModalOpen(false);
       setShowUrlPreviewModal(true);
     } catch (err) {
       setUrlImportError(err instanceof Error ? err.message : "Unexpected error");
@@ -965,72 +975,72 @@ export default function DashboardHomePage() {
             </section>
           </div>
 
-          {showUrlPreviewModal && urlPreview && (
-            <div className="home-url-modal-backdrop" onClick={() => setShowUrlPreviewModal(false)}>
+          {showUrlPreviewModal && urlPreview && urlDraftRecipeRow && (
+            <>
               <div
-                className="home-url-modal"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Imported URL recipe preview"
-                onClick={(e) => e.stopPropagation()}
+                className="recipe-full-view-overlay"
+                onClick={() => {
+                  setShowUrlPreviewModal(false);
+                  setUrlSaveModalOpen(false);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setShowUrlPreviewModal(false);
+                    setUrlSaveModalOpen(false);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label="Close imported recipe"
               >
-                <div className="home-url-modal-head">
-                  <h3>{urlPreview.title || "Untitled recipe"}</h3>
-                  <button
-                    type="button"
-                    className="search-results-clear"
-                    onClick={() => setShowUrlPreviewModal(false)}
+                <div
+                  className="recipe-full-view-scroll-wrapper"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                      gap: "var(--space-3)",
+                      marginBottom: "var(--space-4)",
+                    }}
                   >
-                    Close
-                  </button>
-                </div>
-
-                {urlPreview.image && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={urlPreview.image} alt={urlPreview.title || "Imported recipe"} className="home-url-modal-image" />
-                )}
-
-                <p className="home-url-modal-meta">
-                  Source:{" "}
-                  <a href={urlPreview.source_url} target="_blank" rel="noreferrer">
-                    {urlPreview.source_url}
-                  </a>
-                </p>
-
-                <div className="home-url-modal-tags">
-                  {urlPreview.total_time_minutes ? <span>{urlPreview.total_time_minutes} min</span> : null}
-                  {urlPreview.calories ? <span>{urlPreview.calories}</span> : null}
-                  {urlPreview.yields ? <span>{urlPreview.yields}</span> : null}
-                </div>
-
-                <div className="home-url-modal-grid">
-                  <div>
-                    <h4>Ingredients</h4>
-                    <ul>
-                      {urlPreview.ingredients.slice(0, 12).map((item, idx) => (
-                        <li key={`${idx}-${item}`}>{item}</li>
-                      ))}
-                    </ul>
+                    <button
+                      type="button"
+                      className="search-results-clear"
+                      onClick={() => {
+                        setShowUrlPreviewModal(false);
+                        setUrlSaveModalOpen(false);
+                      }}
+                    >
+                      Close
+                    </button>
+                    <button
+                      type="button"
+                      className="submit-button video-recipe-save-btn"
+                      style={{ margin: 0 }}
+                      disabled={!urlImportCanSave}
+                      onClick={() => setUrlSaveModalOpen(true)}
+                    >
+                      Save to cookbook
+                    </button>
                   </div>
-                  <div>
-                    <h4>Instructions</h4>
-                    <ol>
-                      {(urlPreview.instructions_list.length > 0
-                        ? urlPreview.instructions_list
-                        : (urlPreview.instructions ?? "")
-                            .split("\n")
-                            .map((line) => line.trim())
-                            .filter(Boolean)
-                      )
-                        .slice(0, 8)
-                        .map((step, idx) => (
-                          <li key={`${idx}-${step}`}>{step}</li>
-                        ))}
-                    </ol>
-                  </div>
+                  <RecipeFullView
+                    recipeData={urlDraftRecipeRow}
+                    onClose={() => {
+                      setShowUrlPreviewModal(false);
+                      setUrlSaveModalOpen(false);
+                    }}
+                  />
                 </div>
               </div>
-            </div>
+              <SaveRecipeToCookbookModal
+                open={urlSaveModalOpen}
+                onClose={() => setUrlSaveModalOpen(false)}
+                payload={urlSaveModalOpen && urlImportPayload ? urlImportPayload : null}
+              />
+            </>
           )}
         </motion.div>
       )}

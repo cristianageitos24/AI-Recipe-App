@@ -37,7 +37,9 @@ export async function getOrCreateRecipe(payload: RecipePayload) {
   const supabase = await createClient();
 
   const isUserOwned =
-    payload.recipeID.startsWith("manual-") || payload.recipeID.startsWith("video-recipe-");
+    payload.recipeID.startsWith("manual-") ||
+    payload.recipeID.startsWith("video-recipe-") ||
+    payload.recipeID.startsWith("url-import-");
 
   const { data: existing } = await supabase
     .from("recipes")

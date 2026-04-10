@@ -1,15 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { getVideoJob, type VideoJob } from "@/app/actions/video-jobs";
-import {
-  createFolder,
-  getFolders,
-  addRecipeToFolder,
-} from "@/app/actions/folders";
 import { buildVideoRecipePayload } from "@/lib/processRecipeData";
 import type { ExtractedRecipe, ExtractedRecipeIngredient } from "@/lib/types";
+import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
 
 interface VideoUploadFormProps {
   onJobCreated?: (jobId: string) => void;
@@ -54,7 +49,6 @@ function initialEditedFromExtracted(
 }
 
 export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
-  const router = useRouter();
   const [tiktokUrl, setTiktokUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,11 +57,6 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
   const [editedRecipe, setEditedRecipe] = useState<EditedRecipeState | null>(null);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"ingredients" | "cooktime" | "steps">("ingredients");
-  const [saveFolders, setSaveFolders] = useState<string[]>([]);
-  const [newFolderName, setNewFolderName] = useState("");
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -177,17 +166,6 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
     }
   }, [jobId, jobStatus?.status, jobStatus?.extracted_recipe, jobStatus?.thumbnail_url]);
 
-  // Fetch folders when save modal opens
-  useEffect(() => {
-    if (saveModalOpen) {
-      setSaveError(null);
-      setSaveSuccess(null);
-      getFolders().then((res) => {
-        if (res.data?.folders) setSaveFolders(res.data.folders as string[]);
-      });
-    }
-  }, [saveModalOpen]);
-
   // Cleanup polling on unmount
   useEffect(() => {
     return () => {
@@ -216,67 +194,6 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
         imageUrl,
       }
     );
-  }
-
-  async function handleSaveToExistingFolder(folderName: string) {
-    const payload = getPayloadFromEdited();
-    if (!payload) return;
-    setSaving(true);
-    setSaveError(null);
-    const res = await addRecipeToFolder(folderName, payload);
-    setSaving(false);
-    if (res.error) {
-      setSaveError(res.error);
-      return;
-    }
-    setSaveSuccess(`Saved to "${folderName}"`);
-    const data = "data" in res ? res.data : undefined;
-    setTimeout(() => {
-      setSaveModalOpen(false);
-      setSaveSuccess(null);
-      setNewFolderName("");
-      if (data?.folderName != null && data?.recipeId != null) {
-        router.push(
-          `/dashboard/cookbook/${encodeURIComponent(data.folderName)}?openRecipeId=${encodeURIComponent(data.recipeId)}`
-        );
-      }
-    }, 1500);
-  }
-
-  async function handleCreateAndSave() {
-    const name = newFolderName.trim();
-    if (!name) {
-      setSaveError("Enter a cookbook name");
-      return;
-    }
-    const payload = getPayloadFromEdited();
-    if (!payload) return;
-    setSaving(true);
-    setSaveError(null);
-    const createRes = await createFolder(name);
-    if (createRes.error) {
-      setSaving(false);
-      setSaveError(createRes.error);
-      return;
-    }
-    const addRes = await addRecipeToFolder(name, payload);
-    setSaving(false);
-    if (addRes.error) {
-      setSaveError(addRes.error);
-      return;
-    }
-    setSaveSuccess(`Created "${name}" and saved recipe`);
-    const data = "data" in addRes ? addRes.data : undefined;
-    setTimeout(() => {
-      setSaveModalOpen(false);
-      setSaveSuccess(null);
-      setNewFolderName("");
-      if (data?.folderName != null && data?.recipeId != null) {
-        router.push(
-          `/dashboard/cookbook/${encodeURIComponent(data.folderName)}?openRecipeId=${encodeURIComponent(data.recipeId)}`
-        );
-      }
-    }, 1500);
   }
 
   return (
@@ -534,84 +451,11 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
         </div>
       )}
 
-      {saveModalOpen && (
-        <div
-          className="video-save-modal-overlay"
-          onClick={() => !saving && setSaveModalOpen(false)}
-          onKeyDown={(e) => e.key === "Escape" && !saving && setSaveModalOpen(false)}
-          role="button"
-          tabIndex={0}
-        >
-          <div
-            className="video-save-modal-content"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="video-save-modal-title">Save to cookbook</h3>
-            {saveError && (
-              <div className="error-message video-save-error">{saveError}</div>
-            )}
-            {saveSuccess && (
-              <p className="video-save-success">{saveSuccess}</p>
-            )}
-            {!saveSuccess && (
-              <>
-                {saveFolders.length > 0 && (
-                  <div className="video-save-section">
-                    <p className="video-save-section-label">Existing cookbook</p>
-                    <ul className="video-save-folder-list">
-                      {saveFolders.map((folder) => (
-                        <li key={folder}>
-                          <button
-                            type="button"
-                            className="video-save-folder-btn"
-                            onClick={() => handleSaveToExistingFolder(folder)}
-                            disabled={saving}
-                          >
-                            {folder}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                <div className="video-save-section">
-                  <p className="video-save-section-label">
-                    {saveFolders.length > 0 ? "Or create new cookbook" : "Create new cookbook"}
-                  </p>
-                  <div className="video-save-new-folder">
-                    <input
-                      type="text"
-                      className="form-input video-save-new-input"
-                      placeholder="Cookbook name"
-                      value={newFolderName}
-                      onChange={(e) => setNewFolderName(e.target.value)}
-                      disabled={saving}
-                    />
-                    <button
-                      type="button"
-                      className="submit-button video-save-create-btn"
-                      onClick={handleCreateAndSave}
-                      disabled={saving}
-                    >
-                      {saving ? "Saving..." : "Create and save"}
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-            {!saveSuccess && (
-              <button
-                type="button"
-                className="video-save-cancel-btn"
-                onClick={() => !saving && setSaveModalOpen(false)}
-                disabled={saving}
-              >
-                Cancel
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      <SaveRecipeToCookbookModal
+        open={saveModalOpen}
+        onClose={() => setSaveModalOpen(false)}
+        payload={saveModalOpen ? getPayloadFromEdited() : null}
+      />
     </div>
   );
 }

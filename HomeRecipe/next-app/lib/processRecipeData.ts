@@ -6,6 +6,7 @@ import type {
   ExtractedRecipeIngredient,
   RecipePayload,
   RecipeRow,
+  UrlImportedRecipe,
 } from "./types";
 
 export type ProcessedRecipe = {
@@ -251,4 +252,99 @@ export function buildVideoRecipePayload(
     website_url: options?.sourceUrl?.trim() || null,
     image_url: options?.imageUrl?.trim() || null,
   };
+}
+
+/** Placeholder UUID for `RecipeFullView` before a URL import is persisted (never use with `getRecipeFull`). */
+const URL_IMPORT_DRAFT_ROW_ID = "00000000-0000-4000-8000-000000000001";
+
+function normalizeSourceUrlForHash(url: string): string {
+  try {
+    const u = new URL(url.trim());
+    u.hash = "";
+    const host = u.hostname.toLowerCase();
+    let path = u.pathname;
+    if (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
+    return `${u.protocol}//${host}${path}${u.search}`;
+  } catch {
+    return url.trim();
+  }
+}
+
+function parseScrapedCaloriesString(calories: string | null): number {
+  if (!calories?.trim()) return 0;
+  const match = calories.match(/[\d.]+/);
+  if (!match) return 0;
+  const n = parseFloat(match[0]);
+  return Number.isFinite(n) ? formatCalories(n) : 0;
+}
+
+function urlImportInstructionSteps(imported: UrlImportedRecipe): string[] {
+  if (imported.instructions_list.length > 0) {
+    return imported.instructions_list.map((s) => s.trim()).filter(Boolean);
+  }
+  if (imported.instructions?.trim()) {
+    return imported.instructions
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
+/** Stable payload for the same recipe page URL (re-import updates the row when `recipe_id` is user-owned). */
+export function buildUrlImportRecipePayload(imported: UrlImportedRecipe): RecipePayload {
+  const normalized = normalizeSourceUrlForHash(imported.source_url);
+  const recipeID = `url-import-${generateHashKey(normalized)}`;
+  const ingredient_lines =
+    imported.ingredients.length > 0
+      ? imported.ingredients
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .join("***")
+      : null;
+  const stepLines = urlImportInstructionSteps(imported);
+  const steps = stepLines.length > 0 ? stepLines.join("***") : null;
+  const timeRaw =
+    imported.total_time_minutes ??
+    imported.cooktime_minutes ??
+    imported.prep_time_minutes ??
+    0;
+  const time = Number(timeRaw);
+  const time_in_minutes = Number.isFinite(time) && time >= 0 ? time : 0;
+
+  return {
+    recipeID,
+    recipe_label: imported.title?.trim() || "Untitled Recipe",
+    calories: parseScrapedCaloriesString(imported.calories),
+    cuisine_type: null,
+    meal_type: imported.yields?.trim() || null,
+    time_in_minutes,
+    ingredient_lines,
+    steps,
+    website_url: imported.source_url?.trim() || null,
+    image_url: imported.image?.trim() || null,
+  };
+}
+
+export function urlImportToDraftRecipeRow(payload: RecipePayload): RecipeRow {
+  return {
+    id: URL_IMPORT_DRAFT_ROW_ID,
+    recipe_id: payload.recipeID,
+    recipe_label: payload.recipe_label,
+    calories: payload.calories,
+    cuisine_type: payload.cuisine_type,
+    meal_type: payload.meal_type,
+    time_in_minutes: payload.time_in_minutes,
+    ingredient_lines: payload.ingredient_lines,
+    steps: payload.steps,
+    website_url: payload.website_url,
+    image_url: payload.image_url,
+  };
+}
+
+export function isUrlImportSaveable(imported: UrlImportedRecipe | null): boolean {
+  if (!imported) return false;
+  const title = imported.title?.trim() ?? "";
+  const hasIngredients = imported.ingredients.some((s) => s.trim().length > 0);
+  return title.length > 0 && hasIngredients;
 }

@@ -63,3 +63,18 @@ export type ExtractedRecipe = {
   ingredients: ExtractedRecipeIngredient[];
   steps: string[];
 };
+
+/** JSON returned by the static URL recipe import service (`/api/recipes/import-url`) */
+export type UrlImportedRecipe = {
+  source_url: string;
+  title: string | null;
+  image: string | null;
+  ingredients: string[];
+  instructions: string | null;
+  instructions_list: string[];
+  cooktime_minutes: number | null;
+  prep_time_minutes: number | null;
+  total_time_minutes: number | null;
+  calories: string | null;
+  yields: string | null;
+};

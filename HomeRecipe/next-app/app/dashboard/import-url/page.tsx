@@ -1,38 +1,37 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-
-type ImportedRecipe = {
-  source_url: string;
-  title: string | null;
-  image: string | null;
-  ingredients: string[];
-  instructions: string | null;
-  instructions_list: string[];
-  cooktime_minutes: number | null;
-  prep_time_minutes: number | null;
-  total_time_minutes: number | null;
-  calories: string | null;
-  yields: string | null;
-};
+import { RecipeFullView } from "@/components/RecipeFullView";
+import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
+import {
+  buildUrlImportRecipePayload,
+  isUrlImportSaveable,
+  urlImportToDraftRecipeRow,
+} from "@/lib/processRecipeData";
+import type { UrlImportedRecipe } from "@/lib/types";
+import "@/app/styling/CookbookFolderPage.css";
+import "@/app/styling/CookbookPageRecipeCard.css";
+import "@/app/styling/VideoUpload.css";
 
 export default function ImportRecipeUrlPage() {
+  const router = useRouter();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<ImportedRecipe | null>(null);
+  const [result, setResult] = useState<UrlImportedRecipe | null>(null);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
 
-  const steps = useMemo(() => {
-    if (!result) return [];
-    if (result.instructions_list.length > 0) return result.instructions_list;
-    if (result.instructions) {
-      return result.instructions
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
-    }
-    return [];
-  }, [result]);
+  const urlPayload = useMemo(
+    () => (result ? buildUrlImportRecipePayload(result) : null),
+    [result]
+  );
+  const draftRecipeRow = useMemo(
+    () => (urlPayload ? urlImportToDraftRecipeRow(urlPayload) : null),
+    [urlPayload]
+  );
+  const canSave = isUrlImportSaveable(result);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -51,7 +50,7 @@ export default function ImportRecipeUrlPage() {
         throw new Error(data?.error || "Failed to import recipe URL");
       }
 
-      setResult(data as ImportedRecipe);
+      setResult(data as UrlImportedRecipe);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unexpected error";
       setError(msg);
@@ -61,6 +60,79 @@ export default function ImportRecipeUrlPage() {
     }
   }
 
+  function clearResult() {
+    setResult(null);
+    setSaveModalOpen(false);
+  }
+
+  if (result && draftRecipeRow) {
+    return (
+      <>
+        <div
+          className="recipe-full-view-overlay"
+          onClick={() => router.push("/dashboard/home")}
+          onKeyDown={(e) => e.key === "Escape" && router.push("/dashboard/home")}
+          role="button"
+          tabIndex={0}
+        >
+          <div
+            className="recipe-full-view-scroll-wrapper"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                gap: "var(--space-3)",
+                marginBottom: "var(--space-4)",
+              }}
+            >
+              <Link
+                href="/dashboard/home"
+                className="add-recipe-manual-submit"
+                style={{
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                Back to Home
+              </Link>
+              <button
+                type="button"
+                onClick={clearResult}
+                className="add-recipe-manual-submit"
+                style={{ background: "var(--gray-600)" }}
+              >
+                Import another URL
+              </button>
+              <button
+                type="button"
+                className="submit-button video-recipe-save-btn"
+                style={{ margin: 0 }}
+                disabled={!canSave}
+                onClick={() => setSaveModalOpen(true)}
+              >
+                Save to cookbook
+              </button>
+            </div>
+            <RecipeFullView
+              recipeData={draftRecipeRow}
+              onClose={() => router.push("/dashboard/home")}
+            />
+          </div>
+        </div>
+        <SaveRecipeToCookbookModal
+          open={saveModalOpen}
+          onClose={() => setSaveModalOpen(false)}
+          payload={saveModalOpen && urlPayload ? urlPayload : null}
+        />
+      </>
+    );
+  }
+
   return (
     <section className="main-panel" style={{ maxWidth: 960, margin: "0 auto" }}>
       <h1 style={{ margin: 0, fontSize: 28, color: "var(--color-fg)" }}>
@@ -68,7 +140,7 @@ export default function ImportRecipeUrlPage() {
       </h1>
       <p style={{ marginTop: 8, marginBottom: 24, color: "var(--color-fg-muted)" }}>
         Paste a recipe link and fetch title, image, ingredients, and
-        instructions.
+        instructions. Then save to a cookbook using the same flow as video import.
       </p>
 
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
@@ -110,83 +182,6 @@ export default function ImportRecipeUrlPage() {
 
       {error ? (
         <p style={{ color: "var(--error-fg)", marginTop: 14 }}>{error}</p>
-      ) : null}
-
-      {result ? (
-        <article
-          style={{
-            marginTop: 24,
-            border: "1px solid var(--gray-300)",
-            borderRadius: 14,
-            background: "var(--color-bg)",
-            padding: 16,
-          }}
-        >
-          {result.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={result.image}
-              alt={result.title || "Imported recipe image"}
-              style={{
-                width: "100%",
-                maxHeight: 280,
-                objectFit: "cover",
-                borderRadius: 10,
-                marginBottom: 14,
-              }}
-            />
-          ) : null}
-
-          <h2 style={{ marginTop: 0, marginBottom: 8 }}>
-            {result.title || "Untitled Recipe"}
-          </h2>
-          <p style={{ marginTop: 0, color: "var(--color-fg-muted)", fontSize: 13 }}>
-            Source:{" "}
-            <a href={result.source_url} target="_blank" rel="noreferrer">
-              {result.source_url}
-            </a>
-          </p>
-
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 10,
-              marginBottom: 10,
-            }}
-          >
-            {result.total_time_minutes ? (
-              <span style={{ fontSize: 13, color: "var(--gray-800)" }}>
-                Total: {result.total_time_minutes} min
-              </span>
-            ) : null}
-            {result.calories ? (
-              <span style={{ fontSize: 13, color: "var(--gray-800)" }}>
-                {result.calories}
-              </span>
-            ) : null}
-            {result.yields ? (
-              <span style={{ fontSize: 13, color: "var(--gray-800)" }}>
-                {result.yields}
-              </span>
-            ) : null}
-          </div>
-
-          <h3>Ingredients</h3>
-          <ul>
-            {result.ingredients.map((item, index) => (
-              <li key={`${index}-${item}`}>{item}</li>
-            ))}
-          </ul>
-
-          <hr></hr>
-          <h3>Instructions</h3>
-          <ol>
-            {steps.map((step, index) => (
-              <li key={`${index}-${step}`}>{step}</li>
-            ))}
-          </ol>
-        </article>
       ) : null}
     </section>
   );
