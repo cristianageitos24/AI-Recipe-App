@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import type { RecipeRow } from "@/lib/types";
+import {
+  getRecipeSourceColumnAriaLabel,
+  getRecipeSourceLinkBase,
+} from "@/lib/recipeSourceLink";
 import { addGroceryItem, addGroceryItems, removeGroceryItems } from "@/app/actions/grocery-items";
 import "@/app/styling/RecipeFullView.css";
 
@@ -55,6 +59,8 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
   const cookMinutes = recipeData.time_in_minutes < 1 ? 1 : recipeData.time_in_minutes;
   const cookTimeTone =
     cookMinutes < 10 ? "fast" : cookMinutes > 30 ? "slow" : "medium";
+  const sourceUrl = recipeData.website_url?.trim() || null;
+  const sourceLinkBase = sourceUrl ? getRecipeSourceLinkBase(sourceUrl) : null;
 
   async function handleAddIngredient(item: string) {
     const res = await addGroceryItem(item);
@@ -117,19 +123,51 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
           </svg>
         </button>
       )}
-      <div className="more-information-image-box">
-        <div className="more-info-image-blur" />
-        {recipeData.image_url ? (
-          <img
-            className="more-info-image"
-            src={recipeData.image_url}
-            alt={recipeData.recipe_label}
-          />
-        ) : (
-          <img className="more-info-image more-info-image-placeholder" src="/images/recipe-placeholder.png" alt="" aria-hidden />
-        )}
-        <h1 className="more-info-recipe-label">{recipeData.recipe_label}</h1>
-      </div>
+      {sourceLinkBase ? (
+        <a
+          className="more-information-image-box more-information-image-box--source-link"
+          {...sourceLinkBase}
+          aria-label={getRecipeSourceColumnAriaLabel(recipeData.recipe_label)}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="more-info-image-blur" />
+          {recipeData.image_url ? (
+            <img
+              className="more-info-image"
+              src={recipeData.image_url}
+              alt=""
+              aria-hidden
+            />
+          ) : (
+            <img
+              className="more-info-image more-info-image-placeholder"
+              src="/images/recipe-placeholder.png"
+              alt=""
+              aria-hidden
+            />
+          )}
+          <h1 className="more-info-recipe-label">{recipeData.recipe_label}</h1>
+        </a>
+      ) : (
+        <div className="more-information-image-box">
+          <div className="more-info-image-blur" />
+          {recipeData.image_url ? (
+            <img
+              className="more-info-image"
+              src={recipeData.image_url}
+              alt={recipeData.recipe_label}
+            />
+          ) : (
+            <img
+              className="more-info-image more-info-image-placeholder"
+              src="/images/recipe-placeholder.png"
+              alt=""
+              aria-hidden
+            />
+          )}
+          <h1 className="more-info-recipe-label">{recipeData.recipe_label}</h1>
+        </div>
+      )}
       <div className="full-information">
         <div className="bubble-content">
           <div className="recipe-fullview-pill-row">
@@ -140,11 +178,9 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
               {cookMinutes} min
             </p>
           </div>
-          {recipeData.website_url && (
+          {sourceLinkBase && (
             <a
-              href={recipeData.website_url}
-              target="_blank"
-              rel="noopener noreferrer"
+              {...sourceLinkBase}
               className="recipe-fullview-view-source"
               onClick={(e) => e.stopPropagation()}
             >
@@ -246,13 +282,13 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
             </section>
           )}
         </div>
-        {recipeData.website_url && (
+        {sourceUrl && (
           <button
             type="button"
             className="recipe-fullview-openlink-btn"
             onClick={(e) => {
               e.stopPropagation();
-              window.open(recipeData.website_url ?? "", "_blank");
+              window.open(sourceUrl, "_blank");
             }}
           >
             <svg className="openlink-icon" width="500" height="500" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">

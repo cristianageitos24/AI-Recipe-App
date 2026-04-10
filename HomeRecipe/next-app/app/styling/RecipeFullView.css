@@ -67,6 +67,23 @@
   align-items: center;
 }
 
+/* Whole left column = one outbound link when website_url is set */
+a.more-information-image-box.more-information-image-box--source-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.more-information-image-box--source-link:focus-visible {
+  outline: 2px solid var(--color-fg);
+  outline-offset: 2px;
+}
+
+.more-information-image-box--source-link .more-info-image-blur {
+  pointer-events: none;
+}
+
 .more-information-image-box .more-info-image-blur {
   position: absolute;
   z-index: 1;
