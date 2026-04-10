@@ -5,6 +5,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Next 16.2.x typecheck worker can throw on Node 22+ ("The id argument must be of type string");
+  // project types are enforced via `npm run typecheck` (tsc) in the build script instead.
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   // Next.js 16 uses Turbopack by default; empty config satisfies the build when webpack is also set
   turbopack: {},
   experimental: {

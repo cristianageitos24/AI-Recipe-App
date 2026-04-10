@@ -34,6 +34,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(payload, { status: 200 });
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
+
+    const cause = err.cause;
+    const errno =
+      cause && typeof cause === "object" && "code" in cause
+        ? String((cause as { code?: string }).code)
+        : "";
+    const upstreamUnreachable =
+      err.message === "fetch failed" || errno === "ECONNREFUSED" || errno === "ENOTFOUND";
+
+    if (upstreamUnreachable) {
+      return NextResponse.json(
+        {
+          error: "Recipe import service is unavailable.",
+          detail:
+            process.env.NODE_ENV === "development"
+              ? `Nothing responded at ${IMPORT_API_BASE}. Run the Python API (e.g. docker compose up recipe-url-import from HomeRecipe, or npm run recipe-import-api). See HomeRecipe/DEPLOY.md for production.`
+              : undefined,
+        },
+        { status: 503 },
+      );
+    }
+
     return NextResponse.json(
       {
         error: "Internal server error",

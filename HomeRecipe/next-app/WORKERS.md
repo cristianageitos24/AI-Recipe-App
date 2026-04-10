@@ -53,3 +53,43 @@ Before leaving, stop servers to free ports and resources:
    Get-NetTCPConnection -LocalPort 3000,3001 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
    ```
 3. **Windows:** Close the terminal windows opened by `dev-all.bat`.
+
+---
+
+## Run the video worker with Docker (optional)
+
+Use this when you want the same dependencies as production (no local ffmpeg/Tesseract/yt-dlp install). **Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)** for Windows or macOS first, then start Docker.
+
+1. Ensure `next-app/.env.local` exists (copy from `.env.local.example` and fill in keys). Compose injects these into the container at runtime; they are not baked into the image.
+2. From the **`HomeRecipe`** folder (parent of `next-app`), run:
+
+```cmd
+docker compose build video-worker
+docker compose up -d video-worker
+```
+
+3. Follow logs:
+
+```cmd
+docker compose logs -f video-worker
+```
+
+To run **both** the recipe URL API and the video worker:
+
+```cmd
+docker compose up -d
+```
+
+To stop:
+
+```cmd
+docker compose down
+```
+
+The image is built from `next-app/Dockerfile.worker` and runs `npm run worker:video` inside Linux with **ffmpeg**, **Tesseract**, and **yt-dlp** preinstalled.
+
+---
+
+## Production (Vercel + worker hosting)
+
+For **go-live**: deploy both Docker services on a container host (Railway, Fly.io, Render, VPS, etc.), set secrets there, and on **Vercel** set **`RECIPE_URL_IMPORT_API_URL`** to the **public HTTPS** base URL of the Python service (never `localhost`). Full steps, env var tables, and build contexts are in **[DEPLOY.md](../DEPLOY.md)** in the `HomeRecipe` folder.

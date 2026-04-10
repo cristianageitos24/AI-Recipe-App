@@ -276,7 +276,7 @@ export default function CalendarPage() {
         calories: processed.calories,
         cuisineType: processed.cuisineType,
         mealType: processed.mealType,
-        timeInMinutes: processed.timeInMinutes,
+        timeInMinutes: processed.timeMin,
       };
       setEvents(next);
     }

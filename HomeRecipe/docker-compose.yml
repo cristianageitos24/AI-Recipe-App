@@ -6,3 +6,13 @@ services:
     ports:
       - "8000:8000"
     restart: unless-stopped
+
+  # Node video worker (ffmpeg, Tesseract, yt-dlp bundled in image). Requires next-app/.env.local for Supabase + API keys.
+  video-worker:
+    build:
+      context: ./next-app
+      dockerfile: Dockerfile.worker
+    container_name: video-worker
+    restart: unless-stopped
+    env_file:
+      - ./next-app/.env.local
