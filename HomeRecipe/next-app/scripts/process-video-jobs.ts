@@ -363,6 +363,29 @@ function getYtDlpExecutable(): string {
   return "yt-dlp";
 }
 
+/** User-visible yt-dlp failure text (stderr is usually the actionable part). */
+const YT_DLP_USER_ERROR_MAX = 3500;
+
+function formatYtDlpFailureMessage(error: unknown): string {
+  const e = error as {
+    timedOut?: boolean;
+    shortMessage?: string;
+    message?: string;
+    stderr?: string;
+    stdout?: string;
+    exitCode?: number;
+  };
+  if (e?.timedOut) {
+    return "Downloading the video timed out. Try again or use a shorter clip.";
+  }
+  const stderr = typeof e?.stderr === "string" ? e.stderr.trim() : "";
+  const stdout = typeof e?.stdout === "string" ? e.stdout.trim() : "";
+  const hint =
+    stderr || stdout || e?.shortMessage || e?.message || "yt-dlp exited with an error.";
+  const combined = `TikTok download failed: ${hint}`.slice(0, YT_DLP_USER_ERROR_MAX);
+  return combined;
+}
+
 /**
  * Download a TikTok video for URL-based jobs.
  * Uses yt-dlp (from YT_DLP_PATH, common install locations, or PATH).
@@ -384,12 +407,15 @@ async function downloadTikTokVideo(tiktokUrl: string, jobId: string): Promise<st
       timeout: PROCESSING_TIMEOUT_MS,
     });
   } catch (error: any) {
+    const stderr =
+      typeof error?.stderr === "string" ? error.stderr : String(error?.stderr ?? "");
     log("ERROR", "Failed to download TikTok video", {
       jobId,
       tiktokUrl,
       error: error?.message ?? String(error),
+      stderr: stderr.slice(-2000),
     });
-    throw new Error("Failed to download TikTok video. The video may be private or unsupported.");
+    throw new Error(formatYtDlpFailureMessage(error));
   }
 
   return tempPath;
