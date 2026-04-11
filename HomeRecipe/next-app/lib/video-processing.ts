@@ -304,13 +304,21 @@ export function cleanAndDeduplicateOCRText(text: string): string {
   return Array.from(seen.values()).join("\n");
 }
 
+export type VideoFrameProgressPayload = {
+  frameIndex: number;
+  frameCount: number;
+};
+
 /**
  * Process video: extract frames and run OCR
  */
 export async function processVideo(
   videoPath: string,
   ocrProvider: OCRProvider,
-  maxFrames: number = 60
+  maxFrames: number = 60,
+  onFrameProgress?: (
+    payload: VideoFrameProgressPayload
+  ) => void | Promise<void>
 ): Promise<string> {
   const tempDir = join(tmpdir(), `video-ocr-${Date.now()}`);
   const fs = require("fs");
@@ -336,6 +344,12 @@ export async function processVideo(
         console.error(`[Processing] Error processing frame ${framePath}:`, error);
         // Continue with other frames
       }
+      await Promise.resolve(
+        onFrameProgress?.({
+          frameIndex: i,
+          frameCount: framePaths.length,
+        })
+      );
     }
 
     // Combine and clean text

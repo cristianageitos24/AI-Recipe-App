@@ -18,6 +18,12 @@ export interface VideoJob {
   transcript_text: string | null;
   extracted_recipe: ExtractedRecipe | null;
   thumbnail_url: string | null;
+  /** 0–100 determinate progress (worker); null if column missing on old rows */
+  processing_progress: number | null;
+  /** Machine stage id from worker */
+  processing_stage: string | null;
+  /** Subtext e.g. frame counts */
+  processing_detail: string | null;
   error_message: string | null;
   attempts: number;
   started_at: string | null;

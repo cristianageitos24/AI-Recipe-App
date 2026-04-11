@@ -431,3 +431,155 @@
   background: var(--gray-100);
   color: var(--color-fg);
 }
+
+/* --- Video job: determinate progress + pulsing panel --- */
+
+@keyframes video-job-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--accent-muted-bg);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 6px var(--accent-muted-bg);
+    opacity: 0.97;
+  }
+}
+
+.video-job-progress-card {
+  margin-bottom: var(--space-5);
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-300);
+  background: var(--color-bg);
+}
+
+.video-job-progress-card--pulse {
+  animation: video-job-pulse 2.2s ease-in-out infinite;
+}
+
+.video-job-progress-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.video-job-progress-native {
+  flex: 1;
+  height: 10px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: none;
+  accent-color: var(--accent);
+}
+
+.video-job-progress-native::-webkit-progress-bar {
+  background: var(--gray-200);
+  border-radius: var(--radius-sm);
+}
+
+.video-job-progress-native::-webkit-progress-value {
+  background: var(--accent);
+  border-radius: var(--radius-sm);
+}
+
+.video-job-progress-native::-moz-progress-bar {
+  background: var(--accent);
+  border-radius: var(--radius-sm);
+}
+
+.video-job-progress-percent {
+  flex-shrink: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-fg);
+  min-width: 2.75rem;
+  text-align: right;
+}
+
+.video-job-stage-primary {
+  margin: 0 0 var(--space-1) 0;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-fg);
+}
+
+.video-job-stage-detail {
+  margin: 0 0 var(--space-2) 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--gray-700);
+}
+
+.video-job-elapsed {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--gray-600);
+}
+
+/* --- URL import: indeterminate loading (no real %) --- */
+
+@keyframes import-url-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.import-url-loading-card {
+  margin-top: var(--space-5);
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-300);
+  background: var(--color-bg);
+}
+
+.import-url-loading-card--pulse {
+  animation: video-job-pulse 2.2s ease-in-out infinite;
+}
+
+.import-url-indeterminate-track {
+  position: relative;
+  height: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--gray-200);
+  overflow: hidden;
+  margin-bottom: var(--space-4);
+}
+
+.import-url-indeterminate-bar {
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--accent-muted-bg),
+    var(--accent),
+    var(--accent-muted-bg)
+  );
+  animation: import-url-shimmer 1.4s ease-in-out infinite;
+}
+
+.import-url-rotating-line {
+  margin: 0 0 var(--space-2) 0;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-fg);
+  min-height: 1.5em;
+}
+
+.import-url-honest-note {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--gray-600);
+  line-height: 1.4;
+}

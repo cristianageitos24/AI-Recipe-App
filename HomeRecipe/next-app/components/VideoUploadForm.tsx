@@ -1,10 +1,46 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { getVideoJob, type VideoJob } from "@/app/actions/video-jobs";
 import { buildVideoRecipePayload } from "@/lib/processRecipeData";
 import type { ExtractedRecipe, ExtractedRecipeIngredient } from "@/lib/types";
 import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
+import "@/app/styling/VideoUpload.css";
+
+const JOB_POLL_MS = 1750;
+
+const STAGE_LABELS: Record<string, string> = {
+  downloading: "Downloading video",
+  validating: "Validating clip",
+  thumbnail: "Creating cover image",
+  transcription: "Transcribing speech",
+  ocr: "Reading on-screen text",
+  reasoning: "Building your recipe",
+  finalizing: "Finishing up",
+  complete: "Complete",
+  error: "Something went wrong",
+};
+
+function videoJobPrimaryLine(job: VideoJob): string {
+  if (job.status === "uploaded" && !job.processing_stage) {
+    return "Waiting in queue…";
+  }
+  if (job.processing_stage && STAGE_LABELS[job.processing_stage]) {
+    return STAGE_LABELS[job.processing_stage];
+  }
+  if (job.processing_stage) {
+    return job.processing_stage;
+  }
+  return "Processing…";
+}
+
+function formatElapsedMs(ms: number): string {
+  if (!Number.isFinite(ms) || ms < 0) return "0:00";
+  const totalSec = Math.floor(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
 
 interface VideoUploadFormProps {
   onJobCreated?: (jobId: string) => void;
@@ -57,7 +93,24 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
   const [editedRecipe, setEditedRecipe] = useState<EditedRecipeState | null>(null);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"ingredients" | "cooktime" | "steps">("ingredients");
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [elapsedTick, setElapsedTick] = useState(0);
+
+  const inProgress =
+    jobStatus?.status === "uploaded" || jobStatus?.status === "processing";
+
+  useEffect(() => {
+    if (!inProgress) return;
+    const t = setInterval(() => setElapsedTick((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [inProgress, jobId]);
+
+  const elapsedLabel = useMemo(() => {
+    if (!jobStatus?.started_at || !inProgress) return null;
+    const start = new Date(jobStatus.started_at).getTime();
+    if (Number.isNaN(start)) return null;
+    return formatElapsedMs(Date.now() - start);
+  }, [jobStatus?.started_at, inProgress, elapsedTick]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,6 +158,9 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
       setJobStatus({
         id: data.jobId,
         status: data.status,
+        processing_progress: 0,
+        processing_stage: null,
+        processing_detail: null,
       } as VideoJob);
 
       // Start polling for status
@@ -122,23 +178,18 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
   };
 
   const startPolling = (id: string) => {
-    // Clear existing interval
     if (pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current);
     }
 
-    // Poll every 2 seconds
-    pollIntervalRef.current = setInterval(async () => {
+    const pollOnce = async () => {
       const result = await getVideoJob(id);
       if (result.error) {
         console.error("Failed to fetch job status:", result.error);
         return;
       }
-
       if (result.data) {
         setJobStatus(result.data);
-
-        // Stop polling if job is done or error
         if (result.data.status === "done" || result.data.status === "error") {
           if (pollIntervalRef.current) {
             clearInterval(pollIntervalRef.current);
@@ -146,7 +197,10 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
           }
         }
       }
-    }, 2000);
+    };
+
+    void pollOnce();
+    pollIntervalRef.current = setInterval(pollOnce, JOB_POLL_MS);
   };
 
   // Initialize editable recipe state when job completes with extracted_recipe
@@ -226,15 +280,37 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
       {jobStatus && (
         <div className="job-status">
           <h3>Processing Status</h3>
+
+          {inProgress && (
+            <div
+              className="video-job-progress-card video-job-progress-card--pulse"
+              role="status"
+              aria-live="polite"
+              aria-label="Video processing progress"
+            >
+              <div className="video-job-progress-bar-wrap">
+                <progress
+                  className="video-job-progress-native"
+                  max={100}
+                  value={jobStatus.processing_progress ?? 0}
+                />
+                <span className="video-job-progress-percent" aria-hidden>
+                  {jobStatus.processing_progress ?? 0}%
+                </span>
+              </div>
+              <p className="video-job-stage-primary">{videoJobPrimaryLine(jobStatus)}</p>
+              {jobStatus.processing_detail ? (
+                <p className="video-job-stage-detail">{jobStatus.processing_detail}</p>
+              ) : null}
+              {elapsedLabel ? (
+                <p className="video-job-elapsed">Elapsed {elapsedLabel}</p>
+              ) : null}
+            </div>
+          )}
+
           <div className={`status-badge status-${jobStatus.status}`}>
             {jobStatus.status.charAt(0).toUpperCase() + jobStatus.status.slice(1)}
           </div>
-
-          {jobStatus.status === "processing" && (
-            <p className="status-message">
-              Processing video... This may take a few minutes.
-            </p>
-          )}
 
           {jobStatus.status === "done" && editedRecipe && (
             <div className="video-recipe-editor">

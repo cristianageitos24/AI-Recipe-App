@@ -80,6 +80,80 @@ const TRANSCRIPTION_TIMEOUT_MS = parseInt(
 const WORKER_ID =
   process.env.WORKER_ID || `${hostname()}-${process.pid}`;
 
+/** Progress bands (0–100) — tune in one place */
+const P = {
+  startDownload: 2,
+  downloaded: 10,
+  validated: 14,
+  thumbnailDone: 20,
+  transcriptionExtract: 23,
+  transcriptionMid: 30,
+  transcriptionDone: 38,
+  ocrStartWithTranscription: 40,
+  ocrStartNoTranscription: 22,
+  ocrEnd: 82,
+  reasoningStart: 84,
+  reasoningEnd: 94,
+  finalizing: 97,
+  complete: 100,
+} as const;
+
+const OCR_PROGRESS_EVERY_N = 10;
+const OCR_PROGRESS_MIN_MS = 2500;
+
+function clampProgress(n: number): number {
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+function lerpProgress(min: number, max: number, t: number): number {
+  return clampProgress(min + (max - min) * Math.max(0, Math.min(1, t)));
+}
+
+type ProgressUpdate = {
+  progress: number;
+  stage: string;
+  detail?: string | null;
+};
+
+/**
+ * Persist job progress for the dashboard poller
+ */
+async function updateJobProgress(jobId: string, u: ProgressUpdate) {
+  const { error } = await supabase
+    .from("video_processing_jobs")
+    .update({
+      processing_progress: clampProgress(u.progress),
+      processing_stage: u.stage,
+      processing_detail: u.detail ?? null,
+    })
+    .eq("id", jobId);
+
+  if (error) {
+    log("ERROR", "Failed to update job progress", {
+      jobId,
+      error: error.message,
+    });
+  }
+}
+
+function createOcrThrottleState() {
+  let lastWriteAt = 0;
+
+  return {
+    shouldWrite(frameIndex: number, frameCount: number): boolean {
+      if (frameCount <= 0) return false;
+      const lastIdx = frameCount - 1;
+      if (frameIndex === 0 || frameIndex === lastIdx) return true;
+      if (frameIndex % OCR_PROGRESS_EVERY_N === 0) return true;
+      if (Date.now() - lastWriteAt >= OCR_PROGRESS_MIN_MS) return true;
+      return false;
+    },
+    markWritten() {
+      lastWriteAt = Date.now();
+    },
+  };
+}
+
 // Create Supabase client with service role (bypasses RLS)
 const supabase = createClient(supabaseUrl, supabaseSecretKey, {
   auth: {
@@ -171,6 +245,9 @@ async function resetJobForRetry(jobId: string, attempt: number) {
       locked_by: null,
       started_at: null,
       error_message: null,
+      processing_progress: 0,
+      processing_stage: null,
+      processing_detail: null,
     })
     .eq("id", jobId);
 
@@ -193,6 +270,8 @@ async function markJobFailed(jobId: string, errorMessage: string) {
       finished_at: new Date().toISOString(),
       locked_at: null,
       locked_by: null,
+      processing_stage: "error",
+      processing_detail: null,
     })
     .eq("id", jobId);
 
@@ -252,6 +331,9 @@ async function markJobCompleted(
       finished_at: new Date().toISOString(),
       locked_at: null,
       locked_by: null,
+      processing_progress: P.complete,
+      processing_stage: "complete",
+      processing_detail: null,
     })
     .eq("id", jobId);
 
@@ -437,6 +519,12 @@ async function processJob(job: VideoJob): Promise<void> {
       attempts: job.attempts,
     });
 
+    await updateJobProgress(job.id, {
+      progress: P.startDownload,
+      stage: "downloading",
+      detail: null,
+    });
+
     // Choose video source: direct upload vs URL-based TikTok job
     if (job.source_type === "url" || (!job.video_url && job.tiktok_url)) {
       if (!job.tiktok_url) {
@@ -448,6 +536,12 @@ async function processJob(job: VideoJob): Promise<void> {
       videoPath = await downloadVideo(job.video_url);
     }
 
+    await updateJobProgress(job.id, {
+      progress: P.downloaded,
+      stage: "validating",
+      detail: null,
+    });
+
     // Check video duration
     const duration = await getVideoDuration(videoPath);
     log("DEBUG", "Video duration", { jobId: job.id, duration });
@@ -458,8 +552,19 @@ async function processJob(job: VideoJob): Promise<void> {
       );
     }
 
+    await updateJobProgress(job.id, {
+      progress: P.validated,
+      stage: "validating",
+      detail: `${Math.round(duration * 10) / 10}s clip`,
+    });
+
     // Thumbnail: extract one color frame and upload to recipe-covers (non-fatal on failure)
     let thumbnailUrl: string | null = null;
+    await updateJobProgress(job.id, {
+      progress: P.validated + 2,
+      stage: "thumbnail",
+      detail: "Creating cover image",
+    });
     try {
       thumbnailUrl = await extractAndUploadThumbnail(
         videoPath,
@@ -471,14 +576,39 @@ async function processJob(job: VideoJob): Promise<void> {
       log("ERROR", "Thumbnail failed", { jobId: job.id, error: thumbErr?.message ?? thumbErr });
     }
 
+    await updateJobProgress(job.id, {
+      progress: P.thumbnailDone,
+      stage: "thumbnail",
+      detail: thumbnailUrl ? "Cover image ready" : "Continuing without cover",
+    });
+
     // Transcription: extract audio and transcribe (non-fatal on failure)
     const audioTranscriptionKey = process.env.OPENAI_AUDIO_TRANSCRIPTION_KEY;
+    const ocrProgressMin = audioTranscriptionKey
+      ? P.ocrStartWithTranscription
+      : P.ocrStartNoTranscription;
+
     if (audioTranscriptionKey) {
       wavPath = join(tmpdir(), `audio-${Date.now()}-${Math.random().toString(36).substring(7)}.wav`);
       try {
+        await updateJobProgress(job.id, {
+          progress: P.transcriptionExtract,
+          stage: "transcription",
+          detail: "Extracting audio",
+        });
         await extractAudioToWav(videoPath, wavPath);
+        await updateJobProgress(job.id, {
+          progress: P.transcriptionMid,
+          stage: "transcription",
+          detail: "Transcribing speech",
+        });
         transcriptText = await transcribeWithWhisper(wavPath, audioTranscriptionKey, TRANSCRIPTION_TIMEOUT_MS);
         await updateJobTranscript(job.id, transcriptText);
+        await updateJobProgress(job.id, {
+          progress: P.transcriptionDone,
+          stage: "transcription",
+          detail: transcriptText ? `${transcriptText.length} characters` : null,
+        });
         log("DEBUG", "Transcription complete", { jobId: job.id, transcriptLength: transcriptText?.length ?? 0 });
       } catch (transcriptionError: any) {
         log("ERROR", "Transcription failed, continuing with OCR", {
@@ -487,6 +617,11 @@ async function processJob(job: VideoJob): Promise<void> {
         });
         transcriptText = null;
         await updateJobTranscript(job.id, null);
+        await updateJobProgress(job.id, {
+          progress: P.transcriptionDone - 2,
+          stage: "transcription",
+          detail: "Speech-to-text skipped",
+        });
       } finally {
         if (wavPath) {
           try {
@@ -502,12 +637,37 @@ async function processJob(job: VideoJob): Promise<void> {
     }
 
     // Process video with timeout (1 frame/sec, capped at MAX_FRAMES)
-    const maxFrames = Math.min(
-      Math.ceil(duration),
-      MAX_FRAMES
-    );
+    const maxFrames = Math.min(Math.ceil(duration), MAX_FRAMES);
     log("DEBUG", "Processing frames", { jobId: job.id, duration, maxFrames });
-    const processingPromise = processVideo(videoPath, ocrProvider!, maxFrames);
+
+    await updateJobProgress(job.id, {
+      progress: ocrProgressMin,
+      stage: "ocr",
+      detail: maxFrames > 0 ? `Preparing ${maxFrames} frames` : "Running OCR",
+    });
+
+    const ocrThrottle = createOcrThrottleState();
+    const processingPromise = processVideo(
+      videoPath,
+      ocrProvider!,
+      maxFrames,
+      async ({ frameIndex, frameCount }) => {
+        const pct = lerpProgress(
+          ocrProgressMin,
+          P.ocrEnd,
+          frameCount > 0 ? (frameIndex + 1) / frameCount : 1
+        );
+        const detail = `Frame ${frameIndex + 1} / ${frameCount}`;
+        if (ocrThrottle.shouldWrite(frameIndex, frameCount)) {
+          await updateJobProgress(job.id, {
+            progress: pct,
+            stage: "ocr",
+            detail,
+          });
+          ocrThrottle.markWritten();
+        }
+      }
+    );
     const ocrText = await withTimeout(
       processingPromise,
       PROCESSING_TIMEOUT_MS,
@@ -519,6 +679,12 @@ async function processJob(job: VideoJob): Promise<void> {
     // AI reasoning: extract structured recipe from OCR + transcript (non-fatal)
     let extractedRecipe: ExtractedRecipe | null = null;
     const reasoningKey = process.env.OPENAI_REASONING_API_KEY;
+    await updateJobProgress(job.id, {
+      progress: P.reasoningStart,
+      stage: "reasoning",
+      detail: "Extracting recipe structure",
+    });
+
     if (reasoningKey && (ocrText.trim().length > 0 || (transcriptText ?? "").trim().length > 0)) {
       try {
         extractedRecipe = await extractRecipeFromVideo(ocrText, transcriptText, {
@@ -541,6 +707,18 @@ async function processJob(job: VideoJob): Promise<void> {
         log("DEBUG", "OPENAI_REASONING_API_KEY not set, skipping recipe extraction", { jobId: job.id });
       }
     }
+
+    await updateJobProgress(job.id, {
+      progress: P.reasoningEnd,
+      stage: "reasoning",
+      detail: extractedRecipe ? "Recipe structured" : "Using raw text",
+    });
+
+    await updateJobProgress(job.id, {
+      progress: P.finalizing,
+      stage: "finalizing",
+      detail: "Saving results",
+    });
 
     // Mark as completed
     await markJobCompleted(

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { RecipeFullView } from "@/components/RecipeFullView";
 import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
 import {
@@ -15,6 +15,13 @@ import "@/app/styling/CookbookFolderPage.css";
 import "@/app/styling/CookbookPageRecipeCard.css";
 import "@/app/styling/VideoUpload.css";
 
+const URL_IMPORT_STATUS_LINES = [
+  "Fetching the page…",
+  "Looking for recipe data…",
+  "Parsing ingredients and steps…",
+  "Cleaning up the result…",
+] as const;
+
 export default function ImportRecipeUrlPage() {
   const router = useRouter();
   const [url, setUrl] = useState("");
@@ -22,6 +29,18 @@ export default function ImportRecipeUrlPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<UrlImportedRecipe | null>(null);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [statusLineIndex, setStatusLineIndex] = useState(0);
+
+  useEffect(() => {
+    if (!loading) {
+      setStatusLineIndex(0);
+      return;
+    }
+    const t = setInterval(() => {
+      setStatusLineIndex((i) => (i + 1) % URL_IMPORT_STATUS_LINES.length);
+    }, 2200);
+    return () => clearInterval(t);
+  }, [loading]);
 
   const urlPayload = useMemo(
     () => (result ? buildUrlImportRecipePayload(result) : null),
@@ -179,6 +198,26 @@ export default function ImportRecipeUrlPage() {
           {loading ? "Importing..." : "Import Recipe"}
         </button>
       </form>
+
+      {loading ? (
+        <div
+          className="import-url-loading-card import-url-loading-card--pulse"
+          role="status"
+          aria-live="polite"
+          aria-label="Import in progress"
+        >
+          <div className="import-url-indeterminate-track" aria-hidden>
+            <div className="import-url-indeterminate-bar" />
+          </div>
+          <p className="import-url-rotating-line">
+            {URL_IMPORT_STATUS_LINES[statusLineIndex]}
+          </p>
+          <p className="import-url-honest-note">
+            These steps are approximate for display only—they don&apos;t reflect exact
+            backend progress.
+          </p>
+        </div>
+      ) : null}
 
       {error ? (
         <p style={{ color: "var(--error-fg)", marginTop: 14 }}>{error}</p>
