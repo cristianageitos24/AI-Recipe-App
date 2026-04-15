@@ -47,7 +47,8 @@ function envFloat(key: string, defaultValue: number): number {
 }
 
 /**
- * Read vision config. Defaults favor safe rollout: metrics-only on, skips off.
+ * Read vision config. Defaults: blur/duplicate skipping is on; metrics-only is off.
+ * Use VISION_METRICS_ONLY=1 to log would_skip_* but OCR every frame (diagnostics / rollback).
  */
 export function readVisionConfig(): VisionConfig {
   const engineRaw = (process.env.VISION_ENGINE || "auto").toLowerCase();
@@ -62,10 +63,10 @@ export function readVisionConfig(): VisionConfig {
 
   return {
     enabled: envBool("VISION_ENABLED", true),
-    metricsOnly: envBool("VISION_METRICS_ONLY", true),
+    metricsOnly: envBool("VISION_METRICS_ONLY", false),
     engine,
-    skipBlur: envBool("VISION_SKIP_BLUR", false),
-    skipDuplicate: envBool("VISION_SKIP_DUPES", false),
+    skipBlur: envBool("VISION_SKIP_BLUR", true),
+    skipDuplicate: envBool("VISION_SKIP_DUPES", true),
     minLaplacianVariance: envFloat("VISION_MIN_LAPLACIAN_VARIANCE", 120),
     duplicateMaxHamming: envInt("VISION_DHASH_MAX_HAMMING", 10),
     selectMode,
