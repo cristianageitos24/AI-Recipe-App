@@ -19,6 +19,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
+# Rebuild image after changing scripts/process-video-jobs.ts or lib/* (COPY bakes code at build time).
 COPY . .
 
 ENV NODE_ENV=production

@@ -5,6 +5,7 @@ import { getVideoJob, type VideoJob } from "@/app/actions/video-jobs";
 import { buildVideoRecipePayload } from "@/lib/processRecipeData";
 import type { ExtractedRecipe, ExtractedRecipeIngredient } from "@/lib/types";
 import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
+import { formatInstantLocal } from "@/lib/formatTimestamps";
 import "@/app/styling/VideoUpload.css";
 
 const JOB_POLL_MS = 1750;
@@ -112,6 +113,12 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
     return formatElapsedMs(Date.now() - start);
   }, [jobStatus?.started_at, inProgress, elapsedTick]);
 
+  const progressPercent = useMemo(() => {
+    const raw = Number(jobStatus?.processing_progress);
+    if (!Number.isFinite(raw)) return 0;
+    return Math.max(0, Math.min(100, Math.round(raw)));
+  }, [jobStatus?.processing_progress]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -183,7 +190,7 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
     }
 
     const pollOnce = async () => {
-      const result = await getVideoJob(id);
+      const result = await getVideoJob(id, Date.now());
       if (result.error) {
         console.error("Failed to fetch job status:", result.error);
         return;
@@ -283,19 +290,27 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
 
           {inProgress && (
             <div
-              className="video-job-progress-card video-job-progress-card--pulse"
+              className="video-job-progress-card"
               role="status"
               aria-live="polite"
               aria-label="Video processing progress"
             >
               <div className="video-job-progress-bar-wrap">
-                <progress
-                  className="video-job-progress-native"
-                  max={100}
-                  value={jobStatus.processing_progress ?? 0}
-                />
+                <div
+                  className="video-job-progress-track"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={progressPercent}
+                  aria-valuetext={`${progressPercent}% complete`}
+                >
+                  <div
+                    className="video-job-progress-fill video-job-progress-fill--pulse"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
                 <span className="video-job-progress-percent" aria-hidden>
-                  {jobStatus.processing_progress ?? 0}%
+                  {progressPercent}%
                 </span>
               </div>
               <p className="video-job-stage-primary">{videoJobPrimaryLine(jobStatus)}</p>
@@ -303,7 +318,15 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
                 <p className="video-job-stage-detail">{jobStatus.processing_detail}</p>
               ) : null}
               {elapsedLabel ? (
-                <p className="video-job-elapsed">Elapsed {elapsedLabel}</p>
+                <>
+                  <p className="video-job-elapsed">Elapsed {elapsedLabel}</p>
+                  {jobStatus.started_at ? (
+                    <p className="video-job-local-times">
+                      Started {formatInstantLocal(jobStatus.started_at)}
+                      <span className="video-job-local-times-hint"> (your local time)</span>
+                    </p>
+                  ) : null}
+                </>
               ) : null}
             </div>
           )}
@@ -519,10 +542,32 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
             </div>
           )}
 
-          {jobStatus.processing_ms && (
-            <p className="processing-time">
-              Processed in {(jobStatus.processing_ms / 1000).toFixed(1)} seconds
-            </p>
+          {(jobStatus.status === "done" || jobStatus.status === "error") &&
+            (jobStatus.processing_ms ||
+              jobStatus.started_at ||
+              jobStatus.finished_at) && (
+            <div className="video-job-timing-footer">
+              {jobStatus.processing_ms ? (
+                <p className="processing-time">
+                  Processed in {(jobStatus.processing_ms / 1000).toFixed(1)} seconds
+                </p>
+              ) : null}
+              {(jobStatus.started_at || jobStatus.finished_at) && (
+                <p className="video-job-local-times">
+                  {jobStatus.started_at ? (
+                    <>Started {formatInstantLocal(jobStatus.started_at)}</>
+                  ) : null}
+                  {jobStatus.started_at && jobStatus.finished_at ? " · " : null}
+                  {jobStatus.finished_at ? (
+                    <>Finished {formatInstantLocal(jobStatus.finished_at)}</>
+                  ) : null}
+                  <span className="video-job-local-times-hint">
+                    {" "}
+                    (your local time)
+                  </span>
+                </p>
+              )}
+            </div>
           )}
         </div>
       )}

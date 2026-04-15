@@ -42,6 +42,14 @@ if (!supabaseUrl || !supabaseSecretKey) {
   process.exit(1);
 }
 
+if (!process.env.SUPABASE_SECRET_KEY) {
+  console.error(
+    "[worker] SUPABASE_SECRET_KEY is not set. The video worker must use the service role key so job updates " +
+      "(progress, status) are not blocked by RLS. Add SUPABASE_SECRET_KEY to next-app/.env.local and restart the worker."
+  );
+  process.exit(1);
+}
+
 const supabaseHost =
   (() => {
     try {
@@ -119,21 +127,37 @@ type ProgressUpdate = {
  * Persist job progress for the dashboard poller
  */
 async function updateJobProgress(jobId: string, u: ProgressUpdate) {
-  const { error } = await supabase
-    .from("video_processing_jobs")
-    .update({
-      processing_progress: clampProgress(u.progress),
-      processing_stage: u.stage,
-      processing_detail: u.detail ?? null,
-    })
-    .eq("id", jobId);
+  const progress = clampProgress(u.progress);
+  const { data: ok, error } = await supabase.rpc("worker_update_video_job_progress", {
+    p_job_id: jobId,
+    p_progress: progress,
+    p_stage: u.stage,
+    p_detail: u.detail ?? null,
+  });
 
   if (error) {
-    log("ERROR", "Failed to update job progress", {
+    log("ERROR", "Failed to update job progress (RPC)", {
       jobId,
       error: error.message,
+      stage: u.stage,
+      hint: "Apply migration 023_worker_update_video_job_progress.sql and use SUPABASE_SECRET_KEY.",
     });
+    return;
   }
+
+  if (ok !== true) {
+    log("ERROR", "updateJobProgress: no row updated (wrong job id?)", {
+      jobId,
+      stage: u.stage,
+    });
+    return;
+  }
+
+  log("DEBUG", "Job progress updated", {
+    jobId,
+    progress,
+    stage: u.stage,
+  });
 }
 
 function createOcrThrottleState() {

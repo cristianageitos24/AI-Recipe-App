@@ -432,17 +432,19 @@
   color: var(--color-fg);
 }
 
-/* --- Video job: determinate progress + pulsing panel --- */
+/* --- Video job: determinate progress (div bar; native <progress> styling is fragile in Chromium) --- */
 
-@keyframes video-job-pulse {
+@keyframes video-job-fill-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 var(--accent-muted-bg);
-    opacity: 1;
+    filter: brightness(1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
   }
   50% {
-    box-shadow: 0 0 0 6px var(--accent-muted-bg);
-    opacity: 0.97;
+    filter: brightness(1.14);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      0 0 14px color-mix(in srgb, var(--accent) 45%, transparent);
   }
 }
 
@@ -454,10 +456,6 @@
   background: var(--color-bg);
 }
 
-.video-job-progress-card--pulse {
-  animation: video-job-pulse 2.2s ease-in-out infinite;
-}
-
 .video-job-progress-bar-wrap {
   display: flex;
   align-items: center;
@@ -465,28 +463,29 @@
   margin-bottom: var(--space-4);
 }
 
-.video-job-progress-native {
+.video-job-progress-track {
   flex: 1;
-  height: 10px;
+  min-width: 0;
+  height: 12px;
   border-radius: var(--radius-sm);
-  overflow: hidden;
-  border: none;
-  accent-color: var(--accent);
-}
-
-.video-job-progress-native::-webkit-progress-bar {
   background: var(--gray-200);
-  border-radius: var(--radius-sm);
+  overflow: hidden;
 }
 
-.video-job-progress-native::-webkit-progress-value {
-  background: var(--accent);
+.video-job-progress-fill {
+  height: 100%;
+  min-width: 0;
   border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 88%, var(--accent-hover)),
+    var(--accent)
+  );
+  transition: width 0.45s ease-out;
 }
 
-.video-job-progress-native::-moz-progress-bar {
-  background: var(--accent);
-  border-radius: var(--radius-sm);
+.video-job-progress-fill--pulse {
+  animation: video-job-fill-pulse 1.7s ease-in-out infinite;
 }
 
 .video-job-progress-percent {
@@ -521,6 +520,22 @@
   color: var(--gray-600);
 }
 
+.video-job-local-times {
+  margin: var(--space-1) 0 0 0;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--gray-700);
+}
+
+.video-job-local-times-hint {
+  color: var(--gray-600);
+  font-weight: 400;
+}
+
+.video-job-timing-footer {
+  margin-top: var(--space-4);
+}
+
 /* --- URL import: indeterminate loading (no real %) --- */
 
 @keyframes import-url-shimmer {
@@ -538,10 +553,6 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--gray-300);
   background: var(--color-bg);
-}
-
-.import-url-loading-card--pulse {
-  animation: video-job-pulse 2.2s ease-in-out infinite;
 }
 
 .import-url-indeterminate-track {
@@ -564,7 +575,9 @@
     var(--accent),
     var(--accent-muted-bg)
   );
-  animation: import-url-shimmer 1.4s ease-in-out infinite;
+  animation:
+    import-url-shimmer 1.4s ease-in-out infinite,
+    video-job-fill-pulse 1.7s ease-in-out infinite;
 }
 
 .import-url-rotating-line {

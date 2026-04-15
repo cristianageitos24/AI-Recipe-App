@@ -201,7 +201,7 @@ export default function ImportRecipeUrlPage() {
 
       {loading ? (
         <div
-          className="import-url-loading-card import-url-loading-card--pulse"
+          className="import-url-loading-card"
           role="status"
           aria-live="polite"
           aria-label="Import in progress"

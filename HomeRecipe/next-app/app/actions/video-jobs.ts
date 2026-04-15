@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
+import { unstable_noStore as noStore } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import type { ExtractedRecipe } from "@/lib/types";
 
@@ -35,12 +36,16 @@ export interface VideoJob {
 
 /**
  * Get a single video job by ID
+ * @param _refreshNonce Pass changing value (e.g. Date.now()) from the client poller so Next never dedupes stale reads.
  */
-export async function getVideoJob(jobId: string) {
+export async function getVideoJob(jobId: string, _refreshNonce?: number) {
+  noStore();
   const { userId } = await auth();
   if (!userId) {
     return { error: "Unauthorized", data: null };
   }
+
+  void _refreshNonce;
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -64,6 +69,7 @@ export async function getVideoJob(jobId: string) {
  * Get all video jobs for the current user
  */
 export async function getVideoJobs() {
+  noStore();
   const { userId } = await auth();
   if (!userId) {
     return { error: "Unauthorized", data: [] };
@@ -87,6 +93,7 @@ export async function getVideoJobs() {
  * Get the latest video job for the current user
  */
 export async function getLatestVideoJob() {
+  noStore();
   const { userId } = await auth();
   if (!userId) {
     return { error: "Unauthorized", data: null };
