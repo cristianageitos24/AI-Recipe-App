@@ -110,14 +110,6 @@ function IconLink() {
   );
 }
 
-function IconSparkle() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="currentColor">
-      <path d="M12 2l1.09 3.26L16 6l-2.91 1.74L12 11l-1.09-3.26L8 6l2.91-1.74L12 2zM19 11l.73 2.18L22 14l-2.27 1.36L19 18l-.73-2.18L16 14l2.27-1.36L19 11zM5 14l.91 2.73L9 18l-3.09 1.85L5 23l-.91-2.73L1 18l3.09-1.85L5 14z" />
-    </svg>
-  );
-}
-
 function IconUser() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="none">
@@ -300,6 +292,7 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"recipe" | "nutrition">("recipe");
   const [copyHint, setCopyHint] = useState<string | null>(null);
+  const [recipeThumbFailed, setRecipeThumbFailed] = useState(false);
   const copyHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [elapsedTick, setElapsedTick] = useState(0);
@@ -336,6 +329,17 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
     () => parseTikTokSourceLine(jobStatus?.tiktok_url ?? null),
     [jobStatus?.tiktok_url]
   );
+
+  const recipeThumbSrc = useMemo(() => {
+    const fromEdited = editedRecipe?.imageUrl?.trim();
+    const fromJob = jobStatus?.thumbnail_url?.trim();
+    const u = fromEdited || fromJob;
+    return u || null;
+  }, [editedRecipe?.imageUrl, jobStatus?.thumbnail_url]);
+
+  useEffect(() => {
+    setRecipeThumbFailed(false);
+  }, [recipeThumbSrc]);
 
   const copyRecipe = useCallback(async () => {
     if (!editedRecipe) return;
@@ -492,7 +496,6 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
   }
 
   const submitBusy = uploading || inProgress;
-  const submitLabel = submitBusy ? "Processing…" : "Cook It!";
   const stageIconKey = jobStatus ? videoJobStageIconKey(jobStatus) : "default";
 
   return (
@@ -519,12 +522,20 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
           </div>
           <button
             type="submit"
-            className="submit-button video-extractor-submit"
+            className={`submit-button video-extractor-submit${submitBusy ? " video-extractor-submit--busy" : ""}`}
             disabled={uploading || inProgress || !tiktokUrl.trim()}
           >
             <span className="video-extractor-submit-inner">
-              {submitBusy ? <IconSparkle /> : null}
-              {submitLabel}
+              {submitBusy ? (
+                <>
+                  <span className="video-extractor-submit-sparkle" aria-hidden>
+                    {"\u2728"}
+                  </span>
+                  <span className="video-extractor-submit-busy-text">Processing…</span>
+                </>
+              ) : (
+                "Cook It!"
+              )}
             </span>
           </button>
         </div>
@@ -604,24 +615,38 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
               <label htmlFor="video-recipe-title" className="video-recipe-editor-label">
                 Recipe name
               </label>
-              <input
-                id="video-recipe-title"
-                type="text"
-                className="form-input video-recipe-title-input"
-                value={editedRecipe.title}
-                onChange={(e) =>
-                  setEditedRecipe((prev) =>
-                    prev ? { ...prev, title: e.target.value } : null
-                  )
-                }
-                placeholder="Recipe name"
-              />
-              {jobStatus.tiktok_url ? (
-                <p className="video-recipe-source" title={jobStatus.tiktok_url}>
-                  <IconUser />
-                  <span className="video-recipe-source-text">{sourceLine.line}</span>
-                </p>
-              ) : null}
+              <div className="video-recipe-header-row">
+                {recipeThumbSrc && !recipeThumbFailed ? (
+                  <div className="video-recipe-thumb-wrap">
+                    <img
+                      src={recipeThumbSrc}
+                      alt={editedRecipe.title.trim() || "Recipe thumbnail"}
+                      className="video-recipe-thumb"
+                      onError={() => setRecipeThumbFailed(true)}
+                    />
+                  </div>
+                ) : null}
+                <div className="video-recipe-title-block">
+                  <input
+                    id="video-recipe-title"
+                    type="text"
+                    className="form-input video-recipe-title-input"
+                    value={editedRecipe.title}
+                    onChange={(e) =>
+                      setEditedRecipe((prev) =>
+                        prev ? { ...prev, title: e.target.value } : null
+                      )
+                    }
+                    placeholder="Recipe name"
+                  />
+                  {jobStatus.tiktok_url ? (
+                    <p className="video-recipe-source" title={jobStatus.tiktok_url}>
+                      <IconUser />
+                      <span className="video-recipe-source-text">{sourceLine.line}</span>
+                    </p>
+                  ) : null}
+                </div>
+              </div>
 
               <div className="video-recipe-chips">
                 <div className="video-recipe-chip">

@@ -127,6 +127,50 @@
   opacity: 0.95;
 }
 
+/* Processing: accent text on soft tint instead of grey-on-grey */
+.video-extractor-submit.video-extractor-submit--busy:disabled {
+  background-color: var(--accent-muted-bg);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--gray-300));
+  cursor: wait;
+  opacity: 1;
+}
+
+.video-extractor-submit--busy .video-extractor-submit-inner {
+  color: var(--accent);
+  animation: video-extractor-busy-pulse 1.35s ease-in-out infinite;
+}
+
+.video-extractor-submit--busy .video-extractor-submit-sparkle {
+  display: inline-block;
+  animation: video-extractor-sparkle-wiggle 1.1s ease-in-out infinite;
+}
+
+.video-extractor-submit--busy .video-extractor-submit-busy-text {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+@keyframes video-extractor-busy-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.78;
+  }
+}
+
+@keyframes video-extractor-sparkle-wiggle {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-4deg) scale(1);
+  }
+  50% {
+    transform: translateY(-2px) rotate(6deg) scale(1.06);
+  }
+}
+
 .video-extractor-submit-inner {
   display: inline-flex;
   align-items: center;
@@ -332,6 +376,47 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+.video-recipe-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.video-recipe-thumb-wrap {
+  flex-shrink: 0;
+  width: 112px;
+  aspect-ratio: 1;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--gray-300);
+  background: var(--gray-100);
+  box-shadow: 0 var(--space-1) var(--space-2) var(--overlay-light);
+}
+
+@media (min-width: 640px) {
+  .video-recipe-thumb-wrap {
+    width: 148px;
+  }
+}
+
+.video-recipe-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.video-recipe-title-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.video-recipe-title-block .video-recipe-source {
+  margin-bottom: 0;
 }
 
 .video-recipe-title-input {
