@@ -25,10 +25,114 @@
 }
 
 .video-upload-form {
+  position: relative;
   background: var(--color-bg);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-xl);
   padding: var(--space-8);
   box-shadow: 0 var(--space-1) var(--space-2) var(--overlay-light);
+  border: 1px solid var(--gray-300);
+  border-top: 3px solid var(--accent);
+}
+
+.video-extractor-form-inner {
+  margin: 0;
+}
+
+.video-extractor-form-inner .error-message {
+  margin-top: var(--space-4);
+}
+
+.video-extractor-url-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: stretch;
+}
+
+@media (min-width: 640px) {
+  .video-extractor-url-row {
+    flex-direction: row;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+}
+
+.video-extractor-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-bg);
+  border: 1px solid var(--gray-400);
+  border-radius: var(--radius-lg);
+  box-sizing: border-box;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.video-extractor-input-wrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-muted-bg);
+}
+
+.video-extractor-link-icon {
+  flex-shrink: 0;
+  display: flex;
+  color: var(--accent);
+  opacity: 0.9;
+}
+
+.video-extractor-link-icon svg {
+  display: block;
+}
+
+.video-extractor-url-input {
+  flex: 1;
+  min-width: 0;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: var(--space-2) var(--space-1) !important;
+  border-radius: 0 !important;
+}
+
+.video-extractor-url-input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.video-extractor-submit {
+  flex-shrink: 0;
+  align-self: stretch;
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-5);
+  font-weight: 600;
+}
+
+.video-extractor-submit:disabled {
+  opacity: 0.95;
+}
+
+.video-extractor-submit-inner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .form-group {
@@ -103,17 +207,23 @@
 }
 
 .job-status {
-  margin-top: var(--space-8);
-  padding-top: var(--space-8);
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
   border-top: 1px solid var(--gray-300);
 }
 
-.job-status h3 {
+.job-status-heading {
   font-family: var(--font-body);
   font-size: var(--text-lg);
   font-weight: 600;
   color: var(--color-fg);
   margin: 0 0 var(--space-4) 0;
+}
+
+.status-badge--subtle {
+  text-transform: none;
+  font-size: var(--text-xs);
+  letter-spacing: 0.02em;
 }
 
 .status-badge {
@@ -188,60 +298,227 @@
 }
 
 .video-recipe-editor {
+  position: relative;
   margin-top: var(--space-6);
-  padding: var(--space-5);
-  background: var(--gray-100);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--gray-200);
+  padding: var(--space-6);
+  background: var(--color-bg);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--gray-300);
+  border-top: 3px solid var(--accent);
+  box-shadow: 0 var(--space-1) var(--space-2) var(--overlay-light);
 }
 
 .video-recipe-editor-label {
-  display: block;
-  font-family: var(--font-body);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--color-fg);
-  margin-bottom: var(--space-2);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .video-recipe-title-input {
-  margin-bottom: var(--space-4);
-  font-size: var(--text-lg);
+  display: block;
+  width: 100%;
+  margin: 0 0 var(--space-2) 0;
+  padding: var(--space-2) 0 !important;
+  font-size: var(--text-2xl) !important;
+  font-weight: 700 !important;
+  color: var(--color-fg) !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-sizing: border-box;
+}
+
+.video-recipe-title-input::placeholder {
+  color: var(--gray-600);
+}
+
+.video-recipe-title-input:focus {
+  outline: none !important;
+  border-bottom-color: var(--accent) !important;
+  box-shadow: none !important;
+}
+
+.video-recipe-source {
+  margin: 0 0 var(--space-5) 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--gray-700);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.video-recipe-source svg {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.video-recipe-source-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.video-recipe-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.video-recipe-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--accent-muted-bg);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-fg);
+}
+
+.video-recipe-chip-icon {
+  display: flex;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.video-recipe-chip-label {
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 10px;
+  color: var(--gray-700);
+}
+
+.video-recipe-chip-value {
+  font-weight: 500;
+  color: var(--gray-900);
+}
+
+.video-recipe-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  margin-top: var(--space-5);
+}
+
+.video-recipe-copy-btn {
+  padding: var(--space-3) var(--space-5);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-fg);
+  background: var(--gray-100);
+  border: 1px solid var(--gray-400);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.video-recipe-copy-btn:hover:not(:disabled) {
+  background: var(--accent-muted-bg);
+  border-color: var(--accent);
+}
+
+.video-recipe-save-btn {
+  margin-top: 0;
+  border-radius: var(--radius-lg);
+}
+
+.video-recipe-save-btn:hover:not(:disabled) {
+  background-color: var(--accent-hover);
 }
 
 .video-recipe-tabs {
   display: flex;
   gap: var(--space-1);
   margin-bottom: var(--space-4);
-  border-bottom: 1px solid var(--gray-400);
+  padding: var(--space-1);
+  background: var(--gray-100);
+  border-radius: var(--radius-lg);
 }
 
 .video-recipe-tab {
+  flex: 1;
   padding: var(--space-3) var(--space-4);
   font-family: var(--font-body);
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: 600;
   color: var(--gray-700);
-  background: none;
+  background: transparent;
   border: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
+  border-radius: var(--radius-md);
+  margin-bottom: 0;
   cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .video-recipe-tab:hover {
   color: var(--color-fg);
+  background: color-mix(in srgb, var(--color-bg) 70%, transparent);
 }
 
 .video-recipe-tab.active {
   color: var(--accent);
-  border-bottom-color: var(--accent);
+  background: var(--color-bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .video-recipe-tab-panel {
   min-height: 120px;
   margin-bottom: var(--space-5);
+}
+
+.video-recipe-nutrition-note {
+  margin: 0 0 var(--space-4) 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--gray-700);
+  line-height: 1.5;
+}
+
+.video-recipe-split {
+  display: grid;
+  gap: var(--space-6);
+}
+
+@media (min-width: 768px) {
+  .video-recipe-split {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+.video-recipe-column-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3) 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.video-recipe-column-title svg {
+  flex-shrink: 0;
 }
 
 .video-recipe-ingredients .video-recipe-line-row,
@@ -252,9 +529,28 @@
   margin-bottom: var(--space-2);
 }
 
+.video-recipe-ingredient-bullet {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  margin-top: 13px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-muted-bg);
+}
+
 .video-recipe-line-input,
 .video-recipe-step-input {
   flex: 1;
+  min-width: 0;
+  border-radius: var(--radius-md) !important;
+  border-color: var(--gray-400) !important;
+}
+
+.video-recipe-line-input:focus,
+.video-recipe-step-input:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-muted-bg) !important;
 }
 
 .video-recipe-step-input {
@@ -264,9 +560,18 @@
 
 .video-recipe-step-num {
   flex-shrink: 0;
-  font-weight: 600;
-  color: var(--gray-700);
-  padding-top: var(--space-3);
+  width: 28px;
+  height: 28px;
+  margin-top: var(--space-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-muted-bg);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-full);
 }
 
 .video-recipe-remove-btn {
@@ -296,7 +601,7 @@
   color: var(--accent);
   background: none;
   border: 1px dashed var(--accent);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   cursor: pointer;
 }
 
@@ -314,8 +619,10 @@
   color: var(--gray-900);
 }
 
-.video-recipe-save-btn {
-  margin-top: var(--space-2);
+.video-recipe-copy-hint {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--success-fg);
 }
 
 .video-save-modal-overlay {
@@ -441,33 +748,51 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
   }
   50% {
-    filter: brightness(1.14);
+    filter: brightness(1.08);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.35),
-      0 0 14px color-mix(in srgb, var(--accent) 45%, transparent);
+      0 0 14px rgba(var(--accent-rgb), 0.35);
   }
 }
 
 .video-job-progress-card {
   margin-bottom: var(--space-5);
   padding: var(--space-5);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-xl);
   border: 1px solid var(--gray-300);
-  background: var(--color-bg);
+  background: var(--accent-muted-bg);
+}
+
+.video-job-stage-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  text-align: center;
+}
+
+.video-job-stage-icon {
+  flex-shrink: 0;
+  display: flex;
+  color: var(--accent);
+}
+
+.video-job-stage-icon svg {
+  display: block;
 }
 
 .video-job-progress-bar-wrap {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin-bottom: var(--space-4);
+  width: 100%;
+  margin-bottom: var(--space-3);
 }
 
 .video-job-progress-track {
-  flex: 1;
+  width: 100%;
   min-width: 0;
-  height: 12px;
-  border-radius: var(--radius-sm);
+  height: 16px;
+  border-radius: var(--radius-full);
   background: var(--gray-200);
   overflow: hidden;
 }
@@ -475,10 +800,10 @@
 .video-job-progress-fill {
   height: 100%;
   min-width: 0;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--accent) 88%, var(--accent-hover)),
+    color-mix(in srgb, var(--accent) 75%, var(--color-bg)),
     var(--accent)
   );
   transition: width 0.45s ease-out;
@@ -489,17 +814,20 @@
 }
 
 .video-job-progress-percent {
-  flex-shrink: 0;
+  display: block;
+  margin: 0;
   font-family: var(--font-body);
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--color-fg);
-  min-width: 2.75rem;
-  text-align: right;
+  color: var(--accent);
+  text-align: center;
 }
 
 .video-job-stage-primary {
-  margin: 0 0 var(--space-1) 0;
+  margin: 0;
+  max-width: 100%;
+  flex: 0 1 auto;
+  text-align: center;
   font-family: var(--font-body);
   font-size: var(--text-base);
   font-weight: 600;
@@ -511,6 +839,15 @@
   font-family: var(--font-body);
   font-size: var(--text-sm);
   color: var(--gray-700);
+}
+
+.video-job-progress-card .video-job-stage-detail {
+  text-align: center;
+}
+
+.video-job-meta-times {
+  margin-top: var(--space-3);
+  text-align: center;
 }
 
 .video-job-elapsed {
