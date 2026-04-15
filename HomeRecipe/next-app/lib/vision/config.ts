@@ -47,8 +47,13 @@ function envFloat(key: string, defaultValue: number): number {
 }
 
 /**
- * Read vision config. Defaults: blur/duplicate skipping is on; metrics-only is off.
- * Use VISION_METRICS_ONLY=1 to log would_skip_* but OCR every frame (diagnostics / rollback).
+ * Read vision config.
+ *
+ * Default behavior (when env vars are unset): vision runs on every extracted frame. Frames that
+ * score as too blurry (Laplacian variance vs `minLaplacianVariance`; OpenCV path when the engine
+ * loads OpenCV) or as near-duplicates of a prior kept frame (dHash vs `duplicateMaxHamming`) are
+ * removed from the OCR list when `skipBlur` / `skipDuplicate` are true and `metricsOnly` is false.
+ * Set `metricsOnly` true to populate `would_skip_*` in metrics while still OCRing every frame.
  */
 export function readVisionConfig(): VisionConfig {
   const engineRaw = (process.env.VISION_ENGINE || "auto").toLowerCase();

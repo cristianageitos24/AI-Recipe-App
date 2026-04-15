@@ -859,6 +859,10 @@ async function main() {
     vision: {
       enabled: vision.enabled,
       metricsOnly: vision.metricsOnly,
+      blurSkipsActive:
+        vision.enabled && !vision.metricsOnly && vision.skipBlur,
+      dupSkipsActive:
+        vision.enabled && !vision.metricsOnly && vision.skipDuplicate,
       engine: vision.engine,
       skipBlur: vision.skipBlur,
       skipDupes: vision.skipDuplicate,
