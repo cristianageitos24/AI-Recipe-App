@@ -1,5 +1,12 @@
 # Video processing worker: Node + ffmpeg + Tesseract + yt-dlp (matches VIDEO_UPLOAD_SETUP.md)
-FROM node:22-bookworm-slim
+# Node 20: @u4/opencv4nodejs native build is more reliable than on Node 22 (node-gyp / OpenCV probe).
+FROM node:20-bookworm-slim
+
+# Use apt OpenCV only (no download/build). Without this, install.js often exits 1 on slim images.
+ENV OPENCV4NODEJS_DISABLE_AUTOBUILD=1 \
+    OPENCV_INCLUDE_DIR=/usr/include/opencv4 \
+    OPENCV_LIB_DIR=/usr/lib/x86_64-linux-gnu \
+    OPENCV_BIN_DIR=/usr/bin
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -22,6 +29,11 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 RUN npm ci
+
+# @u4/opencv4nodejs is optionalDependencies: npm ci can succeed even when the native build fails (module omitted).
+# System libopencv-dev above supplies headers/libs; this step fails the image build if Node cannot load OpenCV.
+RUN npm install @u4/opencv4nodejs@7.1.2 --foreground-scripts \
+  && node -e "require('@u4/opencv4nodejs'); console.log('[docker] @u4/opencv4nodejs loaded')"
 
 # Rebuild image after changing scripts/process-video-jobs.ts or lib/* (COPY bakes code at build time).
 COPY . .
