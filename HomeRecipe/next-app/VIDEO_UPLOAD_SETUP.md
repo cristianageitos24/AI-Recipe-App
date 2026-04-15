@@ -71,9 +71,13 @@ This will install:
 - `tesseract.js` - OCR library (fallback if CLI not available)
 - `execa` - Used by the worker to run yt-dlp for TikTok downloads
 - `openai` - Whisper API for audio transcription
+- `sharp` - Image analysis for the vision pipeline when OpenCV native bindings are unavailable
+- `@u4/opencv4nodejs` (optional) - OpenCV bindings; installs when the platform can compile it (Docker worker image includes `libopencv-dev`)
 - `@types/fluent-ffmpeg` - TypeScript types
 
-OCR preprocessing (grayscale, contrast, sharpening) is done via ffmpeg—no sharp required.
+OCR preprocessing (grayscale, contrast, sharpening) is done via ffmpeg. The vision layer (blur / duplicate / selection) uses OpenCV when available and **sharp**-based fallbacks otherwise.
+
+**Optional (local dev, non-Docker worker):** To use OpenCV outside Docker, install OpenCV for your OS (e.g. `brew install opencv` on macOS, `libopencv-dev` on Debian) so `npm install` can build `@u4/opencv4nodejs`. On Windows, prefer running the worker in **Docker** (see [WORKERS.md](WORKERS.md)) or rely on fallbacks.
 
 ## Database Setup
 
@@ -83,6 +87,7 @@ OCR preprocessing (grayscale, contrast, sharpening) is done via ffmpeg—no shar
    - `012_fix_claim_video_job_ambiguous_attempts.sql` – job claiming fix
    - `013_add_transcript_text.sql` – transcript column
    - `014_add_extracted_recipe.sql` – extracted_recipe JSONB column
+   - `024_video_job_vision_metrics.sql` – optional `vision_metrics` JSONB on jobs
 
 2. Verify the table was created:
    ```sql

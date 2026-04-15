@@ -24,6 +24,7 @@ import {
 import { extractAudioToWav, transcribeWithWhisper } from "../lib/transcription";
 import { extractRecipeFromVideo } from "../lib/recipe-reasoning";
 import type { ExtractedRecipe } from "../lib/types";
+import { readVisionConfig } from "../lib/vision";
 
 // Load .env.local from next-app (script's parent dir) then cwd so worker always sees keys
 const nextAppDir = resolve(__dirname, "..");
@@ -333,7 +334,18 @@ async function markJobCompleted(
   processingMs: number,
   transcriptText: string | null,
   extractedRecipe: ExtractedRecipe | null,
-  thumbnailUrl: string | null = null
+  thumbnailUrl: string | null = null,
+  visionMetrics?: {
+    framesExtracted: number;
+    framesSkippedBlur: number;
+    framesSkippedDuplicate: number;
+    framesOcrd: number;
+    visionEngine: string;
+    visionMs: number;
+    ocrMs: number;
+    wouldSkipBlur: number;
+    wouldSkipDuplicate: number;
+  }
 ) {
   log("INFO", "Job completed", {
     jobId,
@@ -341,6 +353,7 @@ async function markJobCompleted(
     textLength: ocrText.length,
     hasExtractedRecipe: extractedRecipe != null,
     hasThumbnail: thumbnailUrl != null,
+    visionMetrics,
   });
 
   const { error } = await supabase
@@ -352,6 +365,7 @@ async function markJobCompleted(
       extracted_recipe: extractedRecipe,
       thumbnail_url: thumbnailUrl,
       processing_ms: processingMs,
+      vision_metrics: visionMetrics ?? null,
       finished_at: new Date().toISOString(),
       locked_at: null,
       locked_by: null,
@@ -681,7 +695,7 @@ async function processJob(job: VideoJob): Promise<void> {
           P.ocrEnd,
           frameCount > 0 ? (frameIndex + 1) / frameCount : 1
         );
-        const detail = `Frame ${frameIndex + 1} / ${frameCount}`;
+        const detail = `OCR ${frameIndex + 1} / ${frameCount}`;
         if (ocrThrottle.shouldWrite(frameIndex, frameCount)) {
           await updateJobProgress(job.id, {
             progress: pct,
@@ -692,11 +706,26 @@ async function processJob(job: VideoJob): Promise<void> {
         }
       }
     );
-    const ocrText = await withTimeout(
+    const { ocrText, metrics: visionMetrics } = await withTimeout(
       processingPromise,
       PROCESSING_TIMEOUT_MS,
       `Processing exceeded timeout of ${PROCESSING_TIMEOUT_MS}ms`
     );
+
+    log("INFO", "Vision/OCR metrics", {
+      jobId: job.id,
+      vision: {
+        framesExtracted: visionMetrics.framesExtracted,
+        framesOcrd: visionMetrics.framesOcrd,
+        framesSkippedBlur: visionMetrics.framesSkippedBlur,
+        framesSkippedDuplicate: visionMetrics.framesSkippedDuplicate,
+        wouldSkipBlur: visionMetrics.wouldSkipBlur,
+        wouldSkipDuplicate: visionMetrics.wouldSkipDuplicate,
+        visionEngine: visionMetrics.visionEngine,
+        visionMs: visionMetrics.visionMs,
+        ocrMs: visionMetrics.ocrMs,
+      },
+    });
 
     const processingMs = Date.now() - startTime;
 
@@ -751,7 +780,8 @@ async function processJob(job: VideoJob): Promise<void> {
       processingMs,
       transcriptText,
       extractedRecipe,
-      thumbnailUrl
+      thumbnailUrl,
+      visionMetrics
     );
   } catch (error: any) {
     const errorMessage = error.message || "Unknown error";
@@ -793,6 +823,7 @@ async function processJob(job: VideoJob): Promise<void> {
 async function main() {
   const hasTranscriptionKey = Boolean(process.env.OPENAI_AUDIO_TRANSCRIPTION_KEY);
   const hasReasoningKey = Boolean(process.env.OPENAI_REASONING_API_KEY);
+  const vision = readVisionConfig();
   log("INFO", "Worker starting", {
     workerId: WORKER_ID,
     maxDuration: MAX_DURATION_SECONDS,
@@ -802,6 +833,16 @@ async function main() {
     pollInterval: POLL_INTERVAL_MS,
     OPENAI_AUDIO_TRANSCRIPTION_KEY: hasTranscriptionKey ? "set" : "not set",
     OPENAI_REASONING_API_KEY: hasReasoningKey ? "set" : "not set",
+    vision: {
+      enabled: vision.enabled,
+      metricsOnly: vision.metricsOnly,
+      engine: vision.engine,
+      skipBlur: vision.skipBlur,
+      skipDupes: vision.skipDuplicate,
+      selectMode: vision.selectMode,
+      maxOcrFrames: vision.maxOcrFrames,
+      cropTextRegions: vision.cropTextRegions,
+    },
   });
   if (!hasTranscriptionKey) {
     console.warn("[worker] OPENAI_AUDIO_TRANSCRIPTION_KEY is not set — speech-to-text will be skipped. Add it to next-app/.env.local and restart the worker.");

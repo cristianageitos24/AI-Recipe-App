@@ -78,6 +78,7 @@ export type ExtractRecipeFromVideoOptions = {
 
 /**
  * Combine OCR and transcript into a single user message for the model.
+ * Splits OCR into ingredient-like vs instruction-like lines heuristically for clearer reasoning.
  */
 function buildUserMessage(ocrText: string, transcriptText: string): string {
   const hasOcr = ocrText.trim().length > 0;
@@ -85,11 +86,50 @@ function buildUserMessage(ocrText: string, transcriptText: string): string {
   const parts: string[] = [];
 
   if (hasOcr) {
-    parts.push("## Text from video frames (OCR)\n" + ocrText.trim());
+    const raw = ocrText.trim();
+    const lines = raw.split(/\n/).map((l) => l.trim()).filter(Boolean);
+    const ingredientLike: string[] = [];
+    const instructionLike: string[] = [];
+    const verbStart =
+      /^(add|mix|stir|bake|cook|preheat|combine|place|heat|pour|remove|serve|garnish|sprinkle|whisk|simmer|boil|fry|chop|dice|slice|mince|drain|transfer|bake|broil|roast)\b/i;
+
+    for (const line of lines) {
+      const looksMeasure =
+        /\b(\d+\/\d+|\d+(\.\d+)?)\s*(cup|tbsp|tsp|oz|lb|g|kg|ml|l|clove|cloves)\b/i.test(
+          line
+        );
+      const looksStep = verbStart.test(line) || line.length > 80;
+      if (looksMeasure && !looksStep) {
+        ingredientLike.push(line);
+      } else if (looksStep) {
+        instructionLike.push(line);
+      } else {
+        ingredientLike.push(line);
+      }
+    }
+
+    if (ingredientLike.length === 0 && instructionLike.length === 0) {
+      parts.push("## Text from video frames (OCR)\n" + raw);
+    } else {
+      parts.push(
+        "## Ingredient candidates (from on-screen OCR)\n" +
+          (ingredientLike.length > 0
+            ? ingredientLike.join("\n")
+            : "(none clearly separated)")
+      );
+      parts.push(
+        "## Instruction candidates (from on-screen OCR)\n" +
+          (instructionLike.length > 0
+            ? instructionLike.join("\n")
+            : "(none clearly separated)")
+      );
+    }
   }
+
   if (hasTranscript) {
-    parts.push("## Spoken narration (transcript)\n" + transcriptText.trim());
+    parts.push("## Transcript (spoken narration)\n" + transcriptText.trim());
   }
+
   if (parts.length === 0) {
     return "No OCR or transcript content provided.";
   }

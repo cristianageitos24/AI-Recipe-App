@@ -53,6 +53,7 @@
     "typescript": "5.9.3"
   },
   "optionalDependencies": {
+    "@u4/opencv4nodejs": "^7.1.2",
     "lightningcss-win32-x64-msvc": "^1.30.2"
   }
 }

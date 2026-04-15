@@ -68,6 +68,13 @@ docker compose build video-worker
 docker compose up -d video-worker
 ```
 
+After changing `Dockerfile.worker`, `package.json`, or OpenCV-related system packages, rebuild so Docker Desktop runs an up-to-date image. If native addons misbehave, force a clean build once:
+
+```cmd
+docker compose build --no-cache video-worker
+docker compose up -d video-worker
+```
+
 3. Follow logs:
 
 ```cmd
@@ -86,7 +93,7 @@ To stop:
 docker compose down
 ```
 
-The image is built from `next-app/Dockerfile.worker` and runs `npm run worker:video` inside Linux with **ffmpeg**, **Tesseract**, and **yt-dlp** preinstalled.
+The image is built from `next-app/Dockerfile.worker` and runs `npm run worker:video` inside Linux with **ffmpeg**, **Tesseract**, **yt-dlp**, **OpenCV dev libraries** (for `@u4/opencv4nodejs`), and a C++ build toolchain so the vision pipeline can use OpenCV at runtime.
 
 ---
 

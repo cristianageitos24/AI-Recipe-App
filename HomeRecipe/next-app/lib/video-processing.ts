@@ -6,6 +6,13 @@ import { tmpdir } from "os";
 import { unlink } from "fs/promises";
 import ffmpeg from "fluent-ffmpeg";
 import { createWorker } from "tesseract.js";
+import {
+  analyzeFramesForOcr,
+  readVisionConfig,
+  maybeCropForOcr,
+  cleanupCropPath,
+} from "./vision";
+import type { VisionJobMetrics } from "./vision/types";
 
 // Try to use bundled ffmpeg/ffprobe if available, otherwise use system binaries
 try {
@@ -164,12 +171,20 @@ export function extractThumbnailFrame(
   });
 }
 
-/**
- * Preprocess a frame for OCR. Frames are already preprocessed by extractFrames (ffmpeg:
- * grayscale, contrast, sharpening). This is a no-op pass-through for compatibility.
- */
-async function preprocessFrameForOCR(imagePath: string): Promise<string> {
-  return imagePath;
+/** Conservative OCR typo fixes for common video OCR noise */
+export function applyOcrTypoCorrections(text: string): string {
+  let s = text;
+  const pairs: [RegExp, string][] = [
+    [/\btb5p\b/gi, "tbsp"],
+    [/\bt5p\b/gi, "tsp"],
+    [/\bmiin\b/gi, "min"],
+    [/\b0live\b/gi, "olive"],
+    [/\bchiken\b/gi, "chicken"],
+  ];
+  for (const [re, rep] of pairs) {
+    s = s.replace(re, rep);
+  }
+  return s;
 }
 
 /**
@@ -309,8 +324,13 @@ export type VideoFrameProgressPayload = {
   frameCount: number;
 };
 
+export type ProcessVideoResult = {
+  ocrText: string;
+  metrics: VisionJobMetrics;
+};
+
 /**
- * Process video: extract frames and run OCR
+ * Process video: extract frames, vision analysis, optional crop, OCR, cleanup.
  */
 export async function processVideo(
   videoPath: string,
@@ -319,44 +339,64 @@ export async function processVideo(
   onFrameProgress?: (
     payload: VideoFrameProgressPayload
   ) => void | Promise<void>
-): Promise<string> {
+): Promise<ProcessVideoResult> {
   const tempDir = join(tmpdir(), `video-ocr-${Date.now()}`);
   const fs = require("fs");
   fs.mkdirSync(tempDir, { recursive: true });
 
+  const visionConfig = readVisionConfig();
+
   try {
-    // Extract frames
     const framePaths = await extractFrames(videoPath, tempDir, maxFrames);
     console.log(`[Processing] Extracted ${framePaths.length} frames`);
 
-    // Run OCR on each frame (with preprocessing for better accuracy)
+    const { selectedPaths, metrics: visionMetrics } =
+      await analyzeFramesForOcr(framePaths, visionConfig);
+
+    const ocrStarted = Date.now();
     const allText: string[] = [];
-    for (let i = 0; i < framePaths.length; i++) {
-      const framePath = framePaths[i];
+
+    for (let i = 0; i < selectedPaths.length; i++) {
+      const framePath = selectedPaths[i];
+      let ocrPath = framePath;
       try {
-        const preprocessedPath = await preprocessFrameForOCR(framePath);
-        const text = await ocrProvider.ocrFrame(preprocessedPath);
+        ocrPath = await maybeCropForOcr(
+          framePath,
+          visionConfig.cropTextRegions,
+          tempDir
+        );
+        const text = await ocrProvider.ocrFrame(ocrPath);
         if (text) {
           allText.push(text);
         }
-        console.log(`[Processing] Frame ${i + 1}/${framePaths.length} processed`);
+        console.log(
+          `[Processing] OCR ${i + 1}/${selectedPaths.length} (vision-selected)`
+        );
       } catch (error) {
         console.error(`[Processing] Error processing frame ${framePath}:`, error);
-        // Continue with other frames
+      } finally {
+        await cleanupCropPath(framePath, ocrPath);
       }
       await Promise.resolve(
         onFrameProgress?.({
           frameIndex: i,
-          frameCount: framePaths.length,
+          frameCount: selectedPaths.length,
         })
       );
     }
 
-    // Combine and clean text
+    const ocrMs = Date.now() - ocrStarted;
     const combinedText = allText.join("\n");
-    const cleanedText = cleanAndDeduplicateOCRText(combinedText);
+    const deduped = cleanAndDeduplicateOCRText(combinedText);
+    const cleanedText = applyOcrTypoCorrections(deduped);
 
-    return cleanedText;
+    const metrics: VisionJobMetrics = {
+      ...visionMetrics,
+      ocrMs,
+      framesOcrd: selectedPaths.length,
+    };
+
+    return { ocrText: cleanedText, metrics };
   } finally {
     // Cleanup temp directory
     try {
