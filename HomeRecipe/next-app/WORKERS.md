@@ -60,6 +60,8 @@ Before leaving, stop servers to free ports and resources:
 
 Use this when you want the same dependencies as production (no local ffmpeg/Tesseract/yt-dlp install). **Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)** for Windows or macOS first, then start Docker.
 
+**Important:** The container **bakes in** whatever is in `next-app` at **image build** time (`COPY . .` in `Dockerfile.worker`). After `git pull` or changing worker code, **rebuild** the image or you will still be running an old worker (wrong behavior, missing `vision_metrics` writes, etc.). Env vars come from `.env.local` at **runtime** via `env_file`.
+
 1. Ensure `next-app/.env.local` exists (copy from `.env.local.example` and fill in keys). Compose injects these into the container at runtime; they are not baked into the image.
 2. From the **`HomeRecipe`** folder (parent of `next-app`), run:
 
@@ -94,6 +96,8 @@ docker compose down
 ```
 
 The image is built from `next-app/Dockerfile.worker` and runs `npm run worker:video` inside Linux with **ffmpeg**, **Tesseract**, **yt-dlp**, **OpenCV dev libraries** (for `@u4/opencv4nodejs`), and a C++ build toolchain so the vision pipeline can use OpenCV at runtime.
+
+After a job finishes, check worker logs for **`vision_metrics saved`** (JSON stored on the job row) or **`Failed to persist vision_metrics`** — if you see the failure line, apply migration `024_video_job_vision_metrics.sql` in the Supabase SQL editor for the same project your worker uses (the `vision_metrics` column must exist).
 
 ---
 

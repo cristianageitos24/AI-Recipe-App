@@ -7,7 +7,7 @@ services:
       - "8000:8000"
     restart: unless-stopped
 
-  # Node video worker (ffmpeg, Tesseract, yt-dlp bundled in image). Requires next-app/.env.local for Supabase + API keys.
+  # Node video worker: code is COPIED at image build — run `docker compose build video-worker` after git pull or lib/scripts changes.
   video-worker:
     build:
       context: ./next-app

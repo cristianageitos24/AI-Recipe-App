@@ -24,7 +24,11 @@ import {
 import { extractAudioToWav, transcribeWithWhisper } from "../lib/transcription";
 import { extractRecipeFromVideo } from "../lib/recipe-reasoning";
 import type { ExtractedRecipe } from "../lib/types";
-import { readVisionConfig } from "../lib/vision";
+import {
+  readVisionConfig,
+  visionJobMetricsToDbJson,
+} from "../lib/vision";
+import type { VisionJobMetrics } from "../lib/vision/types";
 
 // Load .env.local from next-app (script's parent dir) then cwd so worker always sees keys
 const nextAppDir = resolve(__dirname, "..");
@@ -206,7 +210,7 @@ interface VideoJob {
 /**
  * Log with structured format
  */
-function log(level: "INFO" | "ERROR" | "DEBUG", message: string, data?: any) {
+function log(level: "INFO" | "ERROR" | "DEBUG" | "WARN", message: string, data?: any) {
   const timestamp = new Date().toISOString();
   const logEntry = {
     timestamp,
@@ -335,17 +339,7 @@ async function markJobCompleted(
   transcriptText: string | null,
   extractedRecipe: ExtractedRecipe | null,
   thumbnailUrl: string | null = null,
-  visionMetrics?: {
-    framesExtracted: number;
-    framesSkippedBlur: number;
-    framesSkippedDuplicate: number;
-    framesOcrd: number;
-    visionEngine: string;
-    visionMs: number;
-    ocrMs: number;
-    wouldSkipBlur: number;
-    wouldSkipDuplicate: number;
-  }
+  visionMetrics?: VisionJobMetrics
 ) {
   log("INFO", "Job completed", {
     jobId,
@@ -353,7 +347,7 @@ async function markJobCompleted(
     textLength: ocrText.length,
     hasExtractedRecipe: extractedRecipe != null,
     hasThumbnail: thumbnailUrl != null,
-    visionMetrics,
+    hasVisionMetrics: visionMetrics != null,
   });
 
   const { error } = await supabase
@@ -365,7 +359,6 @@ async function markJobCompleted(
       extracted_recipe: extractedRecipe,
       thumbnail_url: thumbnailUrl,
       processing_ms: processingMs,
-      vision_metrics: visionMetrics ?? null,
       finished_at: new Date().toISOString(),
       locked_at: null,
       locked_by: null,
@@ -380,6 +373,36 @@ async function markJobCompleted(
       jobId,
       error: error.message,
     });
+    return;
+  }
+
+  // Second update: JSONB only, so failures are obvious in logs (migration / schema / RLS).
+  if (visionMetrics) {
+    const payload = visionJobMetricsToDbJson(visionMetrics);
+    const { error: vmError } = await supabase
+      .from("video_processing_jobs")
+      .update({ vision_metrics: payload })
+      .eq("id", jobId);
+
+    if (vmError) {
+      log("ERROR", "Failed to persist vision_metrics on job row", {
+        jobId,
+        error: vmError.message,
+        code: (vmError as { code?: string }).code,
+        hint:
+          "Run migration 024_video_job_vision_metrics.sql on this Supabase project so the vision_metrics column exists.",
+      });
+    } else {
+      log("INFO", "vision_metrics saved", {
+        jobId,
+        frames_extracted: payload.frames_extracted,
+        vision_engine: payload.vision_engine,
+        vision_ms: payload.vision_ms,
+        ocr_ms: payload.ocr_ms,
+      });
+    }
+  } else {
+    log("WARN", "No vision metrics object to persist (unexpected)", { jobId });
   }
 }
 

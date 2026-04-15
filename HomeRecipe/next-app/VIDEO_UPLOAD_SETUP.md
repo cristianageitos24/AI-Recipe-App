@@ -81,13 +81,16 @@ OCR preprocessing (grayscale, contrast, sharpening) is done via ffmpeg. The visi
 
 ## Database Setup
 
-1. Run migrations in Supabase SQL Editor (in order):
+1. Prefer **`supabase db push`** (or your team’s migration pipeline) from `next-app` so every file under `supabase/migrations/` is applied in order. If you paste SQL manually, run at least these **video-worker-related** files in order (see the folder for the full chain):
    - `010_video_processing_jobs.sql` – jobs table
    - `011_storage_videos_policies.sql` – storage policies
    - `012_fix_claim_video_job_ambiguous_attempts.sql` – job claiming fix
    - `013_add_transcript_text.sql` – transcript column
    - `014_add_extracted_recipe.sql` – extracted_recipe JSONB column
-   - `024_video_job_vision_metrics.sql` – optional `vision_metrics` JSONB on jobs
+   - `019_video_job_processing_progress.sql` – progress columns + `claim_video_job` updates
+   - `023_worker_update_video_job_progress.sql` – RPC used by the worker for dashboard progress
+   - `024_video_job_vision_metrics.sql` – `vision_metrics` JSONB on jobs
+   - `025_add_video_url_source_columns.sql` – TikTok/URL job fields (`source_type`, `source_url`, …)
 
 2. Verify the table was created:
    ```sql
