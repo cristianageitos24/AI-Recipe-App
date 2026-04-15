@@ -1,7 +1,15 @@
 .video-upload-page {
-  padding: var(--space-10);
-  max-width: 800px;
+  width: 100%;
+  max-width: min(100%, 1200px);
   margin: 0 auto;
+  padding: var(--space-8) var(--space-4);
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .video-upload-page {
+    padding: var(--space-10);
+  }
 }
 
 .video-upload-header {
@@ -26,6 +34,9 @@
 
 .video-upload-form {
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   background: var(--color-bg);
   border-radius: var(--radius-xl);
   padding: var(--space-8);
@@ -299,6 +310,9 @@
 
 .video-recipe-editor {
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   margin-top: var(--space-6);
   padding: var(--space-6);
   background: var(--color-bg);
@@ -494,12 +508,14 @@
   line-height: 1.5;
 }
 
+/* Single column below 960px so fields stay full-width on phones/tablets; two columns on wide screens */
 .video-recipe-split {
   display: grid;
   gap: var(--space-6);
+  grid-template-columns: 1fr;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 960px) {
   .video-recipe-split {
     grid-template-columns: 1fr 1fr;
     align-items: start;
@@ -554,7 +570,7 @@
 }
 
 .video-recipe-step-input {
-  min-height: 52px;
+  min-height: 4.75rem;
   resize: vertical;
 }
 

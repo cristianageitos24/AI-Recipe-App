@@ -738,7 +738,7 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
                               );
                             }}
                             placeholder="Step"
-                            rows={2}
+                            rows={3}
                           />
                           <button
                             type="button"

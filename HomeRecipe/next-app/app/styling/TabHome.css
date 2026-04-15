@@ -193,7 +193,7 @@
 
 .home-extractor-card {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.8fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   gap: var(--space-8);
   padding: var(--space-6);
   border-radius: var(--radius-2xl);
@@ -202,7 +202,7 @@
     var(--color-bg);
   box-shadow: 0 var(--space-2) var(--space-6) var(--overlay-light);
   align-items: flex-start;
-  width: min(100%, 960px);
+  width: min(100%, 1200px);
   min-width: 0;
   overflow: hidden;
   margin: 0 auto;
@@ -273,8 +273,8 @@
 }
 
 .home-extractor-form {
-  max-width: 520px;
   width: 100%;
+  max-width: 100%;
   min-width: 0;
 }
 
