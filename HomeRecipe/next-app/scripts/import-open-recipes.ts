@@ -12,11 +12,11 @@
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import { createReadStream, createWriteStream, existsSync } from "fs";
-import { join } from "path";
+import { join, resolve } from "path";
 import { createInterface } from "readline";
 import { createGunzip } from "zlib";
 
-config({ path: join(process.cwd(), ".env.local") });
+config({ path: resolve(__dirname, "../.env.local") });
 
 const OPEN_RECIPES_URL =
   "https://github.com/jakevdp/open-recipe-data/raw/main/recipeitems.json.gz";

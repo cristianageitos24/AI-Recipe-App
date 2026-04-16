@@ -30,12 +30,9 @@ import {
 } from "../lib/vision";
 import type { VisionJobMetrics } from "../lib/vision/types";
 
-// Load .env.local from next-app (script's parent dir) then cwd so worker always sees keys
+// Load only next-app/.env.local (same file Next.js uses in this project)
 const nextAppDir = resolve(__dirname, "..");
-const envLocal = resolve(nextAppDir, ".env.local");
-const envCwd = resolve(process.cwd(), ".env.local");
-dotenv.config({ path: envLocal });
-if (envCwd !== envLocal) dotenv.config({ path: envCwd });
+dotenv.config({ path: resolve(nextAppDir, ".env.local") });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;

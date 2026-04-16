@@ -8,10 +8,10 @@
 
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-import { join } from "path";
+import { resolve } from "path";
 import { normalizeIngredientName } from "../lib/ingredient-normalize";
 
-config({ path: join(process.cwd(), ".env.local") });
+config({ path: resolve(__dirname, "../.env.local") });
 
 async function main() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

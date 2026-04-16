@@ -30,7 +30,7 @@ The worker polls for video jobs and processes them with:
 - **Transcription** – Speech-to-text from audio (OpenAI Whisper) → stored in `transcript_text` (uses `OPENAI_AUDIO_TRANSCRIPTION_KEY`)
 - **Recipe extraction** – AI combines OCR + transcript into structured recipe JSON (GPT-4.1 nano) → stored in `extracted_recipe` (uses `OPENAI_REASONING_API_KEY`)
 
-It uses `.env.local`. **`SUPABASE_SECRET_KEY` (service role) is required** — the publishable key cannot update jobs under RLS, so progress and completion would fail silently. Also set `OPENAI_AUDIO_TRANSCRIPTION_KEY`, `OPENAI_REASONING_API_KEY` as needed. See `.env.local.example`. For full system dependencies (ffmpeg, Tesseract, yt-dlp), see [VIDEO_UPLOAD_SETUP.md](VIDEO_UPLOAD_SETUP.md).
+It loads **`next-app/.env.local`** only (see `scripts/process-video-jobs.ts`); run the worker from any directory. **`SUPABASE_SECRET_KEY` (service role) is required** — the publishable key cannot update jobs under RLS, so progress and completion would fail silently. Set `OPENAI_AUDIO_TRANSCRIPTION_KEY` and `OPENAI_REASONING_API_KEY` if you want transcription and structured recipe extraction. **Worker behavior** (poll interval, timeouts, max frames, vision blur/duplicate rules, etc.) follows **defaults in the repo** — see **`lib/vision/config.ts`**, **`scripts/process-video-jobs.ts`**, and **`lib/recipe-reasoning.ts`** for the model/schema. You only need env vars for those if you intentionally override a default. See `.env.local.example`. For system dependencies (ffmpeg, Tesseract, yt-dlp), see [VIDEO_UPLOAD_SETUP.md](VIDEO_UPLOAD_SETUP.md).
 
 ---
 

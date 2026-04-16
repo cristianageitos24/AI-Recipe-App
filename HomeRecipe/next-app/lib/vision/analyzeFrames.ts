@@ -30,8 +30,9 @@ export async function analyzeFramesForOcr(
   analyses: FrameAnalysis[];
 }> {
   const t0 = Date.now();
-  let usedOpenCvAny = false;
   const useOpenCv = resolveUseOpenCv(config);
+  /** OpenCV available + enabled for pipeline metrics; Laplacian always uses Sharp (see blur.ts). */
+  const openCvLoaded = useOpenCv && tryLoadOpenCv() !== null;
 
   if (!config.enabled || framePaths.length === 0) {
     const visionMs = Date.now() - t0;
@@ -57,11 +58,7 @@ export async function analyzeFramesForOcr(
 
   for (let i = 0; i < framePaths.length; i++) {
     const path = framePaths[i];
-    const { value: lapVar, usedOpenCv: oc } = await measureLaplacianVariance(
-      path,
-      useOpenCv
-    );
-    if (oc) usedOpenCvAny = true;
+    const { value: lapVar } = await measureLaplacianVariance(path, useOpenCv);
 
     const [dhash, { brightness, contrast }, textLikelihood, sceneChangeScore] =
       await Promise.all([
@@ -92,7 +89,7 @@ export async function analyzeFramesForOcr(
 
   const sel = selectFramesForOcr(analyses, config);
 
-  const engine: VisionEngineKind = usedOpenCvAny ? "opencv" : "fallback";
+  const engine: VisionEngineKind = openCvLoaded ? "opencv" : "fallback";
 
   return {
     selectedPaths: sel.paths,
