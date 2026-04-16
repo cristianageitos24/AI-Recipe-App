@@ -66,9 +66,6 @@ export default function DashboardHomePage() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
-  const [urlInput, setUrlInput] = useState("");
-  const [urlImportLoading, setUrlImportLoading] = useState(false);
-  const [urlImportError, setUrlImportError] = useState<string | null>(null);
   const [urlPreview, setUrlPreview] = useState<UrlImportedRecipe | null>(null);
   const [showUrlPreviewModal, setShowUrlPreviewModal] = useState(false);
   const [urlSaveModalOpen, setUrlSaveModalOpen] = useState(false);
@@ -483,30 +480,20 @@ export default function DashboardHomePage() {
     return () => window.removeEventListener("keydown", handleEsc);
   }, [searchModalOpen]);
 
-  async function handleUrlImportSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!urlInput.trim() || urlImportLoading) return;
-    setUrlImportLoading(true);
-    setUrlImportError(null);
-    try {
-      const res = await fetch("/api/recipes/import-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: urlInput.trim() }),
-      });
-      const data = (await res.json()) as UrlImportedRecipe | { error?: string };
-      if (!res.ok) {
-        throw new Error("error" in data && data.error ? data.error : "Failed to import recipe URL");
-      }
-      setUrlPreview(data as UrlImportedRecipe);
-      setUrlSaveModalOpen(false);
-      setShowUrlPreviewModal(true);
-    } catch (err) {
-      setUrlImportError(err instanceof Error ? err.message : "Unexpected error");
-    } finally {
-      setUrlImportLoading(false);
+  const importRecipeFromWebUrl = useCallback(async (url: string) => {
+    const res = await fetch("/api/recipes/import-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    const data = (await res.json()) as UrlImportedRecipe | { error?: string };
+    if (!res.ok) {
+      throw new Error("error" in data && data.error ? data.error : "Failed to import recipe URL");
     }
-  }
+    setUrlPreview(data as UrlImportedRecipe);
+    setUrlSaveModalOpen(false);
+    setShowUrlPreviewModal(true);
+  }, []);
 
   const hasSuggestions = suggestions.ingredients.length > 0 || suggestions.recipes.length > 0;
   const hasSearchInputText = text.trim().length > 0;
@@ -788,30 +775,16 @@ export default function DashboardHomePage() {
             </section>
 
             <section className="home-surface-card home-block-card home-video-panel">
-              <h2 className="home-section-title">Video Extraction</h2>
-              <p className="home-section-caption">Paste a TikTok URL and submit to start recipe extraction.</p>
+              <h2 className="home-section-title">Recipe Extraction</h2>
+              <p className="home-section-caption">
+                Paste a TikTok link or any recipe webpage URL, then tap Cook It! to extract.
+              </p>
               <div className="home-inline-video-form">
-                <VideoUploadForm variant="embedded" />
-              </div>
-            </section>
-
-            <section className="home-surface-card home-block-card">
-              <h2 className="home-section-title">URL Recipe Extraction</h2>
-              <p className="home-section-caption">Paste a recipe URL and preview extracted details in a modal.</p>
-              <form className="home-url-import-form" onSubmit={handleUrlImportSubmit}>
-                <input
-                  type="url"
-                  className="home-url-input"
-                  placeholder="https://example.com/recipe"
-                  value={urlInput}
-                  onChange={(e) => setUrlInput(e.target.value)}
-                  required
+                <VideoUploadForm
+                  variant="embedded-unified"
+                  onWebRecipeUrlImport={importRecipeFromWebUrl}
                 />
-                <button type="submit" className="home-primary-cta" disabled={urlImportLoading}>
-                  {urlImportLoading ? "Importing..." : "Submit URL"}
-                </button>
-              </form>
-              {urlImportError && <p className="home-section-empty home-error-text">{urlImportError}</p>}
+              </div>
             </section>
 
             <section className="home-surface-card home-block-card home-liked-panel">

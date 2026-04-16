@@ -7,6 +7,7 @@ import { buildVideoRecipePayload } from "@/lib/processRecipeData";
 import type { ExtractedRecipe, ExtractedRecipeIngredient } from "@/lib/types";
 import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
 import { formatInstantLocal } from "@/lib/formatTimestamps";
+import { classifyUrlForIngest } from "@/lib/url-ingest-classification";
 import "@/app/styling/VideoUpload.css";
 
 const JOB_POLL_MS = 1750;
@@ -246,7 +247,11 @@ function VideoJobStageGlyph({ stageKey }: { stageKey: string }) {
 
 interface VideoUploadFormProps {
   onJobCreated?: (jobId: string) => void;
-  variant?: "default" | "embedded";
+  variant?: "default" | "embedded" | "embedded-unified";
+  /**
+   * When `variant` is `embedded-unified`, non-video URLs trigger this handler (recipe webpage import).
+   */
+  onWebRecipeUrlImport?: (url: string) => Promise<void>;
 }
 
 type EditedRecipeState = {
@@ -287,9 +292,11 @@ function initialEditedFromExtracted(
 export function VideoUploadForm({
   onJobCreated,
   variant = "default",
+  onWebRecipeUrlImport,
 }: VideoUploadFormProps) {
   const [tiktokUrl, setTiktokUrl] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [webImportInFlight, setWebImportInFlight] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<VideoJob | null>(null);
@@ -369,19 +376,48 @@ export function VideoUploadForm({
 
     const trimmedUrl = tiktokUrl.trim();
     if (!trimmedUrl) {
-      setError("Please enter a TikTok URL");
+      setError(
+        variant === "embedded-unified" ? "Please enter a URL" : "Please enter a TikTok URL"
+      );
       return;
     }
 
-    try {
-      const url = new URL(trimmedUrl);
-      if (!/^https?:$/.test(url.protocol) || !url.hostname.includes("tiktok.com")) {
+    if (variant === "embedded-unified") {
+      const classified = classifyUrlForIngest(trimmedUrl);
+      if (classified.kind === "invalid") {
+        setError(classified.error);
+        return;
+      }
+      if (classified.kind === "webpage") {
+        if (!onWebRecipeUrlImport) {
+          setError("Recipe URL import is not available.");
+          return;
+        }
+        setWebImportInFlight(true);
+        setError(null);
+        try {
+          await onWebRecipeUrlImport(trimmedUrl);
+          setTiktokUrl("");
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : "Import failed";
+          setError(message);
+        } finally {
+          setWebImportInFlight(false);
+        }
+        return;
+      }
+      // Video URL (currently TikTok only for supported platforms)
+    } else {
+      try {
+        const url = new URL(trimmedUrl);
+        if (!/^https?:$/.test(url.protocol) || !url.hostname.includes("tiktok.com")) {
+          setError("Please enter a valid TikTok URL");
+          return;
+        }
+      } catch {
         setError("Please enter a valid TikTok URL");
         return;
       }
-    } catch {
-      setError("Please enter a valid TikTok URL");
-      return;
     }
 
     setUploading(true);
@@ -500,35 +536,47 @@ export function VideoUploadForm({
     );
   }
 
-  const submitBusy = uploading || inProgress;
+  const submitBusy = uploading || inProgress || webImportInFlight;
   const stageIconKey = jobStatus ? videoJobStageIconKey(jobStatus) : "default";
   const reduceMotion = useReducedMotion();
-  const homeMotionEnabled = variant === "embedded" && !reduceMotion;
+  const homeMotionEnabled =
+    (variant === "embedded" || variant === "embedded-unified") && !reduceMotion;
   const layoutTransition = { duration: 0.22, ease: "easeOut" as const };
 
   return (
     <motion.div
-      className={`video-upload-form${variant === "embedded" ? " video-upload-form--embedded" : ""}`}
+      className={`video-upload-form${
+        variant === "embedded" || variant === "embedded-unified"
+          ? " video-upload-form--embedded"
+          : ""
+      }`}
       layout={homeMotionEnabled}
       transition={layoutTransition}
     >
       <form onSubmit={handleSubmit} className="video-extractor-form-inner">
         <div className="video-extractor-url-row">
-          <label htmlFor="tiktok-url" className="visually-hidden">
-            TikTok URL
+          <label
+            htmlFor={variant === "embedded-unified" ? "recipe-source-url" : "tiktok-url"}
+            className="visually-hidden"
+          >
+            {variant === "embedded-unified" ? "Recipe or video URL" : "TikTok URL"}
           </label>
           <div className="video-extractor-input-wrap">
             <span className="video-extractor-link-icon" aria-hidden>
               <IconLink />
             </span>
             <input
-              id="tiktok-url"
+              id={variant === "embedded-unified" ? "recipe-source-url" : "tiktok-url"}
               type="url"
               value={tiktokUrl}
               onChange={(e) => setTiktokUrl(e.target.value)}
-              placeholder="https://www.tiktok.com/..."
+              placeholder={
+                variant === "embedded-unified"
+                  ? "https://www.tiktok.com/... or recipe page URL"
+                  : "https://www.tiktok.com/..."
+              }
               className="form-input video-extractor-url-input"
-              disabled={uploading}
+              disabled={uploading || webImportInFlight}
               autoComplete="off"
             />
           </div>
