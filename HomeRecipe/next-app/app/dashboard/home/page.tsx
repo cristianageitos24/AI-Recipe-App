@@ -8,6 +8,7 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { RecipeListCard } from "@/components/RecipeListCard";
 import { RecipeFullView } from "@/components/RecipeFullView";
 import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
+import { VideoUploadForm } from "@/components/VideoUploadForm";
 import { getHomeBootstrap } from "@/app/actions/dashboard";
 import {
   getSearchSuggestions,
@@ -65,10 +66,6 @@ export default function DashboardHomePage() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
-  const [videoUrlInput, setVideoUrlInput] = useState("");
-  const [videoImportLoading, setVideoImportLoading] = useState(false);
-  const [videoImportError, setVideoImportError] = useState<string | null>(null);
-  const [videoImportSuccess, setVideoImportSuccess] = useState<string | null>(null);
   const [urlInput, setUrlInput] = useState("");
   const [urlImportLoading, setUrlImportLoading] = useState(false);
   const [urlImportError, setUrlImportError] = useState<string | null>(null);
@@ -511,32 +508,6 @@ export default function DashboardHomePage() {
     }
   }
 
-  async function handleVideoImportSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!videoUrlInput.trim() || videoImportLoading) return;
-    setVideoImportLoading(true);
-    setVideoImportError(null);
-    setVideoImportSuccess(null);
-    try {
-      const res = await fetch("/api/video/url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: videoUrlInput.trim() }),
-      });
-      const data = (await res.json()) as { error?: string; detail?: string; jobId?: string };
-      if (!res.ok) {
-        const message = data.detail ? `${data.error ?? "Error"}: ${data.detail}` : data.error ?? "Failed to start extraction";
-        throw new Error(message);
-      }
-      setVideoImportSuccess("Extraction started. Continue in Video Upload tools.");
-      setVideoUrlInput("");
-    } catch (err) {
-      setVideoImportError(err instanceof Error ? err.message : "Unexpected error");
-    } finally {
-      setVideoImportLoading(false);
-    }
-  }
-
   const hasSuggestions = suggestions.ingredients.length > 0 || suggestions.recipes.length > 0;
   const hasSearchInputText = text.trim().length > 0;
   const cardHoverMotion = { y: -4 };
@@ -819,21 +790,9 @@ export default function DashboardHomePage() {
             <section className="home-surface-card home-block-card home-video-panel">
               <h2 className="home-section-title">Video Extraction</h2>
               <p className="home-section-caption">Paste a TikTok URL and submit to start recipe extraction.</p>
-              <form className="home-url-import-form" onSubmit={handleVideoImportSubmit}>
-                <input
-                  type="url"
-                  className="home-url-input"
-                  placeholder="https://www.tiktok.com/..."
-                  value={videoUrlInput}
-                  onChange={(e) => setVideoUrlInput(e.target.value)}
-                  required
-                />
-                <button type="submit" className="home-primary-cta" disabled={videoImportLoading}>
-                  {videoImportLoading ? "Starting..." : "Submit Video URL"}
-                </button>
-              </form>
-              {videoImportError && <p className="home-section-empty home-error-text">{videoImportError}</p>}
-              {videoImportSuccess && <p className="home-section-empty home-success-text">{videoImportSuccess}</p>}
+              <div className="home-inline-video-form">
+                <VideoUploadForm variant="embedded" />
+              </div>
             </section>
 
             <section className="home-surface-card home-block-card">

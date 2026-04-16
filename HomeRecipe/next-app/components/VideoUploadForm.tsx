@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { getVideoJob, type VideoJob } from "@/app/actions/video-jobs";
 import { buildVideoRecipePayload } from "@/lib/processRecipeData";
 import type { ExtractedRecipe, ExtractedRecipeIngredient } from "@/lib/types";
@@ -245,6 +246,7 @@ function VideoJobStageGlyph({ stageKey }: { stageKey: string }) {
 
 interface VideoUploadFormProps {
   onJobCreated?: (jobId: string) => void;
+  variant?: "default" | "embedded";
 }
 
 type EditedRecipeState = {
@@ -282,7 +284,10 @@ function initialEditedFromExtracted(
   };
 }
 
-export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
+export function VideoUploadForm({
+  onJobCreated,
+  variant = "default",
+}: VideoUploadFormProps) {
   const [tiktokUrl, setTiktokUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -497,9 +502,16 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
 
   const submitBusy = uploading || inProgress;
   const stageIconKey = jobStatus ? videoJobStageIconKey(jobStatus) : "default";
+  const reduceMotion = useReducedMotion();
+  const homeMotionEnabled = variant === "embedded" && !reduceMotion;
+  const layoutTransition = { duration: 0.22, ease: "easeOut" as const };
 
   return (
-    <div className="video-upload-form">
+    <motion.div
+      className={`video-upload-form${variant === "embedded" ? " video-upload-form--embedded" : ""}`}
+      layout={homeMotionEnabled}
+      transition={layoutTransition}
+    >
       <form onSubmit={handleSubmit} className="video-extractor-form-inner">
         <div className="video-extractor-url-row">
           <label htmlFor="tiktok-url" className="visually-hidden">
@@ -544,18 +556,25 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
       </form>
 
       {jobStatus && (
-        <div className="job-status">
+        <motion.div className="job-status" layout={homeMotionEnabled} transition={layoutTransition}>
           {!inProgress && (
             <h3 className="job-status-heading">Status</h3>
           )}
 
-          {inProgress && (
-            <div
-              className="video-job-progress-card"
-              role="status"
-              aria-live="polite"
-              aria-label="Video processing progress"
-            >
+          <AnimatePresence initial={false}>
+            {inProgress ? (
+              <motion.div
+                key="video-progress"
+                layout={homeMotionEnabled}
+                initial={homeMotionEnabled ? { opacity: 0, y: 6 } : false}
+                animate={homeMotionEnabled ? { opacity: 1, y: 0 } : undefined}
+                exit={homeMotionEnabled ? { opacity: 0, y: -4 } : undefined}
+                transition={layoutTransition}
+                className="video-job-progress-card"
+                role="status"
+                aria-live="polite"
+                aria-label="Video processing progress"
+              >
               <div className="video-job-stage-row">
                 <span className="video-job-stage-icon">
                   <VideoJobStageGlyph stageKey={stageIconKey} />
@@ -599,8 +618,9 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
                   ) : null}
                 </div>
               ) : null}
-            </div>
-          )}
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
 
           {!inProgress && (
             <div
@@ -610,8 +630,16 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
             </div>
           )}
 
-          {jobStatus.status === "done" && editedRecipe && (
-            <div className="video-recipe-editor">
+          <AnimatePresence initial={false}>
+            {jobStatus.status === "done" && editedRecipe ? (
+              <motion.div
+                key="video-editor"
+                className="video-recipe-editor"
+                layout={homeMotionEnabled}
+                initial={homeMotionEnabled ? { opacity: 0, y: 8 } : false}
+                animate={homeMotionEnabled ? { opacity: 1, y: 0 } : undefined}
+                transition={layoutTransition}
+              >
               <label htmlFor="video-recipe-title" className="video-recipe-editor-label">
                 Recipe name
               </label>
@@ -885,8 +913,9 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
                   Save to cookbook
                 </button>
               </div>
-            </div>
-          )}
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
 
           {jobStatus.status === "done" && !jobStatus.extracted_recipe && (
             <>
@@ -945,7 +974,7 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
                 )}
               </div>
             )}
-        </div>
+        </motion.div>
       )}
 
       <SaveRecipeToCookbookModal
@@ -953,6 +982,6 @@ export function VideoUploadForm({ onJobCreated }: VideoUploadFormProps) {
         onClose={() => setSaveModalOpen(false)}
         payload={saveModalOpen ? getPayloadFromEdited() : null}
       />
-    </div>
+    </motion.div>
   );
 }

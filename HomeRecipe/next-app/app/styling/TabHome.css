@@ -911,6 +911,24 @@
   margin-top: var(--space-2);
 }
 
+.home-video-panel {
+  overflow: visible;
+}
+
+.home-video-panel .home-inline-video-form {
+  margin-top: var(--space-2);
+}
+
+.home-video-panel .home-inline-video-form .video-upload-form {
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  border-top: 0;
+  box-shadow: none;
+  border-radius: 0;
+  background: transparent;
+}
+
 .home-inline-link {
   display: inline-flex;
   margin-top: var(--space-2);
