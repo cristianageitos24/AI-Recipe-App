@@ -94,10 +94,14 @@ function buildUserMessage(ocrText: string, transcriptText: string): string {
       /^(add|mix|stir|bake|cook|preheat|combine|place|heat|pour|remove|serve|garnish|sprinkle|whisk|simmer|boil|fry|chop|dice|slice|mince|drain|transfer|bake|broil|roast)\b/i;
 
     for (const line of lines) {
+      // Unicode fractions (e.g. ½ cup) and informal measures common in on-screen text
       const looksMeasure =
-        /\b(\d+\/\d+|\d+(\.\d+)?)\s*(cup|tbsp|tsp|oz|lb|g|kg|ml|l|clove|cloves)\b/i.test(
+        /\b(\d+\/\d+|\d+(\.\d+)?|[\u00BC\u00BD\u00BE\u2150-\u215E])\s*(cup|cups|tbsp|tsp|oz|lb|g|kg|ml|l|clove|cloves)?\b/i.test(
           line
-        );
+        ) ||
+        /\b(\d+(\.\d+)?)\s*(cup|cups|tbsp|tsp|oz|lb|g|kg|ml|l|clove|cloves)\b/i.test(line) ||
+        /\b(a\s+)?pinch(\s+of)?\b/i.test(line) ||
+        /\bdash\b/i.test(line);
       const looksStep = verbStart.test(line) || line.length > 80;
       if (looksMeasure && !looksStep) {
         ingredientLike.push(line);
@@ -134,7 +138,11 @@ function buildUserMessage(ocrText: string, transcriptText: string): string {
     return "No OCR or transcript content provided.";
   }
 
-  return parts.join("\n\n");
+  const preamble =
+    "The sections below come from the same cooking video (on-screen OCR plus optional narration transcript). " +
+    "Use them together; OCR lines are roughly in video order but may be incomplete or noisy.";
+
+  return preamble + "\n\n" + parts.join("\n\n");
 }
 
 const SYSTEM_PROMPT = `You extract a structured recipe from raw text that came from a cooking video.
@@ -143,11 +151,16 @@ Sources:
 - OCR: text extracted from video frames (often ingredient lists, titles, on-screen text). Prefer OCR for ingredient names, quantities, and measurements.
 - Transcript: speech-to-text from the video. Prefer transcript for cooking steps, order of operations, and timing.
 
+OCR quality:
+- OCR can contain typos, broken words, or partial lines. Similar frames are filtered upstream, but near-duplicates or repeated phrases may still appear—merge them mentally.
+- On-screen text may flash quickly; ingredient and step lines might be split oddly across OCR lines. Reconstruct sensible ingredient lines and steps.
+- If OCR and transcript disagree on an amount or ingredient name, trust clear on-screen measurements and spellings from OCR for quantities; use transcript for procedure when OCR only shows fragments.
+
 Rules:
 - Combine both sources intelligently. Do not duplicate information.
 - Deduplicate ingredients; merge variants (e.g. "2 cups flour" and "flour" → one line with quantity and unit).
 - Normalize units when possible (e.g. tbsp, tsp, cups, g, ml).
-- Order cooking steps chronologically.
+- Order cooking steps chronologically (use transcript order when it is clearer than OCR order).
 - Do not invent or assume information that is not present in the input. Use null for unknown servings, cook_time_minutes, or ingredient quantity/unit/notes when not stated.
 - Title: infer a short recipe title; use "Untitled Recipe" only if nothing suggests a name.
 - Ingredients vs steps:
