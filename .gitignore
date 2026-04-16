@@ -2,3 +2,6 @@
 data/*.csv
 # Keep import script local (not shared)
 data/import_full_dataset.py
+
+# Cursor IDE debug session logs (NDJSON)
+.cursor/debug*.log
