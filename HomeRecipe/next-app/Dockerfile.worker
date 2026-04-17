@@ -3,9 +3,9 @@
 FROM node:20-bookworm-slim
 
 # Use apt OpenCV only (no download/build). Without this, install.js often exits 1 on slim images.
+# Do not hardcode OPENCV_LIB_DIR: it differs by architecture (amd64 vs arm64).
 ENV OPENCV4NODEJS_DISABLE_AUTOBUILD=1 \
     OPENCV_INCLUDE_DIR=/usr/include/opencv4 \
-    OPENCV_LIB_DIR=/usr/lib/x86_64-linux-gnu \
     OPENCV_BIN_DIR=/usr/bin
 
 RUN apt-get update \
@@ -32,7 +32,11 @@ RUN npm ci
 
 # @u4/opencv4nodejs is optionalDependencies: npm ci can succeed even when the native build fails (module omitted).
 # System libopencv-dev above supplies headers/libs; this step fails the image build if Node cannot load OpenCV.
-RUN npm install @u4/opencv4nodejs@7.1.2 --foreground-scripts \
+# Detect OpenCV lib/include paths dynamically so this works on both amd64 and arm64 images.
+RUN export OPENCV_INCLUDE_DIR="$(pkg-config --variable=includedir opencv4 2>/dev/null || echo /usr/include/opencv4)" \
+  && export OPENCV_LIB_DIR="$(pkg-config --variable=libdir opencv4 2>/dev/null || true)" \
+  && [ -n "$OPENCV_LIB_DIR" ] \
+  && npm install @u4/opencv4nodejs@7.1.2 --foreground-scripts \
   && node -e "require('@u4/opencv4nodejs'); console.log('[docker] @u4/opencv4nodejs loaded')"
 
 # Rebuild image after changing scripts/process-video-jobs.ts or lib/* (COPY bakes code at build time).
