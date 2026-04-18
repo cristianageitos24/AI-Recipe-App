@@ -5,3 +5,6 @@ data/import_full_dataset.py
 
 # Cursor IDE debug session logs (NDJSON)
 .cursor/debug*.log
+
+# macOS Finder metadata
+.DS_Store
