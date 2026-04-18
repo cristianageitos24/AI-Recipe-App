@@ -10,7 +10,6 @@
     "start": "next start",
     "lint": "eslint",
     "import:recipes": "tsx scripts/import-open-recipes.ts",
-    "import:ingredients": "tsx scripts/import-open-recipes-ingredients.ts",
     "import:fdc": "tsx scripts/import-fdc-csv.ts",
     "stub:selective-branded": "tsx scripts/selective-branded-import-stub.ts",
     "worker:video": "tsx scripts/process-video-jobs.ts",

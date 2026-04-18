@@ -15,6 +15,6 @@ From the **`next-app`** directory (with Supabase CLI installed and project linke
    - In Clerk Dashboard → [Supabase integration](https://dashboard.clerk.com/setup/supabase) → Activate and copy your Clerk domain.
    - In Supabase Dashboard → **Authentication** → **Sign In / Up** → **Add provider** → **Clerk** → Paste the Clerk domain.
 
-2. **Migrations** — numbered files under `supabase/migrations/` are the source of truth, including FDC nutrition (`026+`), grocery (`027`), comments (`028`), and `fdc_candidates` (`029`). Apply via CLI or MCP as above. The SQL Editor is for one-off debugging only.
+2. **Migrations** — numbered files under `supabase/migrations/` are the source of truth, including FDC nutrition (`026+`), grocery (`027`), comments (`028`), `fdc_candidates` (`029`), and legacy **`ingredients` removal (`030`)**. Apply via CLI or MCP as above. The SQL Editor is for one-off debugging only.
 
    Early files include: `001_initial_schema.sql` (base tables), `002_clerk_schema.sql`, `003_add_recipe_steps.sql`, `004_drop_django_legacy_tables.sql`, `005_enable_rls_on_app_tables.sql`, `006_drop_user_recipes.sql`, `007_ingredients_table.sql`, `008_recipes_search_indexes.sql`. Newer migrations extend the schema further; always apply the full chain on a fresh database.

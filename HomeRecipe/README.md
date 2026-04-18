@@ -192,11 +192,10 @@ Migrations are idempotent where possible (IF EXISTS / IF NOT EXISTS). Do not ski
 
 To populate the app with a large recipe dataset and enable search/suggestions:
 
-1. Apply all migrations (including `007_ingredients_table.sql`).
+1. Apply all migrations (including `007` then `030`, which drops the legacy `ingredients` table).
 2. From `next-app`, with `SUPABASE_SECRET_KEY` in `.env.local`:
    ```bash
    npm run import:recipes    # Imports from Open Recipes (~230k recipes; downloads ~200MB)
-   npm run import:ingredients # Fills ingredients for autocomplete
    ```
 
 ### Video upload and OCR
