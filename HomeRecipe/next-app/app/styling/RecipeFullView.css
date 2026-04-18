@@ -618,6 +618,22 @@ a.more-information-image-box.more-information-image-box--source-link {
   color: #a33;
 }
 
+.recipe-fullview-fdc-attribution {
+  margin: 6px 0 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--gray-600, #666);
+}
+
+.recipe-fullview-fdc-attribution a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.recipe-fullview-fdc-attribution-more {
+  font-weight: 500;
+}
+
 @media screen and (max-width: 575px) {
   .more-information-container {
     left: 0;

@@ -81,3 +81,14 @@ npm start
 3. Deploy.
 
 See [Next.js deployment docs](https://nextjs.org/docs/app/building-your-application/deploying) for more options.
+
+---
+
+## Nutrition (USDA FDC) and branded foods
+
+- **Bulk catalog:** Foundation + SR Legacy foods are loaded from in-repo CSVs via `npm run import:fdc` (see repo root `README.md`). **Branded** packaged products are **not** fully bulk-imported.
+- **Runtime:** When a line does not match the local `fdc_foods` catalog, the server calls USDA `/foods/search` and `/food/{fdcId}` with results cached in `fdc_api_cache` (see `lib/nutrition/fdc-api.ts`). Set **`USDA_FDC_API_KEY`** (or **`FDC_API_KEY`**) for API fallback; requests use retry/backoff on HTTP 429.
+- **Resolver behavior:** API hits are ranked so **Foundation / SR Legacy** are preferred over **Branded** when scores are comparable; if an unfiltered search returns no foods, a **Branded-only** search is tried once for the same query (separate cache row).
+- **Attribution:** See **Dashboard → About** and the recipe nutrition footnote in the recipe detail view.
+
+**Note:** Older migration files may still contain outdated vendor names in SQL *line* comments only; we do not rewrite applied history. Current semantics for `recipes` / `user_id` are documented in the database via `028_schema_comments_recipes_shared_catalog.sql` (`COMMENT ON`).

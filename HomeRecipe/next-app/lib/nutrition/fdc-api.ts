@@ -24,6 +24,11 @@ function isCacheFresh(fetchedAt: string | null): boolean {
   return Date.now() - t < CACHE_TTL_MS;
 }
 
+export type FdcSearchOptions = {
+  /** USDA `dataType` filter (e.g. `Branded`); uses a separate `fdc_api_cache` row from unfiltered search. */
+  dataType?: string;
+};
+
 export type FdcSearchFood = {
   fdcId: number;
   description: string;
@@ -59,19 +64,29 @@ async function fetchWithRetry(url: string, init: RequestInit, label: string): Pr
   throw new Error(`${label}: too many 429 responses`);
 }
 
+function searchCacheDataTypeKey(options?: FdcSearchOptions): string {
+  const dt = options?.dataType?.trim();
+  if (!dt) return "search_v1";
+  const slug = dt.toLowerCase().replace(/\s+/g, "_");
+  return `search_${slug}_v1`;
+}
+
 export async function fdcSearchFoodsCached(
   svc: SupabaseClient,
-  query: string
+  query: string,
+  options?: FdcSearchOptions
 ): Promise<FdcSearchFood[]> {
   const apiKey = getFdcApiKey();
   const qn = normalizeSearchQuery(query);
   if (!qn) return [];
 
+  const cacheFilter = searchCacheDataTypeKey(options);
+
   const { data: cached } = await svc
     .from("fdc_api_cache")
     .select("payload, fetched_at")
     .eq("query_normalized", `search:${qn}`)
-    .eq("data_type_filter", "search_v1")
+    .eq("data_type_filter", cacheFilter)
     .maybeSingle();
 
   if (cached?.payload && isCacheFresh(cached.fetched_at as string)) {
@@ -83,9 +98,17 @@ export async function fdcSearchFoodsCached(
     return [];
   }
 
-  const url = `${FDC_BASE}/foods/search?query=${encodeURIComponent(
-    qn
-  )}&pageSize=15&api_key=${encodeURIComponent(apiKey)}`;
+  const params = new URLSearchParams({
+    query: qn,
+    pageSize: "15",
+    api_key: apiKey,
+  });
+  const dt = options?.dataType?.trim();
+  if (dt) {
+    params.set("dataType", dt);
+  }
+
+  const url = `${FDC_BASE}/foods/search?${params.toString()}`;
 
   const res = await fetchWithRetry(url, { method: "GET" }, "fdcSearch");
   if (!res.ok) {
@@ -97,7 +120,7 @@ export async function fdcSearchFoodsCached(
   await svc.from("fdc_api_cache").upsert(
     {
       query_normalized: `search:${qn}`,
-      data_type_filter: "search_v1",
+      data_type_filter: cacheFilter,
       payload: json as unknown as Record<string, unknown>,
       fetched_at: new Date().toISOString(),
     },

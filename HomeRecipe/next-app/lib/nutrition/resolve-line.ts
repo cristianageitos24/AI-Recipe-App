@@ -80,6 +80,38 @@ function normalizeApiScore(raw: number): number {
   return raw > 0 && raw <= 1 ? raw : Math.min(0.99, raw / 500);
 }
 
+/** Map FDC `/foods/search` `dataType` strings to `DATA_TYPE_PRIORITY` keys. */
+function mapApiDataTypeToKey(
+  dataType?: string
+): keyof typeof DATA_TYPE_PRIORITY | "unknown" {
+  if (!dataType) return "unknown";
+  const d = dataType.toLowerCase();
+  if (d.includes("foundation")) return "foundation_food";
+  if (d.includes("sr") && d.includes("legacy")) return "sr_legacy_food";
+  if (d.includes("legacy")) return "sr_legacy_food";
+  if (d.includes("brand")) return "branded_food";
+  if (d.includes("survey") || d.includes("fndds")) return "survey_fndds_food";
+  return "unknown";
+}
+
+function apiFoodTypeRank(dataType?: string): number {
+  const k = mapApiDataTypeToKey(dataType);
+  if (k === "unknown") return 50;
+  return DATA_TYPE_PRIORITY[k] ?? 45;
+}
+
+/** Prefer Foundation / SR over Branded when scores are comparable (single or merged API responses). */
+function rankApiHits(hits: FdcSearchFood[]): FdcSearchFood[] {
+  return [...hits].sort((a, b) => {
+    const pa = apiFoodTypeRank(a.dataType);
+    const pb = apiFoodTypeRank(b.dataType);
+    if (pa !== pb) return pa - pb;
+    const sa = normalizeApiScore(a.score ?? 0);
+    const sb = normalizeApiScore(b.score ?? 0);
+    return sb - sa;
+  });
+}
+
 function dedupeCandidates(cands: FdcCandidate[]): FdcCandidate[] {
   const m = new Map<number, FdcCandidate>();
   for (const c of cands) {
@@ -205,12 +237,11 @@ export async function resolveIngredientLine(
   }
 
   if (!chosen) {
-    const apiHits = await fdcSearchFoodsCached(svc, term);
-    apiSorted = [...apiHits].sort((a, b) => {
-      const sa = a.score ?? 0;
-      const sb = b.score ?? 0;
-      return sb - sa;
-    });
+    let apiHits = await fdcSearchFoodsCached(svc, term);
+    if (apiHits.length === 0) {
+      apiHits = await fdcSearchFoodsCached(svc, term, { dataType: "Branded" });
+    }
+    apiSorted = rankApiHits(apiHits);
     const top = apiSorted[0];
     if (top) {
       const normalizedScore = normalizeApiScore(top.score ?? 0);

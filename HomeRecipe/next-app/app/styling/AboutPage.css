@@ -1,0 +1,37 @@
+.dashboard-about {
+  padding: var(--space-5, 24px) var(--space-6, 32px);
+  max-width: 40rem;
+}
+
+.dashboard-about-title {
+  font-family: var(--font-body);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-fg);
+  margin: 0 0 var(--space-4, 16px);
+}
+
+.dashboard-about-h2 {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-fg);
+  margin: 0 0 var(--space-2, 8px);
+}
+
+.dashboard-about-p {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--gray-700, #444);
+  margin: 0;
+}
+
+.dashboard-about-link {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.dashboard-about-link:hover {
+  color: var(--accent-hover, var(--accent));
+}

@@ -42,6 +42,11 @@ const navItems = [
     label: "Import URL",
     icon: "/images/dashboard/openrecipe.svg",
   },
+  {
+    href: "/dashboard/about",
+    label: "About",
+    icon: "/images/dashboard/icon.svg",
+  },
 ];
 
 export function DashboardNav() {

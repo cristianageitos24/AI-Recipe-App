@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type {
   RecipeIngredientLineSnapshot,
   RecipeNutritionSnapshot,
@@ -262,6 +263,25 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
               className={`recipe-fullview-nutrition-source recipe-fullview-nutrition-source--${src}`}
             >
               Nutrition: {nutritionSourceLabel}
+            </p>
+            <p className="recipe-fullview-fdc-attribution">
+              Data:{" "}
+              <a
+                href="https://fdc.nal.usda.gov/"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                USDA FoodData Central
+              </a>{" "}
+              (public domain).{" "}
+              <Link
+                href="/dashboard/about"
+                className="recipe-fullview-fdc-attribution-more"
+                onClick={(e) => e.stopPropagation()}
+              >
+                More
+              </Link>
             </p>
           </div>
           {sourceLinkBase && (
