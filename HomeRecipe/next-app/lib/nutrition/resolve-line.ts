@@ -5,6 +5,7 @@ import { DATA_TYPE_PRIORITY } from "@/lib/nutrition/constants";
 import {
   fdcFoodDetailCached,
   fdcSearchFoodsCached,
+  type FdcSearchFood,
   type NutrientsPer100g,
 } from "@/lib/nutrition/fdc-api";
 import { getNutrientsPer100gFromDb } from "@/lib/nutrition/nutrients-from-db";
@@ -55,13 +56,81 @@ export type ResolvedLine = {
   nutrients_scaled: { kcal: number; protein_g: number; fat_g: number; carb_g: number };
 };
 
-function scaleNutrients(n100: NutrientsPer100g, grams: number): ResolvedLine["nutrients_scaled"] {
+/** Top FDC hits from the same local/API search used for deterministic matching (for AI context). */
+export type FdcCandidate = { fdc_id: number; description: string; score: number };
+
+export type ResolvedLineWithCandidates = ResolvedLine & {
+  fdc_candidates: FdcCandidate[];
+};
+
+export function scaleNutrientsToGrams(
+  n100: NutrientsPer100g,
+  grams: number
+): ResolvedLine["nutrients_scaled"] {
   const f = grams / 100;
   return {
-    kcal: (n100.kcal * f),
-    protein_g: (n100.protein_g * f),
-    fat_g: (n100.fat_g * f),
-    carb_g: (n100.carb_g * f),
+    kcal: n100.kcal * f,
+    protein_g: n100.protein_g * f,
+    fat_g: n100.fat_g * f,
+    carb_g: n100.carb_g * f,
+  };
+}
+
+function normalizeApiScore(raw: number): number {
+  return raw > 0 && raw <= 1 ? raw : Math.min(0.99, raw / 500);
+}
+
+function dedupeCandidates(cands: FdcCandidate[]): FdcCandidate[] {
+  const m = new Map<number, FdcCandidate>();
+  for (const c of cands) {
+    const prev = m.get(c.fdc_id);
+    if (!prev || c.score > prev.score) {
+      m.set(c.fdc_id, c);
+    }
+  }
+  return [...m.values()].sort((a, b) => b.score - a.score).slice(0, 12);
+}
+
+function candidatesFromRankedLocal(
+  ranked: { fdc_id: number; description: string; score: number }[]
+): FdcCandidate[] {
+  return ranked.slice(0, 8).map((r) => ({
+    fdc_id: r.fdc_id,
+    description: r.description,
+    score: r.score,
+  }));
+}
+
+function candidatesFromApiHits(sorted: FdcSearchFood[]): FdcCandidate[] {
+  return sorted.slice(0, 8).map((top) => ({
+    fdc_id: top.fdcId,
+    description: top.description,
+    score: normalizeApiScore(top.score ?? 0),
+  }));
+}
+
+/**
+ * Fetch nutrients and build an FDC-backed line (used after deterministic resolution or AI-picked fdc_id).
+ */
+export async function buildFdcResolvedLine(
+  svc: SupabaseClient,
+  fdcId: number,
+  grams: number,
+  matchScore: number | null
+): Promise<ResolvedLine | null> {
+  let per100 = await getNutrientsPer100gFromDb(svc, fdcId);
+  if (!per100) {
+    per100 = await fdcFoodDetailCached(svc, fdcId);
+  }
+  if (!per100) return null;
+  return {
+    fdc_id: fdcId,
+    fdc_match_score: matchScore,
+    line_nutrition_source: "fdc",
+    grams,
+    ml: null,
+    estimation_reason: null,
+    nutrients_scaled: scaleNutrientsToGrams(per100, grams),
   };
 }
 
@@ -70,7 +139,7 @@ const LOCAL_SCORE_MIN = 0.55;
 export async function resolveIngredientLine(
   svc: SupabaseClient,
   parsed: ParsedIngredientLine
-): Promise<ResolvedLine> {
+): Promise<ResolvedLineWithCandidates> {
   const empty: ResolvedLine = {
     fdc_id: null,
     fdc_match_score: null,
@@ -83,7 +152,7 @@ export async function resolveIngredientLine(
 
   const term = searchTermFromParsed(parsed);
   if (!term || !parsed.item?.trim()) {
-    return empty;
+    return { ...empty, fdc_candidates: [] };
   }
 
   const grams = estimateGrams({
@@ -96,6 +165,7 @@ export async function resolveIngredientLine(
     return {
       ...empty,
       estimation_reason: "Could not convert quantity/unit to grams.",
+      fdc_candidates: [],
     };
   }
 
@@ -118,9 +188,12 @@ export async function resolveIngredientLine(
   } | null = null;
 
   const locals = (localRows ?? []) as FdcFoodRow[];
+  let rankedLocal: ReturnType<typeof rankLocal> = [];
+  let apiSorted: FdcSearchFood[] = [];
+
   if (locals.length) {
-    const ranked = rankLocal(locals, term);
-    const best = ranked[0];
+    rankedLocal = rankLocal(locals, term);
+    const best = rankedLocal[0];
     if (best && best.score >= LOCAL_SCORE_MIN) {
       chosen = {
         fdc_id: best.fdc_id,
@@ -133,16 +206,14 @@ export async function resolveIngredientLine(
 
   if (!chosen) {
     const apiHits = await fdcSearchFoodsCached(svc, term);
-    const sorted = [...apiHits].sort((a, b) => {
+    apiSorted = [...apiHits].sort((a, b) => {
       const sa = a.score ?? 0;
       const sb = b.score ?? 0;
       return sb - sa;
     });
-    const top = sorted[0];
+    const top = apiSorted[0];
     if (top) {
-      const raw = top.score ?? 0;
-      const normalizedScore =
-        raw > 0 && raw <= 1 ? raw : Math.min(0.99, raw / 500);
+      const normalizedScore = normalizeApiScore(top.score ?? 0);
       chosen = {
         fdc_id: top.fdcId,
         score: normalizedScore,
@@ -152,20 +223,22 @@ export async function resolveIngredientLine(
     }
   }
 
+  const failureCandidates = dedupeCandidates([
+    ...candidatesFromRankedLocal(rankedLocal),
+    ...candidatesFromApiHits(apiSorted),
+  ]);
+
   if (!chosen) {
     return {
       ...empty,
       grams,
       estimation_reason: "No confident FDC food match.",
+      fdc_candidates: failureCandidates,
     };
   }
 
-  let per100 = await getNutrientsPer100gFromDb(svc, chosen.fdc_id);
-  if (!per100) {
-    per100 = await fdcFoodDetailCached(svc, chosen.fdc_id);
-  }
-
-  if (!per100) {
+  const resolved = await buildFdcResolvedLine(svc, chosen.fdc_id, grams, chosen.score);
+  if (!resolved) {
     return {
       ...empty,
       fdc_id: chosen.fdc_id,
@@ -173,18 +246,19 @@ export async function resolveIngredientLine(
       grams,
       line_nutrition_source: "unresolved",
       estimation_reason: "Nutrients unavailable for matched food.",
+      fdc_candidates: dedupeCandidates([
+        ...failureCandidates,
+        {
+          fdc_id: chosen.fdc_id,
+          description: chosen.description,
+          score: chosen.score,
+        },
+      ]),
     };
   }
 
-  const nutrients_scaled = scaleNutrients(per100, grams);
-
   return {
-    fdc_id: chosen.fdc_id,
-    fdc_match_score: chosen.score,
-    line_nutrition_source: "fdc",
-    grams,
-    ml: null,
-    estimation_reason: null,
-    nutrients_scaled,
+    ...resolved,
+    fdc_candidates: [],
   };
 }

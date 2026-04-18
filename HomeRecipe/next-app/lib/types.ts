@@ -8,6 +8,16 @@ export type RecipeNutritionSnapshot = {
   nutrition_source: "fdc" | "estimated" | "mixed" | "incomplete";
 };
 
+/** Per-line nutrition provenance from `recipe_ingredient_lines` (embedded select). */
+export type RecipeIngredientLineSnapshot = {
+  line_index: number;
+  item: string | null;
+  raw_text: string | null;
+  line_nutrition_source: "fdc" | "estimated" | "unresolved";
+  fdc_id: number | null;
+  estimation_reason: string | null;
+};
+
 export type RecipeRow = {
   id: string;
   recipe_id: string;
@@ -23,6 +33,8 @@ export type RecipeRow = {
   created_at?: string;
   /** Embedded from `recipe_nutrition` when selected (1:1). */
   recipe_nutrition?: RecipeNutritionSnapshot | RecipeNutritionSnapshot[] | null;
+  /** Populated when the query embeds `recipe_ingredient_lines` (nutrition sync). */
+  recipe_ingredient_lines?: RecipeIngredientLineSnapshot[] | null;
 };
 
 export type RecipePayload = {

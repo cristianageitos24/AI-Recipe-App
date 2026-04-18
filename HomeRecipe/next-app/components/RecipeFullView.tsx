@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import type { RecipeNutritionSnapshot, RecipeRow } from "@/lib/types";
+import type {
+  RecipeIngredientLineSnapshot,
+  RecipeNutritionSnapshot,
+  RecipeRow,
+} from "@/lib/types";
 import {
   getRecipeSourceColumnAriaLabel,
   getRecipeSourceLinkBase,
@@ -29,6 +33,47 @@ function pickNutritionSnapshot(
   const n = Array.isArray(raw) ? raw[0] : raw;
   if (!n || typeof n !== "object") return null;
   return n as RecipeNutritionSnapshot;
+}
+
+function lineNutritionByIndex(row: RecipeRow): Map<number, RecipeIngredientLineSnapshot> {
+  const raw = row.recipe_ingredient_lines;
+  if (!raw) return new Map();
+  const arr = Array.isArray(raw) ? raw : [raw];
+  const m = new Map<number, RecipeIngredientLineSnapshot>();
+  for (const entry of arr) {
+    if (
+      entry &&
+      typeof entry === "object" &&
+      typeof (entry as RecipeIngredientLineSnapshot).line_index === "number"
+    ) {
+      const line = entry as RecipeIngredientLineSnapshot;
+      m.set(line.line_index, line);
+    }
+  }
+  return m;
+}
+
+function lineNutritionBadge(line: RecipeIngredientLineSnapshot | undefined): {
+  label: string;
+  classSuffix: "fdc" | "estimated" | "unresolved";
+  title?: string;
+} {
+  const src = line?.line_nutrition_source ?? "unresolved";
+  if (src === "fdc") {
+    return { label: "USDA", classSuffix: "fdc", title: "Matched to USDA FoodData Central" };
+  }
+  if (src === "estimated") {
+    return {
+      label: "Est.",
+      classSuffix: "estimated",
+      title: line?.estimation_reason?.trim() || "Estimated nutrition",
+    };
+  }
+  return {
+    label: "—",
+    classSuffix: "unresolved",
+    title: line?.estimation_reason?.trim() || "Not included in nutrition total",
+  };
 }
 
 function AddToGroceryIcon() {
@@ -73,6 +118,7 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
   const sourceLinkBase = sourceUrl ? getRecipeSourceLinkBase(sourceUrl) : null;
 
   const nutritionSnap = pickNutritionSnapshot(recipeData);
+  const lineNutritionMap = lineNutritionByIndex(recipeData);
   const displayKcal = nutritionSnap
     ? Math.round(Number(nutritionSnap.energy_kcal))
     : Math.round(Number(recipeData.calories));
@@ -283,9 +329,19 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
               )}
               <ul className="recipe-ingredients-list">
                 {ingredientLines.length > 0 ? (
-                  ingredientLines.map((item, index) => (
+                  ingredientLines.map((item, index) => {
+                    const nutBadge = lineNutritionBadge(lineNutritionMap.get(index));
+                    return (
                     <li key={index} className="recipe-ingredient-item recipe-ingredient-item-with-add">
                       <span className="recipe-ingredient-text">{item}</span>
+                      {lineNutritionMap.size > 0 && (
+                        <span
+                          className={`recipe-ingredient-nut-badge recipe-ingredient-nut-badge--${nutBadge.classSuffix}`}
+                          title={nutBadge.title}
+                        >
+                          {nutBadge.label}
+                        </span>
+                      )}
                       <button
                         type="button"
                         className="recipe-ingredient-add-btn"
@@ -298,7 +354,8 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
                         <AddToGroceryIcon />
                       </button>
                     </li>
-                  ))
+                    );
+                  })
                 ) : (
                   <li className="recipe-ingredient-item recipe-empty-hint">No ingredients listed.</li>
                 )}
