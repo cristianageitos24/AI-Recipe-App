@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import { recipeDisplayEnergyKcal } from "@/lib/recipe-select";
 import type {
   ExtractedRecipe,
   ExtractedRecipeIngredient,
@@ -43,7 +44,7 @@ export function recipeRowToProcessed(r: RecipeRow): ProcessedRecipe {
   return {
     recipeID: r.recipe_id,
     recipeLabel: r.recipe_label,
-    calories: r.calories,
+    calories: recipeDisplayEnergyKcal(r),
     cuisineType: r.cuisine_type ?? "",
     mealType: r.meal_type ?? "",
     timeMin: r.time_in_minutes,

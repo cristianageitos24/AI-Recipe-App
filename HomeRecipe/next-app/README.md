@@ -38,7 +38,7 @@ Optional:
 
 ## Database
 
-Run the SQL migrations in **order** in the Supabase SQL Editor (Dashboard → SQL Editor → New query). Copy each file from `supabase/migrations/` and run it:
+Apply migrations with the **Supabase CLI** (`supabase link` and `supabase db push`) or the project **MCP `apply_migration`** hook so the linked database stays in sync with `supabase/migrations/`. Avoid pasting migration SQL in the Dashboard for routine deploys (parity and ordering are easier to verify from the repo). The table below is the **intended order** of the numbered files:
 
 | Order | File | Purpose |
 |-------|------|--------|
@@ -48,10 +48,18 @@ Run the SQL migrations in **order** in the Supabase SQL Editor (Dashboard → SQ
 | 4 | `004_drop_django_legacy_tables.sql` | Drop legacy tables |
 | 5 | `005_enable_rls_on_app_tables.sql` | RLS policies for Clerk |
 | 6 | `006_drop_user_recipes.sql` | Drop unused user_recipes |
-| 7 | `007_ingredients_table.sql` | Legacy `ingredients` seed table (Open Recipes); home search autocomplete uses **`fdc_foods`** server-side instead |
+| 7 | `007_ingredients_table.sql` | Legacy `ingredients` table (see **Legacy `ingredients`** below) |
 | 8 | `008_recipes_search_indexes.sql` | Search indexes + recommended RPC |
 
-See `supabase/README.md` for schema and RLS details. If you haven’t run 008 yet, the app still works: “Recommended for you” uses a fallback query until the `get_random_recipes` RPC exists.
+See `supabase/README.md` for schema and RLS details. If you haven’t applied `008` yet, the app still works: “Recommended for you” uses a fallback query until the `get_random_recipes` RPC exists.
+
+### Grocery (`grocery_items` / `grocery_trips`)
+
+Migration **`027_grocery_tables.sql`** defines `grocery_items` (checklist rows) and **`grocery_trips`** (one planned trip per user per calendar date). The **Grocery** dashboard page, **Add to grocery list** on recipe detail, and **Calendar** (grocery trips as non-editable events; delete from the event popup) all use these tables via `app/actions/grocery-items.ts` and `app/actions/grocery-trips.ts`. Nothing here is a dead path.
+
+### Legacy `public.ingredients` (Open Recipes)
+
+The table from **`007_ingredients_table.sql`** is still **written** when recipes are saved (`upsertIngredientsFromRecipe` in `app/actions/ingredients.ts`, called from recipe/folder flows) and can be bulk-filled with **`npm run import:ingredients`**. **Ingredient-mode search autocomplete** in the app queries **`fdc_foods`** on the server, not this table. Keep the table for scripts and `use_count` bookkeeping unless you add a dedicated migration to retire it.
 
 ## Recipe data (Open Recipes)
 
@@ -89,7 +97,7 @@ See [Next.js deployment docs](https://nextjs.org/docs/app/building-your-applicat
 - **Bulk catalog:** Foundation + SR Legacy foods are loaded from in-repo CSVs via `npm run import:fdc` (see repo root `README.md`). **Branded** packaged products are **not** fully bulk-imported.
 - **Runtime:** When a line does not match the local `fdc_foods` catalog, the server calls USDA `/foods/search` and `/food/{fdcId}` with results cached in `fdc_api_cache` (see `lib/nutrition/fdc-api.ts`). Set **`USDA_FDC_API_KEY`** (or **`FDC_API_KEY`**) for API fallback; requests use retry/backoff on HTTP 429. Search uses distinct cache keys for **unfiltered** vs **`dataType=Branded`** queries (`search_v1` vs `search_branded_v1`).
 - **Resolver / ranking:** Local `fdc_foods` hits and **both** general and branded API searches are **merged** and sorted by **data type** (Foundation → SR → … → Branded), then by relevance score, so branded does not win only because the general search was empty. Very strong local matches (high score) skip API calls to save quota. **Ambiguous** lines (close scores, same type tier) stay **unresolved** with stored **`fdc_candidates`**; the user can **Pick food** on the recipe detail card to set `fdc_id` and re-sync.
-- **Display kcal:** Prefer **`recipe_nutrition.energy_kcal`** when present; **`recipes.calories`** is still updated on sync for compatibility.
+- **`recipes.calories` (reads vs writes):** **UI and `recipeRowToProcessed`** use **`recipeDisplayEnergyKcal()`** (`lib/recipe-select.ts`), which prefers **`recipe_nutrition.energy_kcal`** and falls back to **`recipes.calories`**. **Writes:** manual create / URL import / `getOrCreateRecipe` set **`recipes.calories`** from the form or scraped data; **`syncRecipeNutritionForRecipe`** (`lib/nutrition/sync-recipe-nutrition.ts`) upserts **`recipe_nutrition`** and **mirrors** total kcal into **`recipes.calories`** so older selects and payloads stay consistent. Do not read raw **`recipes.calories`** for display outside the helper fallback.
 - **Autocomplete (ingredients mode):** Suggestions query **`fdc_foods.description`** on the server (service role), not the legacy `ingredients` table.
 - **Selective branded bulk import:** Stub only — `npm run stub:selective-branded` (see `scripts/selective-branded-import-stub.ts`).
 - **Attribution:** See **Dashboard → About** and the recipe nutrition footnote in the recipe detail view.
