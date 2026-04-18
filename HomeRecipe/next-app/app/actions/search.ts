@@ -6,7 +6,7 @@ import type { RecipeRow } from "@/lib/types";
 
 /** Narrow columns for list views (cards); avoids transferring ingredient_lines, steps */
 const RECIPE_LIST_COLUMNS =
-  "id, recipe_id, recipe_label, calories, cuisine_type, meal_type, time_in_minutes, image_url, website_url, recipe_nutrition(energy_kcal)" as const;
+  "id, recipe_id, recipe_label, calories, cuisine_type, meal_type, time_in_minutes, image_url, website_url, recipe_nutrition(energy_kcal, nutrition_source)" as const;
 
 export type SearchSuggestions = {
   ingredients: string[];

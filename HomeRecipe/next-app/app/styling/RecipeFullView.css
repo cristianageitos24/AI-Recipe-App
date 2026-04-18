@@ -681,6 +681,10 @@ a.more-information-image-box.more-information-image-box--source-link {
   font-weight: 600;
 }
 
+.recipe-fullview-nutrition-kcal--partial {
+  font-style: italic;
+}
+
 .recipe-fullview-nutrition-source {
   margin: 4px 0 0;
   font-size: 0.78rem;

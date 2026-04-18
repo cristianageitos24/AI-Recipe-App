@@ -2,6 +2,14 @@
 
 This is the main application: Next.js (App Router + TypeScript) with Supabase (Auth + Postgres) and Open Recipes for recipe search.
 
+## First-time clone
+
+1. Copy env: `cp .env.local.example .env.local` and set at least **`NEXT_PUBLIC_SUPABASE_URL`**, **`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`**, **`SUPABASE_SECRET_KEY`** (server/service scripts), **Clerk** keys from `.env.local.example`, and **`USDA_FDC_API_KEY`** (or **`FDC_API_KEY`**) for USDA search/detail fallback.
+2. Install: `npm install`.
+3. Apply **all** migrations in `supabase/migrations/` to your linked project (**`supabase db push`** or Supabase MCP **`apply_migration`** / **`list_migrations`**), not one-off Dashboard SQL for routine work.
+4. Optional data: **`npm run import:fdc`** from the repo root (see root `README.md`) for the local FDC catalog; **`npm run import:ingredients`** only backfills the legacy **`ingredients`** table (not used for in-app autocomplete).
+5. Verify: **`npm run typecheck`** and **`npm run dev`**.
+
 ## Prerequisites
 
 - **Node.js** and **npm** – to run the app and install dependencies.
@@ -59,7 +67,7 @@ Migration **`027_grocery_tables.sql`** defines `grocery_items` (checklist rows) 
 
 ### Legacy `public.ingredients` (Open Recipes)
 
-The table from **`007_ingredients_table.sql`** is still **written** when recipes are saved (`upsertIngredientsFromRecipe` in `app/actions/ingredients.ts`, called from recipe/folder flows) and can be bulk-filled with **`npm run import:ingredients`**. **Ingredient-mode search autocomplete** in the app queries **`fdc_foods`** on the server, not this table. Keep the table for scripts and `use_count` bookkeeping unless you add a dedicated migration to retire it.
+The table from **`007_ingredients_table.sql`** is **no longer updated on recipe save** (Open Recipes–style `use_count` tracking was removed; autocomplete uses **`fdc_foods`** only). You can still bulk-fill rows with **`npm run import:ingredients`** for local scripts or experiments. **Retiring** the table is a future migration once nothing depends on it.
 
 ## Recipe data (Open Recipes)
 
@@ -97,7 +105,7 @@ See [Next.js deployment docs](https://nextjs.org/docs/app/building-your-applicat
 - **Bulk catalog:** Foundation + SR Legacy foods are loaded from in-repo CSVs via `npm run import:fdc` (see repo root `README.md`). **Branded** packaged products are **not** fully bulk-imported.
 - **Runtime:** When a line does not match the local `fdc_foods` catalog, the server calls USDA `/foods/search` and `/food/{fdcId}` with results cached in `fdc_api_cache` (see `lib/nutrition/fdc-api.ts`). Set **`USDA_FDC_API_KEY`** (or **`FDC_API_KEY`**) for API fallback; requests use retry/backoff on HTTP 429. Search uses distinct cache keys for **unfiltered** vs **`dataType=Branded`** queries (`search_v1` vs `search_branded_v1`).
 - **Resolver / ranking:** Local `fdc_foods` hits and **both** general and branded API searches are **merged** and sorted by **data type** (Foundation → SR → … → Branded), then by relevance score, so branded does not win only because the general search was empty. Very strong local matches (high score) skip API calls to save quota. **Ambiguous** lines (close scores, same type tier) stay **unresolved** with stored **`fdc_candidates`**; the user can **Pick food** on the recipe detail card to set `fdc_id` and re-sync.
-- **`recipes.calories` (reads vs writes):** **UI and `recipeRowToProcessed`** use **`recipeDisplayEnergyKcal()`** (`lib/recipe-select.ts`), which prefers **`recipe_nutrition.energy_kcal`** and falls back to **`recipes.calories`**. **Writes:** manual create / URL import / `getOrCreateRecipe` set **`recipes.calories`** from the form or scraped data; **`syncRecipeNutritionForRecipe`** (`lib/nutrition/sync-recipe-nutrition.ts`) upserts **`recipe_nutrition`** and **mirrors** total kcal into **`recipes.calories`** so older selects and payloads stay consistent. Do not read raw **`recipes.calories`** for display outside the helper fallback.
+- **`recipes.calories` (reads vs writes):** **UI and `recipeRowToProcessed`** use **`recipeDisplayEnergyKcal()`** (`lib/recipe-select.ts`), which prefers **`recipe_nutrition.energy_kcal`** and falls back to **`recipes.calories`**. **Writes:** manual create / URL import / `getOrCreateRecipe` still set **`recipes.calories`** from the form or scraped data (required column + import paths); **`syncRecipeNutritionForRecipe`** upserts **`recipe_nutrition`** and **mirrors** kcal into **`recipes.calories`**. Keep this dual-write until a deliberate migration drops or stops updating the legacy column. Do not read raw **`recipes.calories`** for display outside the helper.
 - **Autocomplete (ingredients mode):** Suggestions query **`fdc_foods.description`** on the server (service role), not the legacy `ingredients` table.
 - **Selective branded bulk import:** Stub only — `npm run stub:selective-branded` (see `scripts/selective-branded-import-stub.ts`).
 - **Attribution:** See **Dashboard → About** and the recipe nutrition footnote in the recipe detail view.

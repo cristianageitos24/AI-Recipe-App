@@ -7,7 +7,7 @@ import { getCollectionBySlug } from "@/lib/collections";
 
 /** Full columns for collection pages (RecipeFullView needs ingredient_lines, steps) */
 const RECIPE_COLLECTION_COLUMNS =
-  "id, recipe_id, recipe_label, calories, cuisine_type, meal_type, time_in_minutes, image_url, website_url, ingredient_lines, steps, recipe_nutrition(energy_kcal)" as const;
+  "id, recipe_id, recipe_label, calories, cuisine_type, meal_type, time_in_minutes, image_url, website_url, ingredient_lines, steps, recipe_nutrition(energy_kcal, nutrition_source)" as const;
 
 /**
  * Escape a keyword for use in Supabase ilike pattern.

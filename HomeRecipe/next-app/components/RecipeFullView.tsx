@@ -4,7 +4,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import { pickRecipeIngredientFdc } from "@/app/actions/recipes";
-import { recipeDisplayEnergyKcal } from "@/lib/recipe-select";
+import {
+  formatRecipeEnergyKcalDisplay,
+  recipeNutritionSourceDetail,
+} from "@/lib/nutrition/nutrition-display";
 import type {
   FdcCandidateSnapshot,
   RecipeIngredientLineSnapshot,
@@ -147,7 +150,7 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
 
   const nutritionSnap = pickNutritionSnapshot(recipeData);
   const lineNutritionMap = lineNutritionByIndex(recipeData);
-  const displayKcal = recipeDisplayEnergyKcal(recipeData);
+  const energyDisplay = formatRecipeEnergyKcalDisplay(recipeData);
   const src = nutritionSnap?.nutrition_source ?? "incomplete";
   const nutritionSourceLabel =
     src === "fdc"
@@ -294,17 +297,29 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
           </div>
           <div className="recipe-fullview-nutrition" aria-label="Nutrition summary">
             <p className="recipe-fullview-nutrition-macros">
-              <span className="recipe-fullview-nutrition-kcal">{displayKcal} kcal</span>
+              <span
+                className={`recipe-fullview-nutrition-kcal${src === "incomplete" ? " recipe-fullview-nutrition-kcal--partial" : ""}`}
+                title={energyDisplay.title}
+              >
+                {energyDisplay.kcalText} kcal
+              </span>
               {nutritionSnap && (
                 <>
-                  <span>· P {Number(nutritionSnap.protein_g).toFixed(1)}g</span>
-                  <span>· F {Number(nutritionSnap.fat_g).toFixed(1)}g</span>
-                  <span>· C {Number(nutritionSnap.carb_g).toFixed(1)}g</span>
+                  <span title={src === "incomplete" ? energyDisplay.title : undefined}>
+                    · P {Number(nutritionSnap.protein_g).toFixed(1)}g
+                  </span>
+                  <span title={src === "incomplete" ? energyDisplay.title : undefined}>
+                    · F {Number(nutritionSnap.fat_g).toFixed(1)}g
+                  </span>
+                  <span title={src === "incomplete" ? energyDisplay.title : undefined}>
+                    · C {Number(nutritionSnap.carb_g).toFixed(1)}g
+                  </span>
                 </>
               )}
             </p>
             <p
               className={`recipe-fullview-nutrition-source recipe-fullview-nutrition-source--${src}`}
+              title={recipeNutritionSourceDetail(recipeData, src)}
             >
               Nutrition: {nutritionSourceLabel}
             </p>

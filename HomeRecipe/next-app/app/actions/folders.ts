@@ -1,12 +1,11 @@
- "use server";
- 
- import { auth } from "@clerk/nextjs/server";
- import { createClient } from "@/utils/supabase/server";
- import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
+"use server";
+
+import { auth } from "@clerk/nextjs/server";
+import { createClient } from "@/utils/supabase/server";
+import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
 import type { RecipePayload } from "@/lib/types";
- import { upsertIngredientsFromRecipe } from "@/app/actions/ingredients";
- 
- export async function getFolders() {
+
+export async function getFolders() {
   const { userId } = await auth();
   if (!userId) return { error: "Unauthorized", data: { folders: [], results: {} } };
 
@@ -151,12 +150,6 @@ export async function addRecipeToFolder(
     const res = await getOrCreateRecipe(payload);
     if (res.error || !res.data) return { error: res.error ?? "Failed to get/create recipe" };
     recipeUuid = res.data.id;
-
-    // For newly saved recipes (including video/manual), ensure their ingredients
-    // are reflected in the canonical ingredients table.
-    if (payload.ingredient_lines) {
-      await upsertIngredientsFromRecipe(payload.ingredient_lines);
-    }
   }
 
   const { data: folder } = await supabase

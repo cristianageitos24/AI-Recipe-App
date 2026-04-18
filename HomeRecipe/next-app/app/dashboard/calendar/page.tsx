@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 import { getMealDates, createOrUpdateMealDate, deleteMealDate } from "@/app/actions/meal-dates";
 import { getGroceryTrips, deleteGroceryTrip } from "@/app/actions/grocery-trips";
 import { getCalendarBootstrap } from "@/app/actions/dashboard";
-import { recipeDisplayEnergyKcal } from "@/lib/recipe-select";
+import { formatRecipeEnergyKcalDisplay } from "@/lib/nutrition/nutrition-display";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/TabCalendar.css";
 import "@/app/styling/TabCalendarHeader.css";
@@ -29,8 +29,10 @@ type CalendarEvent = {
   allDay: boolean;
   editable: boolean;
   eventType?: "recipe" | "grocery";
-  /** Display kcal: prefers `recipe_nutrition.energy_kcal` when present (see `recipeDisplayEnergyKcal`). */
+  /** Numeric kcal (canonical value; display may use `caloriesLabel` with ~ when incomplete). */
   calories?: number | null;
+  caloriesLabel?: string;
+  caloriesTitle?: string;
   cuisineType?: string | null;
   mealType?: string | null;
   timeInMinutes?: number | null;
@@ -53,6 +55,7 @@ function mapEvents(
   const mapped: CalendarEvent[] = [];
   for (const mealDate of mealDates) {
     for (const recipe of mealDate.recipes) {
+      const energy = formatRecipeEnergyKcalDisplay(recipe);
       mapped.push({
         className: "recipe-event-div",
         title: recipe.recipe_label,
@@ -63,7 +66,9 @@ function mapEvents(
         allDay: true,
         editable: true,
         eventType: "recipe",
-        calories: recipeDisplayEnergyKcal(recipe),
+        calories: energy.numeric,
+        caloriesLabel: energy.kcalText,
+        caloriesTitle: energy.title,
         cuisineType: recipe.cuisine_type,
         mealType: recipe.meal_type,
         timeInMinutes: recipe.time_in_minutes,
@@ -82,6 +87,8 @@ function mapEvents(
       editable: false,
       eventType: "grocery",
       calories: null,
+      caloriesLabel: undefined,
+      caloriesTitle: undefined,
       cuisineType: null,
       mealType: null,
       timeInMinutes: null,
@@ -190,13 +197,16 @@ export default function CalendarPage() {
     if (selectedSearchOption) {
       const idx = events.findIndex((e) => e.eventID === clickedEvent.eventID);
       if (idx !== -1) {
+        const energy = formatRecipeEnergyKcalDisplay(selectedSearchOption);
         const next = [...events];
         next[idx] = {
           ...next[idx],
           title: selectedSearchOption.recipe_label,
           recipeID: selectedSearchOption.recipe_id,
           imageURL: selectedSearchOption.image_url ?? "",
-          calories: recipeDisplayEnergyKcal(selectedSearchOption),
+          calories: energy.numeric,
+          caloriesLabel: energy.kcalText,
+          caloriesTitle: energy.title,
           cuisineType: selectedSearchOption.cuisine_type,
           mealType: selectedSearchOption.meal_type,
           timeInMinutes: selectedSearchOption.time_in_minutes,
@@ -376,7 +386,10 @@ export default function CalendarPage() {
                                   </div>
                                   <div className="small-labels">
                                     <p>
-                                      <span>{event.calories ?? 0}</span> calories
+                                      <span title={event.caloriesTitle}>
+                                        {event.caloriesLabel ?? String(event.calories ?? 0)}
+                                      </span>{" "}
+                                      calories
                                     </p>
                                     <p className={`calendar-card-minutes calendar-card-minutes--${minutesTone}`}>
                                       {minutes} {minutes === 1 ? "minute" : "minutes"}

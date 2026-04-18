@@ -8,8 +8,6 @@ import {
 import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import type { RecipePayload, RecipeRow } from "@/lib/types";
-import { upsertIngredientsFromRecipe } from "@/app/actions/ingredients";
-
 async function syncNutritionIfOwner(
   recipeUuid: string,
   userId: string,
@@ -158,10 +156,6 @@ export async function createRecipeAndReturn(
 ): Promise<{ error: string | null; data: RecipeRow | null }> {
   const res = await getOrCreateRecipe(payload);
   if (res.error || !res.data) return { error: res.error ?? "Failed to get/create recipe", data: null };
-
-  if (payload.ingredient_lines) {
-    await upsertIngredientsFromRecipe(payload.ingredient_lines);
-  }
 
   const supabase = await createClient();
   const { data: row, error } = await supabase

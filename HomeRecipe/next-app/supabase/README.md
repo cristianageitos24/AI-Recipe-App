@@ -2,20 +2,19 @@
 
 This app uses **Clerk** for authentication and **Supabase** for the database. Clerk session tokens are passed to Supabase for RLS (Row Level Security).
 
+## First-time database sync
+
+From the **`next-app`** directory (with Supabase CLI installed and project linked, or using Cursor’s Supabase MCP):
+
+1. **`supabase db push`** — applies every file in `supabase/migrations/` that is not yet recorded on the remote project, or use MCP **`list_migrations`** / **`apply_migration`** to stay aligned with the repo.
+2. Prefer **not** pasting migration bodies into the Dashboard SQL Editor for routine deploys (ordering and parity are easier to verify from git).
+
 ## Setup
 
 1. **Enable Clerk as third-party auth in Supabase:**
    - In Clerk Dashboard → [Supabase integration](https://dashboard.clerk.com/setup/supabase) → Activate and copy your Clerk domain.
    - In Supabase Dashboard → **Authentication** → **Sign In / Up** → **Add provider** → **Clerk** → Paste the Clerk domain.
 
-2. **Apply schema migrations (in order)** — prefer **`supabase db push`** or MCP **`apply_migration`** against the linked project; use the SQL Editor only for one-off debugging, not as the primary migration path.
-   - `001_initial_schema.sql` – base tables (profiles, recipes, folders, favorites, meal_dates, etc.)
-   - `002_clerk_schema.sql` – adapts schema for Clerk user IDs
-   - `003_add_recipe_steps.sql` – adds `steps` column to `recipes`
-   - `004_drop_django_legacy_tables.sql` – drops legacy Django/api_* tables (safe if you never had them)
-   - `005_enable_rls_on_app_tables.sql` – RLS policies for Clerk (`auth.jwt()->>'sub'`)
-   - `006_drop_user_recipes.sql` – drops unused `user_recipes` table
-   - `007_ingredients_table.sql` – ingredients table + pg_trgm for autocomplete
-   - `008_recipes_search_indexes.sql` – GIN indexes for recipe search + `get_random_recipes` RPC
+2. **Migrations** — numbered files under `supabase/migrations/` are the source of truth, including FDC nutrition (`026+`), grocery (`027`), comments (`028`), and `fdc_candidates` (`029`). Apply via CLI or MCP as above. The SQL Editor is for one-off debugging only.
 
-   Open each file under `supabase/migrations/`, copy its contents into the SQL Editor, and click **Run**. Migrations are idempotent where possible (IF EXISTS / IF NOT EXISTS).
+   Early files include: `001_initial_schema.sql` (base tables), `002_clerk_schema.sql`, `003_add_recipe_steps.sql`, `004_drop_django_legacy_tables.sql`, `005_enable_rls_on_app_tables.sql`, `006_drop_user_recipes.sql`, `007_ingredients_table.sql`, `008_recipes_search_indexes.sql`. Newer migrations extend the schema further; always apply the full chain on a fresh database.
