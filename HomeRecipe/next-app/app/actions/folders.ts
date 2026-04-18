@@ -2,7 +2,8 @@
  
  import { auth } from "@clerk/nextjs/server";
  import { createClient } from "@/utils/supabase/server";
- import type { RecipePayload } from "@/lib/types";
+ import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
+import type { RecipePayload } from "@/lib/types";
  import { upsertIngredientsFromRecipe } from "@/app/actions/ingredients";
  
  export async function getFolders() {
@@ -29,7 +30,7 @@
   const folderIds = folders.map((f: { id: string }) => f.id);
   const { data: folderRecipesRows, error: frError } = await supabase
     .from("folder_recipes")
-    .select("folder_id, recipes (*)")
+    .select(`folder_id, recipes (${RECIPE_WITH_NUTRITION})`)
     .in("folder_id", folderIds);
 
   if (frError) return { error: frError.message, data: { folders: [], results: {} } };
@@ -117,7 +118,7 @@ export async function getFolderRecipes(folderName: string) {
 
   const { data, error } = await supabase
     .from("folder_recipes")
-    .select("recipes (*)")
+    .select(`recipes (${RECIPE_WITH_NUTRITION})`)
     .eq("folder_id", folder.id);
   if (error) return { error: error.message, data: [] };
 

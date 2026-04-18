@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { RecipeRow } from "@/lib/types";
+import type { RecipeNutritionSnapshot, RecipeRow } from "@/lib/types";
 import {
   getRecipeSourceColumnAriaLabel,
   getRecipeSourceLinkBase,
@@ -20,6 +20,16 @@ type RecipeFullViewProps = {
   recipeData: RecipeRow;
   onClose?: () => void;
 };
+
+function pickNutritionSnapshot(
+  row: RecipeRow
+): RecipeNutritionSnapshot | null {
+  const raw = row.recipe_nutrition;
+  if (!raw) return null;
+  const n = Array.isArray(raw) ? raw[0] : raw;
+  if (!n || typeof n !== "object") return null;
+  return n as RecipeNutritionSnapshot;
+}
 
 function AddToGroceryIcon() {
   return (
@@ -61,6 +71,20 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
     cookMinutes < 10 ? "fast" : cookMinutes > 30 ? "slow" : "medium";
   const sourceUrl = recipeData.website_url?.trim() || null;
   const sourceLinkBase = sourceUrl ? getRecipeSourceLinkBase(sourceUrl) : null;
+
+  const nutritionSnap = pickNutritionSnapshot(recipeData);
+  const displayKcal = nutritionSnap
+    ? Math.round(Number(nutritionSnap.energy_kcal))
+    : Math.round(Number(recipeData.calories));
+  const src = nutritionSnap?.nutrition_source ?? "incomplete";
+  const nutritionSourceLabel =
+    src === "fdc"
+      ? "USDA"
+      : src === "estimated"
+        ? "Estimated"
+        : src === "mixed"
+          ? "Mixed"
+          : "Incomplete";
 
   async function handleAddIngredient(item: string) {
     const res = await addGroceryItem(item);
@@ -173,9 +197,25 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
           <div className="recipe-fullview-pill-row">
             {recipeData.cuisine_type && <p>{capitalizeFirstLetter(recipeData.cuisine_type)}</p>}
             {recipeData.meal_type && <p>{capitalizeFirstLetter(recipeData.meal_type)}</p>}
-            <p>{recipeData.calories} cal</p>
             <p className={`recipe-fullview-cooktime-pill recipe-fullview-cooktime-pill--${cookTimeTone}`}>
               {cookMinutes} min
+            </p>
+          </div>
+          <div className="recipe-fullview-nutrition" aria-label="Nutrition summary">
+            <p className="recipe-fullview-nutrition-macros">
+              <span className="recipe-fullview-nutrition-kcal">{displayKcal} kcal</span>
+              {nutritionSnap && (
+                <>
+                  <span>· P {Number(nutritionSnap.protein_g).toFixed(1)}g</span>
+                  <span>· F {Number(nutritionSnap.fat_g).toFixed(1)}g</span>
+                  <span>· C {Number(nutritionSnap.carb_g).toFixed(1)}g</span>
+                </>
+              )}
+            </p>
+            <p
+              className={`recipe-fullview-nutrition-source recipe-fullview-nutrition-source--${src}`}
+            >
+              Nutrition: {nutritionSourceLabel}
             </p>
           </div>
           {sourceLinkBase && (

@@ -1,13 +1,26 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
-import { createClient } from "@/utils/supabase/server";
+import { syncRecipeNutritionForRecipe } from "@/lib/nutrition/sync-recipe-nutrition";
+import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
+import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import type { RecipePayload, RecipeRow } from "@/lib/types";
 import { upsertIngredientsFromRecipe } from "@/app/actions/ingredients";
 
-/** Full columns for RecipeFullView (ingredient_lines, steps). Same set as collections. */
-const RECIPE_FULL_COLUMNS =
-  "id, recipe_id, recipe_label, calories, cuisine_type, meal_type, time_in_minutes, image_url, website_url, ingredient_lines, steps" as const;
+async function syncNutritionIfOwner(recipeUuid: string, userId: string) {
+  try {
+    const svc = await createServiceRoleClient();
+    const { data: row } = await svc
+      .from("recipes")
+      .select("user_id")
+      .eq("id", recipeUuid)
+      .maybeSingle();
+    if (!row || row.user_id !== userId) return;
+    await syncRecipeNutritionForRecipe(svc, recipeUuid);
+  } catch (e) {
+    console.error("syncNutritionIfOwner:", e);
+  }
+}
 
 /**
  * Fetch a single recipe by its UUID primary key with full columns (ingredient_lines, steps).
@@ -22,7 +35,9 @@ export async function getRecipeFull(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("recipes")
-    .select(RECIPE_FULL_COLUMNS)
+    .select(
+      "id, recipe_id, recipe_label, calories, cuisine_type, meal_type, time_in_minutes, image_url, website_url, ingredient_lines, steps, recipe_nutrition(energy_kcal, protein_g, fat_g, carb_g, nutrition_source)"
+    )
     .eq("id", recipeId)
     .single();
 
@@ -63,6 +78,7 @@ export async function getOrCreateRecipe(payload: RecipePayload) {
           image_url: payload.image_url,
         })
         .eq("id", existing.id);
+      await syncNutritionIfOwner(existing.id, userId);
     }
     return { error: null, data: existing };
   }
@@ -88,6 +104,9 @@ export async function getOrCreateRecipe(payload: RecipePayload) {
     .single();
 
   if (error) return { error: error.message, data: null };
+  if (isUserOwned) {
+    await syncNutritionIfOwner(inserted.id, userId);
+  }
   return { error: null, data: inserted };
 }
 
@@ -108,7 +127,7 @@ export async function createRecipeAndReturn(
   const supabase = await createClient();
   const { data: row, error } = await supabase
     .from("recipes")
-    .select("*")
+    .select(RECIPE_WITH_NUTRITION)
     .eq("id", res.data.id)
     .single();
 

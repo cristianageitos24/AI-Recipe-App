@@ -549,6 +549,46 @@ a.more-information-image-box.more-information-image-box--source-link {
   outline: solid 1px var(--color-fg);
 }
 
+.recipe-fullview-nutrition {
+  margin-top: 6px;
+  margin-bottom: 4px;
+}
+
+.recipe-fullview-nutrition-macros {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  color: var(--color-fg);
+}
+
+.recipe-fullview-nutrition-kcal {
+  font-weight: 600;
+}
+
+.recipe-fullview-nutrition-source {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--gray-600, #666);
+}
+
+.recipe-fullview-nutrition-source--fdc {
+  color: #1b6e3f;
+}
+
+.recipe-fullview-nutrition-source--estimated {
+  color: #8a5a00;
+}
+
+.recipe-fullview-nutrition-source--mixed {
+  color: #5c4d9f;
+}
+
+.recipe-fullview-nutrition-source--incomplete {
+  color: #a33;
+}
+
 @media screen and (max-width: 575px) {
   .more-information-container {
     left: 0;

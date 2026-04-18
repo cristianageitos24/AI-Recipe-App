@@ -11,6 +11,7 @@
     "lint": "eslint",
     "import:recipes": "tsx scripts/import-open-recipes.ts",
     "import:ingredients": "tsx scripts/import-open-recipes-ingredients.ts",
+    "import:fdc": "tsx scripts/import-fdc-csv.ts",
     "worker:video": "tsx scripts/process-video-jobs.ts",
     "recipe-import-api": "cd ../services/recipe-url-import && python -m uvicorn app.main:app --host 127.0.0.1 --port 8000",
     "setup:storage": "tsx scripts/setup-storage.ts"
@@ -44,6 +45,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "csv-parse": "^5.6.0",
     "dotenv": "^16.4.5",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",

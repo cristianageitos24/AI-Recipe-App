@@ -8,13 +8,13 @@
 - **Next.js** (App Router, TypeScript) – UI and API in one codebase
 - **Clerk** – Authentication (sign-in, sign-up, sessions)
 - **Supabase** – PostgreSQL database and storage (RLS uses Clerk user IDs)
-- **Edamam API** – Optional recipe search
+- **USDA FoodData Central** – Nutrition reference data (bulk CSV import + optional server-side API; see migrations and `npm run import:fdc`)
 - **Open Recipes** – Optional recipe data import and search
 
 ## Features
 
 - **User authentication**: Sign up and log in via Clerk.
-- **Recipe search**: Find recipes (Edamam and/or Open Recipes data).
+- **Recipe search**: Find recipes (Open Recipes data on Home).
 - **Save and organize**: Like recipes and save them to custom folders (cookbooks).
 - **Meal planning**: Add recipes to a personal calendar (FullCalendar).
 - **Video upload & OCR** (optional): Upload videos (e.g. TikTok), process with FFmpeg + Tesseract to extract recipe text.
@@ -73,11 +73,10 @@
    In Supabase Dashboard → **Authentication** → **Sign In / Up** → **Add provider** → **Clerk** → paste the Clerk domain.  
    See [next-app/supabase/README.md](next-app/supabase/README.md) for details.
 
-### Edamam (optional – recipe search)
+### USDA FoodData Central (optional – nutrition API for future server-side features)
 
-- Sign up at [Edamam](https://www.edamam.com/) (Recipe Search API) and get:
-  - Application ID → `NEXT_PUBLIC_EDAMAM_APP_ID`
-  - Application Key → `NEXT_PUBLIC_EDAMAM_APP_KEY`
+- Request a [Data.gov API key](https://fdc.nal.usda.gov/api-key-signup.html) for the FDC REST API.
+- Use **`USDA_FDC_API_KEY`** (server-only; never `NEXT_PUBLIC_*`). Bulk Foundation + SR Legacy CSVs ship under `AI-Recipe-App/data/`; load into Postgres with `npm run import:fdc` after applying migrations.
 
 ---
 
@@ -124,8 +123,9 @@ Create `.env.local` from `.env.local.example` and set:
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase publishable key (client-side) |
 | `SUPABASE_SECRET_KEY` | For worker/imports | Supabase secret key (video worker, import scripts, storage setup; server-only) |
-| `NEXT_PUBLIC_EDAMAM_APP_ID` | Optional | Edamam Application ID |
-| `NEXT_PUBLIC_EDAMAM_APP_KEY` | Optional | Edamam Application Key |
+| `USDA_FDC_API_KEY` | Optional | USDA FoodData Central API key (server-only; runtime search/detail when implemented) |
+| `FDC_FOUNDATION_CSV_DIR` | Optional | Override path to Foundation CSV bundle for `npm run import:fdc` |
+| `FDC_SR_LEGACY_CSV_DIR` | Optional | Override path to SR Legacy CSV bundle for `npm run import:fdc` |
 
 Optional video worker configuration (defaults are usually fine):
 
@@ -230,7 +230,7 @@ npm run build
 npm start
 ```
 
-For **Vercel**: set the project **Root Directory** to `next-app`, add the same environment variables (Clerk, Supabase, and optionally Edamam), then deploy.
+For **Vercel**: set the project **Root Directory** to `next-app`, add the same environment variables (Clerk, Supabase, and optional `USDA_FDC_API_KEY` when using FDC API features), then deploy.
 
 ---
 

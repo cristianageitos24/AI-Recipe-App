@@ -32,11 +32,14 @@ export async function createClient() {
  */
 export async function createServiceRoleClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SECRET_KEY;
+  const key =
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_KEY;
 
   if (!url || !key) {
     console.error(
-      "Supabase env missing for service role client: NEXT_PUBLIC_SUPABASE_URL and/or SUPABASE_SECRET_KEY"
+      "Supabase env missing for service role client: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY"
     );
     throw new Error("Server misconfiguration (service role)");
   }

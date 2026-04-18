@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
+import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
 import { createClient } from "@/utils/supabase/server";
 
 export async function getMealDates() {
@@ -14,7 +15,7 @@ export async function getMealDates() {
       id,
       event_id,
       date,
-      meal_date_recipes (recipe_id, recipes (*))
+      meal_date_recipes (recipe_id, recipes (${RECIPE_WITH_NUTRITION}))
     `)
     .eq("user_id", userId)
     .order("date");

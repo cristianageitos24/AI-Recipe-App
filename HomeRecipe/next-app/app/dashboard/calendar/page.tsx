@@ -11,8 +11,6 @@ import { v4 as uuidv4 } from "uuid";
 import { getMealDates, createOrUpdateMealDate, deleteMealDate } from "@/app/actions/meal-dates";
 import { getGroceryTrips, deleteGroceryTrip } from "@/app/actions/grocery-trips";
 import { getCalendarBootstrap } from "@/app/actions/dashboard";
-import { getOrCreateRecipe } from "@/app/actions/recipes";
-import { processRecipeData, toRecipePayload } from "@/lib/processRecipeData";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/TabCalendar.css";
 import "@/app/styling/TabCalendarHeader.css";
@@ -131,16 +129,6 @@ export default function CalendarPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const calendarRef = useRef<FullCalendar>(null);
   const [calendarKey, setCalendarKey] = useState(1);
-  const [edamamQuery, setEdamamQuery] = useState("");
-  const [edamamResults, setEdamamResults] = useState<Array<{ recipe: unknown }>>([]);
-  const [edamamSearching, setEdamamSearching] = useState(false);
-
-  const appID = process.env.NEXT_PUBLIC_EDAMAM_APP_ID;
-  const appKEY = process.env.NEXT_PUBLIC_EDAMAM_APP_KEY;
-  const isEdamamEnabled = Boolean(
-    appID && appKEY && !appID.includes("your-") && !appKEY.includes("your-")
-  );
-
   const loadEvents = useCallback(async () => {
     const [mealRes, tripsRes] = await Promise.all([getMealDates(), getGroceryTrips()]);
     setEvents(
@@ -230,65 +218,6 @@ export default function CalendarPage() {
     setIsEventClicked(false);
     setInputText("");
     setSelectedSearchOption(null);
-    setEdamamQuery("");
-    setEdamamResults([]);
-  }
-
-  async function handleEdamamSearch() {
-    if (!isEdamamEnabled || !edamamQuery.trim()) return;
-    setEdamamSearching(true);
-    try {
-      const response = await fetch(
-        `https://api.edamam.com/api/recipes/v2?to=10&type=public&q=${encodeURIComponent(edamamQuery.trim())}&app_id=${appID}&app_key=${appKEY}`
-      );
-      if (response.ok) {
-        const json = await response.json();
-        setEdamamResults(json.hits ?? []);
-      } else {
-        setEdamamResults([]);
-      }
-    } catch {
-      setEdamamResults([]);
-    } finally {
-      setEdamamSearching(false);
-    }
-  }
-
-  async function handleSelectEdamamRecipe(hit: { recipe: unknown }) {
-    if (!clickedEvent) return;
-    const processed = processRecipeData(hit.recipe as Parameters<typeof processRecipeData>[0]);
-    const payload = toRecipePayload(processed);
-    const res = await getOrCreateRecipe(payload);
-    if (res.error || !res.data) return;
-    await createOrUpdateMealDate({
-      date: clickedEvent.start,
-      recipeID: payload.recipeID,
-      eventID: clickedEvent.eventID,
-    });
-    const idx = events.findIndex((e) => e.eventID === clickedEvent.eventID);
-    if (idx !== -1) {
-      const next = [...events];
-      next[idx] = {
-        ...next[idx],
-        title: processed.recipeLabel,
-        recipeID: payload.recipeID,
-        imageURL: processed.imageURL,
-        calories: processed.calories,
-        cuisineType: processed.cuisineType,
-        mealType: processed.mealType,
-        timeInMinutes: processed.timeMin,
-      };
-      setEvents(next);
-    }
-    setIsEventClicked(false);
-    setInputText("");
-    setSelectedSearchOption(null);
-    setEdamamQuery("");
-    setEdamamResults([]);
-    handleUpdateEvents();
-    setTimeout(() => {
-      calendarRef.current?.getApi().changeView("dayGridMonth", clickedEvent.start);
-    }, 1);
   }
 
   function handleDateClick(arg: { dateStr: string }) {
@@ -571,48 +500,6 @@ export default function CalendarPage() {
                     (search and like or save to a cookbook), then come back here to assign them to a date.
                   </p>
                 </div>
-                {isEdamamEnabled && (
-                  <div className="event-popup-edamam">
-                    <p className="event-popup-edamam-label">Or search for a recipe</p>
-                    <div className="event-popup-edamam-row">
-                      <input
-                        type="text"
-                        className="event-popup-edamam-input"
-                        placeholder="Search recipes..."
-                        value={edamamQuery}
-                        onChange={(e) => setEdamamQuery(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleEdamamSearch()}
-                      />
-                      <button
-                        type="button"
-                        className="event-popup-edamam-btn"
-                        onClick={handleEdamamSearch}
-                        disabled={edamamSearching}
-                      >
-                        {edamamSearching ? "Searching..." : "Search"}
-                      </button>
-                    </div>
-                    {edamamResults.length > 0 && (
-                      <ul className="event-popup-edamam-list">
-                        {edamamResults.map((hit, index) => {
-                          const info = processRecipeData(hit.recipe as Parameters<typeof processRecipeData>[0]);
-                          return (
-                            <li key={index}>
-                              <button
-                                type="button"
-                                className="event-popup-edamam-item"
-                                onClick={() => handleSelectEdamamRecipe(hit)}
-                              >
-                                <img src={info.imageURL || "/images/recipe-placeholder.png"} alt="" className="event-popup-edamam-item-img" />
-                                <span>{info.recipeLabel}</span>
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </div>
-                )}
               </>
             ) : null}
             {clickedEvent.eventType !== "grocery" && filteredOptions.length > 0 && (
@@ -663,48 +550,6 @@ export default function CalendarPage() {
                     </div>
                   )}
                 </div>
-              </div>
-            )}
-            {clickedEvent.eventType !== "grocery" && isEdamamEnabled && filteredOptions.length > 0 && (
-              <div className="event-popup-edamam event-popup-edamam-inline">
-                <p className="event-popup-edamam-label">Search online</p>
-                <div className="event-popup-edamam-row">
-                  <input
-                    type="text"
-                    className="event-popup-edamam-input"
-                    placeholder="Search recipes..."
-                    value={edamamQuery}
-                    onChange={(e) => setEdamamQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleEdamamSearch()}
-                  />
-                  <button
-                    type="button"
-                    className="event-popup-edamam-btn"
-                    onClick={handleEdamamSearch}
-                    disabled={edamamSearching}
-                  >
-                    {edamamSearching ? "Searching..." : "Search"}
-                  </button>
-                </div>
-                {edamamResults.length > 0 && (
-                  <ul className="event-popup-edamam-list">
-                    {edamamResults.map((hit, index) => {
-                      const info = processRecipeData(hit.recipe as Parameters<typeof processRecipeData>[0]);
-                      return (
-                        <li key={index}>
-                          <button
-                            type="button"
-                            className="event-popup-edamam-item"
-                            onClick={() => handleSelectEdamamRecipe(hit)}
-                          >
-                            <img src={info.imageURL || "/images/recipe-placeholder.png"} alt="" className="event-popup-edamam-item-img" />
-                            <span>{info.recipeLabel}</span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
               </div>
             )}
             <div className="event-popup-bttns">

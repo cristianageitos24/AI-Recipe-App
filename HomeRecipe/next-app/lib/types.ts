@@ -1,5 +1,13 @@
 // App types aligned with Supabase schema and frontend
 
+export type RecipeNutritionSnapshot = {
+  energy_kcal: number;
+  protein_g: number;
+  fat_g: number;
+  carb_g: number;
+  nutrition_source: "fdc" | "estimated" | "mixed" | "incomplete";
+};
+
 export type RecipeRow = {
   id: string;
   recipe_id: string;
@@ -13,6 +21,8 @@ export type RecipeRow = {
   website_url: string | null;
   image_url: string | null;
   created_at?: string;
+  /** Embedded from `recipe_nutrition` when selected (1:1). */
+  recipe_nutrition?: RecipeNutritionSnapshot | RecipeNutritionSnapshot[] | null;
 };
 
 export type RecipePayload = {

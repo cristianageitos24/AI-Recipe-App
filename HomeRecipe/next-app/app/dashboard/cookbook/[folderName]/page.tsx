@@ -6,11 +6,9 @@ import { addRecipeToFolder, deleteFolder, getFolderRecipes, getFolders, renameFo
 import { getFavorites } from "@/app/actions/favorites";
 import { CookbookPageRecipeCard } from "@/components/CookbookPageRecipeCard";
 import { RecipeFullView } from "@/components/RecipeFullView";
-import { buildManualRecipePayload, processRecipeData, toRecipePayload } from "@/lib/processRecipeData";
+import { buildManualRecipePayload } from "@/lib/processRecipeData";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/CookbookFolderPage.css";
-
-type EdamamHit = { recipe: unknown };
 
 export default function CookbookFolderPage() {
   const params = useParams();
@@ -26,12 +24,8 @@ export default function CookbookFolderPage() {
   const [folderRename, setFolderRename] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isAddRecipeModalOpen, setIsAddRecipeModalOpen] = useState(false);
-  const [addRecipeTab, setAddRecipeTab] = useState<"your-recipes" | "search">("your-recipes");
+  const [addRecipeTab, setAddRecipeTab] = useState<"your-recipes" | "manual">("your-recipes");
   const [addableRecipes, setAddableRecipes] = useState<RecipeRow[]>([]);
-  const [addRecipeSearchQuery, setAddRecipeSearchQuery] = useState("");
-  const [addRecipeSearchResults, setAddRecipeSearchResults] = useState<EdamamHit[]>([]);
-  const [addRecipeSearching, setAddRecipeSearching] = useState(false);
-  const [addRecipeMode, setAddRecipeMode] = useState<"search" | "manual">("search");
   const [manualRecipeLabel, setManualRecipeLabel] = useState("");
   const [manualAddRecipeTab, setManualAddRecipeTab] = useState<"ingredients" | "cooktime" | "steps">("ingredients");
   const [manualIngredientLines, setManualIngredientLines] = useState<string[]>([""]);
@@ -44,12 +38,6 @@ export default function CookbookFolderPage() {
   const [manualWebsiteUrl, setManualWebsiteUrl] = useState("");
   const [manualSubmitting, setManualSubmitting] = useState(false);
   const [manualError, setManualError] = useState("");
-
-  const appID = process.env.NEXT_PUBLIC_EDAMAM_APP_ID;
-  const appKEY = process.env.NEXT_PUBLIC_EDAMAM_APP_KEY;
-  const isEdamamEnabled = Boolean(
-    appID && appKEY && !appID.includes("your-") && !appKEY.includes("your-")
-  );
 
   const refreshFolderRecipes = useCallback(() => {
     getFolderRecipes(folderName).then((res) => {
@@ -149,9 +137,6 @@ export default function CookbookFolderPage() {
   function closeAddRecipeModal() {
     setIsAddRecipeModalOpen(false);
     setAddRecipeTab("your-recipes");
-    setAddRecipeSearchQuery("");
-    setAddRecipeSearchResults([]);
-    setAddRecipeMode("search");
     setManualRecipeLabel("");
     setManualAddRecipeTab("ingredients");
     setManualIngredientLines([""]);
@@ -170,36 +155,6 @@ export default function CookbookFolderPage() {
     if (!res.error) {
       refreshFolderRecipes();
       setAddableRecipes((prev) => prev.filter((r) => r.recipe_id !== recipe.recipe_id));
-    }
-  }
-
-  async function handleAddRecipeSearch() {
-    if (!isEdamamEnabled || !addRecipeSearchQuery.trim()) return;
-    setAddRecipeSearching(true);
-    try {
-      const response = await fetch(
-        `https://api.edamam.com/api/recipes/v2?to=10&type=public&q=${encodeURIComponent(addRecipeSearchQuery.trim())}&app_id=${appID}&app_key=${appKEY}`
-      );
-      if (response.ok) {
-        const json = await response.json();
-        setAddRecipeSearchResults(json.hits ?? []);
-      } else {
-        setAddRecipeSearchResults([]);
-      }
-    } catch {
-      setAddRecipeSearchResults([]);
-    } finally {
-      setAddRecipeSearching(false);
-    }
-  }
-
-  async function handleAddRecipeFromSearch(hit: EdamamHit) {
-    const processed = processRecipeData(hit.recipe as Parameters<typeof processRecipeData>[0]);
-    const payload = toRecipePayload(processed);
-    const res = await addRecipeToFolder(copyFolderName, payload);
-    if (!res.error) {
-      refreshFolderRecipes();
-      closeAddRecipeModal();
     }
   }
 
@@ -370,17 +325,17 @@ export default function CookbookFolderPage() {
               </button>
               <button
                 type="button"
-                className={`add-recipe-tab ${addRecipeTab === "search" ? "active" : ""}`}
-                onClick={() => setAddRecipeTab("search")}
+                className={`add-recipe-tab ${addRecipeTab === "manual" ? "active" : ""}`}
+                onClick={() => setAddRecipeTab("manual")}
               >
-                Search
+                Add manually
               </button>
             </div>
             {addRecipeTab === "your-recipes" ? (
               <div className="add-recipe-list-container">
                 {addableRecipes.length === 0 ? (
                   <p className="add-recipe-empty-msg">
-                    Like or save recipes from Home search first, or search below.
+                    Like or save recipes from Home first, or use the Add manually tab.
                   </p>
                 ) : (
                   <ul className="add-recipe-list">
@@ -409,69 +364,6 @@ export default function CookbookFolderPage() {
               </div>
             ) : (
               <div className="add-recipe-search-container">
-                <div className="add-recipe-mode-toggle">
-                  <button
-                    type="button"
-                    className={`add-recipe-mode-toggle-btn ${addRecipeMode === "search" ? "active" : ""}`}
-                    onClick={() => setAddRecipeMode("search")}
-                  >
-                    Search online
-                  </button>
-                  <button
-                    type="button"
-                    className={`add-recipe-mode-toggle-btn ${addRecipeMode === "manual" ? "active" : ""}`}
-                    onClick={() => setAddRecipeMode("manual")}
-                  >
-                    Add manually
-                  </button>
-                </div>
-                {addRecipeMode === "search" ? (
-                  !isEdamamEnabled ? (
-                    <p className="add-recipe-empty-msg">
-                      Add Edamam API keys to enable recipe search (see Home page).
-                    </p>
-                  ) : (
-                    <>
-                      <div className="add-recipe-search-row">
-                        <input
-                          type="text"
-                          className="add-recipe-search-input"
-                          placeholder="Search recipes..."
-                          value={addRecipeSearchQuery}
-                          onChange={(e) => setAddRecipeSearchQuery(e.target.value)}
-                          onKeyDown={(e) => e.key === "Enter" && handleAddRecipeSearch()}
-                        />
-                        <button
-                          type="button"
-                          className="add-recipe-search-btn"
-                          onClick={handleAddRecipeSearch}
-                          disabled={addRecipeSearching}
-                        >
-                          {addRecipeSearching ? "Searching..." : "Search"}
-                        </button>
-                      </div>
-                      <div className="add-recipe-search-results">
-                        {addRecipeSearchResults.length === 0 && !addRecipeSearching && addRecipeSearchQuery.trim() !== "" && (
-                          <p className="add-recipe-empty-msg">No results. Try another query.</p>
-                        )}
-                        {addRecipeSearchResults.map((hit, index) => {
-                          const info = processRecipeData(hit.recipe as Parameters<typeof processRecipeData>[0]);
-                          return (
-                            <button
-                              key={index}
-                              type="button"
-                              className="add-recipe-list-item add-recipe-search-result-item"
-                              onClick={() => handleAddRecipeFromSearch(hit)}
-                            >
-                              <img src={info.imageURL || "/images/recipe-placeholder.png"} alt="" className="add-recipe-list-item-img" />
-                              <span className="add-recipe-list-item-label">{info.recipeLabel}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )
-                ) : (
                   <form className="add-recipe-manual-form manual-recipe-tabbed-form" onSubmit={handleSubmitManualRecipe}>
                     {manualError && <p className="add-recipe-manual-error">{manualError}</p>}
                     <label className="add-recipe-manual-label">
@@ -648,7 +540,6 @@ export default function CookbookFolderPage() {
                       {manualSubmitting ? "Adding..." : "Add recipe"}
                     </button>
                   </form>
-                )}
               </div>
             )}
             <div className="rename-popup-bttns" style={{ marginTop: 16 }}>

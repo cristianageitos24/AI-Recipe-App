@@ -83,7 +83,7 @@
   justify-content: center;
 }
 
-/* Edamam search in calendar popup */
+/* Legacy “search online” block (removed); classes kept for harmless dead CSS */
 .event-popup-edamam {
   margin-top: 20px;
   padding-top: 16px;
