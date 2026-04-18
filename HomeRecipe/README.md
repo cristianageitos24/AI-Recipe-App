@@ -102,7 +102,7 @@
    Edit `.env.local` with the variables listed in the next section.
 
 4. **Database:**  
-   Run all migrations in order in the Supabase SQL Editor (see [Database setup](#database-setup) below).
+   Apply all migrations with **`supabase db push`** (linked project) or Supabase MCP **`apply_migration`** / **`list_migrations`** — see [Database setup](#database-setup). Avoid pasting large migration SQL in the Dashboard for routine deploys.
 
 5. **Run the dev server:**
    ```bash
@@ -122,10 +122,14 @@ Create `.env.local` from `.env.local.example` and set:
 | `CLERK_SECRET_KEY` | Yes | Clerk secret key |
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase publishable key (client-side) |
-| `SUPABASE_SECRET_KEY` | For worker/imports | Supabase secret key (video worker, import scripts, storage setup; server-only) |
-| `USDA_FDC_API_KEY` | Optional | USDA FoodData Central API key (server-only; runtime search/detail when implemented) |
+| `SUPABASE_SECRET_KEY` | For worker/imports | Supabase secret key (same role as `SUPABASE_SERVICE_ROLE_KEY` where supported; video worker, import scripts, storage setup; server-only) |
+| `USDA_FDC_API_KEY` or `FDC_API_KEY` | Optional | USDA FoodData Central API key (server-only; search/detail fallback) |
+| `NUTRITION_ESTIMATE_OPENAI_API_KEY` | Optional | Nutrition AI fallback; if unset, `OPENAI_REASONING_API_KEY` is used when present |
+| `OPENAI_REASONING_API_KEY` | Optional | Video recipe extraction; also nutrition-estimate fallback when `NUTRITION_ESTIMATE_OPENAI_API_KEY` is unset |
+| `OPENAI_AUDIO_TRANSCRIPTION_KEY` | Optional | Video worker Whisper transcription |
 | `FDC_FOUNDATION_CSV_DIR` | Optional | Override path to Foundation CSV bundle for `npm run import:fdc` |
 | `FDC_SR_LEGACY_CSV_DIR` | Optional | Override path to SR Legacy CSV bundle for `npm run import:fdc` |
+| `SUPABASE_DB_PASSWORD` | Optional | Postgres password for Supabase CLI (`supabase link` / `db push`); not used by the Next.js app at runtime |
 
 Optional video worker configuration (defaults are usually fine):
 
@@ -145,22 +149,9 @@ The app uses **Clerk** for auth and **Supabase** for the database. RLS policies 
 1. **Clerk + Supabase:**  
    Follow the Clerk–Supabase integration steps in [next-app/supabase/README.md](next-app/supabase/README.md).
 
-2. **Run migrations in order** in Supabase Dashboard → **SQL Editor** (copy each file from `next-app/supabase/migrations/` and run):
+2. **Apply migrations** from `next-app/supabase/migrations/` using **`supabase link`** and **`supabase db push`**, or Supabase MCP **`list_migrations`** / **`apply_migration`**, so the remote database matches the repo. Use the SQL Editor only for one-off debugging, not as the primary deploy path.
 
-| Order | File | Purpose |
-|-------|------|---------|
-| 1 | `001_initial_schema.sql` | Base tables (profiles, recipes, folders, favorites, meal_dates, etc.) |
-| 2 | `002_clerk_schema.sql` | Schema for Clerk user IDs |
-| 3 | `003_add_recipe_steps.sql` | `steps` column on recipes |
-| 4 | `004_drop_django_legacy_tables.sql` | Drop legacy Django/api_* tables |
-| 5 | `005_enable_rls_on_app_tables.sql` | RLS policies for Clerk |
-| 6 | `006_drop_user_recipes.sql` | Drop unused user_recipes table |
-| 7 | `007_ingredients_table.sql` | Ingredients table + autocomplete |
-| 8 | `008_recipes_search_indexes.sql` | Search indexes + get_random_recipes RPC |
-| 9 | `009_ensure_search_indexes.sql` | Ensure search indexes exist |
-| 10 | `010_video_processing_jobs.sql` | Video processing jobs table |
-| 11 | `011_storage_videos_policies.sql` | Storage RLS for `videos` bucket (create bucket first; see below) |
-| 12 | `012_fix_claim_video_job_ambiguous_attempts.sql` | Fix video job claiming logic |
+3. **Full chain:** The numbered files run in lexical order through **`030_drop_legacy_ingredients_table.sql`** (FDC nutrition **`026+`**, grocery **`027`**, comments **`028`**, **`fdc_candidates` `029`**, legacy **`ingredients` drop `030`**). Details and RLS notes: [next-app/supabase/README.md](next-app/supabase/README.md) and [next-app/README.md](next-app/README.md).
 
 Migrations are idempotent where possible (IF EXISTS / IF NOT EXISTS). Do not skip or reorder.
 
@@ -217,7 +208,7 @@ Full details: [next-app/VIDEO_UPLOAD_SETUP.md](next-app/VIDEO_UPLOAD_SETUP.md).
 - **`next-app/WORKERS.md`** – Dev server vs. workers (separate processes).
 - **`next-app/VIDEO_UPLOAD_SETUP.md`** – Video upload and OCR setup.
 - **`next-app/supabase/README.md`** – Supabase and Clerk integration details.
-- **`next-app/supabase/migrations/`** – All SQL migrations (run in order in Supabase SQL Editor).
+- **`next-app/supabase/migrations/`** – All SQL migrations (apply via CLI or MCP per [next-app/supabase/README.md](next-app/supabase/README.md)).
 
 ---
 

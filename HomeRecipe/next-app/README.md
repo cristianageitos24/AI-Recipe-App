@@ -40,9 +40,12 @@ Create `.env.local` from `.env.local.example` and set:
 
 Optional:
 
-- `SUPABASE_SECRET_KEY` – server/worker only; bypasses RLS for bulk import scripts and video worker
-- `OPENAI_AUDIO_TRANSCRIPTION_KEY` – for video worker audio transcription (Whisper); worker-only, not exposed to browser
-- `OPENAI_REASONING_API_KEY` – for video worker AI recipe extraction (GPT-4.1 nano); worker-only, not exposed to browser
+- `SUPABASE_SECRET_KEY` (or `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_SERVICE_KEY`) – server/worker only; bypasses RLS for bulk import scripts, FDC resolver, and video worker
+- `USDA_FDC_API_KEY` or `FDC_API_KEY` – USDA `/foods/search` and `/food/{id}` fallback (server-only)
+- `NUTRITION_ESTIMATE_OPENAI_API_KEY` – nutrition AI fallback; if unset, `OPENAI_REASONING_API_KEY` is used when present
+- `OPENAI_AUDIO_TRANSCRIPTION_KEY` – video worker audio transcription (Whisper); worker-only
+- `OPENAI_REASONING_API_KEY` – video worker AI recipe extraction; also fallback for nutrition estimate when `NUTRITION_ESTIMATE_OPENAI_API_KEY` is unset
+- `SUPABASE_DB_PASSWORD` – optional; for Supabase CLI database connection (`supabase link` / `db push`), not read by the app at runtime
 
 ## Database
 
