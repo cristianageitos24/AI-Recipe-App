@@ -1,13 +1,20 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
-import { syncRecipeNutritionForRecipe } from "@/lib/nutrition/sync-recipe-nutrition";
+import {
+  syncRecipeNutritionForRecipe,
+  type SyncRecipeNutritionOptions,
+} from "@/lib/nutrition/sync-recipe-nutrition";
 import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import type { RecipePayload, RecipeRow } from "@/lib/types";
 import { upsertIngredientsFromRecipe } from "@/app/actions/ingredients";
 
-async function syncNutritionIfOwner(recipeUuid: string, userId: string) {
+async function syncNutritionIfOwner(
+  recipeUuid: string,
+  userId: string,
+  options?: SyncRecipeNutritionOptions
+) {
   try {
     const svc = await createServiceRoleClient();
     const { data: row } = await svc
@@ -16,9 +23,43 @@ async function syncNutritionIfOwner(recipeUuid: string, userId: string) {
       .eq("id", recipeUuid)
       .maybeSingle();
     if (!row || row.user_id !== userId) return;
-    await syncRecipeNutritionForRecipe(svc, recipeUuid);
+    await syncRecipeNutritionForRecipe(svc, recipeUuid, options);
   } catch (e) {
     console.error("syncNutritionIfOwner:", e);
+  }
+}
+
+/**
+ * User-selected USDA food for an ambiguous ingredient line. Re-runs nutrition sync with that `fdc_id`.
+ */
+export async function pickRecipeIngredientFdc(input: {
+  recipeId: string;
+  lineIndex: number;
+  fdcId: number;
+}): Promise<{ error: string | null }> {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized" };
+
+  const supabase = await createClient();
+  const { data: recipe, error } = await supabase
+    .from("recipes")
+    .select("id, user_id")
+    .eq("id", input.recipeId)
+    .maybeSingle();
+
+  if (error || !recipe) return { error: error?.message ?? "Recipe not found" };
+  if (recipe.user_id !== userId) return { error: "Forbidden" };
+
+  try {
+    const svc = await createServiceRoleClient();
+    const res = await syncRecipeNutritionForRecipe(svc, recipe.id, {
+      lineFdcOverrides: { [input.lineIndex]: input.fdcId },
+    });
+    if (!res.ok) return { error: res.error };
+    return { error: null };
+  } catch (e) {
+    console.error("pickRecipeIngredientFdc", e);
+    return { error: "Failed to update nutrition" };
   }
 }
 

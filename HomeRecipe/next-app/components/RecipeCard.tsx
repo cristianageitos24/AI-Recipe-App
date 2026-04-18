@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useDrag } from "react-dnd";
 import { removeFavorite as removeFav } from "@/app/actions/favorites";
+import { recipeDisplayEnergyKcal } from "@/lib/recipe-select";
 import type { RecipeRow } from "@/lib/types";
 import { formatRecipeTitleTwoWordsPerLine } from "@/lib/formatRecipeTitle";
 import "@/app/styling/RecipeCard.css";
@@ -117,7 +118,7 @@ export function RecipeCard({ recipeData }: RecipeCardProps) {
             <p>{capitalizeFirstLetter(mealType)}</p>
           </div>
           <div className="small-labels">
-            <p><span>{recipeData.calories}</span> calories</p>
+            <p><span>{recipeDisplayEnergyKcal(recipeData)}</span> calories</p>
             <p>
               <span>{recipeData.time_in_minutes < 1 ? "1" : recipeData.time_in_minutes}</span> minutes
             </p>

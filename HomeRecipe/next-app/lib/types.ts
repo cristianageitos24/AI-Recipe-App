@@ -9,6 +9,12 @@ export type RecipeNutritionSnapshot = {
 };
 
 /** Per-line nutrition provenance from `recipe_ingredient_lines` (embedded select). */
+export type FdcCandidateSnapshot = {
+  fdc_id: number;
+  description: string;
+  score: number;
+};
+
 export type RecipeIngredientLineSnapshot = {
   line_index: number;
   item: string | null;
@@ -16,6 +22,8 @@ export type RecipeIngredientLineSnapshot = {
   line_nutrition_source: "fdc" | "estimated" | "unresolved";
   fdc_id: number | null;
   estimation_reason: string | null;
+  /** Present when resolution was ambiguous (user should pick a USDA food). */
+  fdc_candidates?: FdcCandidateSnapshot[] | null;
 };
 
 export type RecipeRow = {

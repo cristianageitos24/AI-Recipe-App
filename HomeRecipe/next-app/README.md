@@ -48,7 +48,7 @@ Run the SQL migrations in **order** in the Supabase SQL Editor (Dashboard → SQ
 | 4 | `004_drop_django_legacy_tables.sql` | Drop legacy tables |
 | 5 | `005_enable_rls_on_app_tables.sql` | RLS policies for Clerk |
 | 6 | `006_drop_user_recipes.sql` | Drop unused user_recipes |
-| 7 | `007_ingredients_table.sql` | Ingredients + autocomplete |
+| 7 | `007_ingredients_table.sql` | Legacy `ingredients` seed table (Open Recipes); home search autocomplete uses **`fdc_foods`** server-side instead |
 | 8 | `008_recipes_search_indexes.sql` | Search indexes + recommended RPC |
 
 See `supabase/README.md` for schema and RLS details. If you haven’t run 008 yet, the app still works: “Recommended for you” uses a fallback query until the `get_random_recipes` RPC exists.
@@ -87,8 +87,13 @@ See [Next.js deployment docs](https://nextjs.org/docs/app/building-your-applicat
 ## Nutrition (USDA FDC) and branded foods
 
 - **Bulk catalog:** Foundation + SR Legacy foods are loaded from in-repo CSVs via `npm run import:fdc` (see repo root `README.md`). **Branded** packaged products are **not** fully bulk-imported.
-- **Runtime:** When a line does not match the local `fdc_foods` catalog, the server calls USDA `/foods/search` and `/food/{fdcId}` with results cached in `fdc_api_cache` (see `lib/nutrition/fdc-api.ts`). Set **`USDA_FDC_API_KEY`** (or **`FDC_API_KEY`**) for API fallback; requests use retry/backoff on HTTP 429.
-- **Resolver behavior:** API hits are ranked so **Foundation / SR Legacy** are preferred over **Branded** when scores are comparable; if an unfiltered search returns no foods, a **Branded-only** search is tried once for the same query (separate cache row).
+- **Runtime:** When a line does not match the local `fdc_foods` catalog, the server calls USDA `/foods/search` and `/food/{fdcId}` with results cached in `fdc_api_cache` (see `lib/nutrition/fdc-api.ts`). Set **`USDA_FDC_API_KEY`** (or **`FDC_API_KEY`**) for API fallback; requests use retry/backoff on HTTP 429. Search uses distinct cache keys for **unfiltered** vs **`dataType=Branded`** queries (`search_v1` vs `search_branded_v1`).
+- **Resolver / ranking:** Local `fdc_foods` hits and **both** general and branded API searches are **merged** and sorted by **data type** (Foundation → SR → … → Branded), then by relevance score, so branded does not win only because the general search was empty. Very strong local matches (high score) skip API calls to save quota. **Ambiguous** lines (close scores, same type tier) stay **unresolved** with stored **`fdc_candidates`**; the user can **Pick food** on the recipe detail card to set `fdc_id` and re-sync.
+- **Display kcal:** Prefer **`recipe_nutrition.energy_kcal`** when present; **`recipes.calories`** is still updated on sync for compatibility.
+- **Autocomplete (ingredients mode):** Suggestions query **`fdc_foods.description`** on the server (service role), not the legacy `ingredients` table.
+- **Selective branded bulk import:** Stub only — `npm run stub:selective-branded` (see `scripts/selective-branded-import-stub.ts`).
 - **Attribution:** See **Dashboard → About** and the recipe nutrition footnote in the recipe detail view.
+
+**Verify:** Apply migration `029_recipe_ingredient_line_fdc_candidates.sql` so `fdc_candidates` can be stored. Run `npm run typecheck`.
 
 **Note:** Older migration files may still contain outdated vendor names in SQL *line* comments only; we do not rewrite applied history. Current semantics for `recipes` / `user_id` are documented in the database via `028_schema_comments_recipes_shared_catalog.sql` (`COMMENT ON`).

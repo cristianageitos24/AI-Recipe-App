@@ -1,19 +1,19 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import type { RecipeRow } from "@/lib/types";
 
 /** Narrow columns for list views (cards); avoids transferring ingredient_lines, steps */
 const RECIPE_LIST_COLUMNS =
-  "id, recipe_id, recipe_label, calories, cuisine_type, meal_type, time_in_minutes, image_url, website_url" as const;
+  "id, recipe_id, recipe_label, calories, cuisine_type, meal_type, time_in_minutes, image_url, website_url, recipe_nutrition(energy_kcal)" as const;
 
 export type SearchSuggestions = {
   ingredients: string[];
   recipes: { recipe_id: string; recipe_label: string }[];
 };
 
-/** Ingredients-only suggestions (one DB call); min length 1 when ingredientsOnly. */
+/** Ingredients-only suggestions: `fdc_foods.description` via service role (no client reads on bulk FDC). */
 export async function getIngredientSuggestions(
   query: string
 ): Promise<{ error: string | null; data: string[] | null }> {
@@ -25,20 +25,31 @@ export async function getIngredientSuggestions(
     return { error: null, data: [] };
   }
 
-  const supabase = await createClient();
-  const pattern = `%${trimmed.replace(/%/g, "\\%")}%`;
+  try {
+    const svc = await createServiceRoleClient();
+    const pattern = `%${trimmed.replace(/%/g, "\\%").replace(/_/g, "\\_")}%`;
+    const { data, error } = await svc
+      .from("fdc_foods")
+      .select("description")
+      .ilike("description", pattern)
+      .order("description", { ascending: true })
+      .limit(12);
 
-  const { data, error } = await supabase
-    .from("ingredients")
-    .select("name")
-    .ilike("search_name", pattern)
-    .order("use_count", { ascending: false })
-    .limit(10);
-
-  if (error) return { error: error.message, data: null };
-  const ingredients =
-    data?.map((r) => r.name as string).filter(Boolean) ?? [];
-  return { error: null, data: ingredients };
+    if (error) return { error: error.message, data: null };
+    const seen = new Set<string>();
+    const ingredients: string[] = [];
+    for (const row of data ?? []) {
+      const name = (row as { description?: string }).description?.trim();
+      if (!name || seen.has(name)) continue;
+      seen.add(name);
+      ingredients.push(name);
+      if (ingredients.length >= 10) break;
+    }
+    return { error: null, data: ingredients };
+  } catch (e) {
+    console.error("getIngredientSuggestions", e);
+    return { error: "Search unavailable", data: null };
+  }
 }
 
 export async function getSearchSuggestions(
@@ -53,24 +64,36 @@ export async function getSearchSuggestions(
   }
 
   const supabase = await createClient();
-  const pattern = `%${trimmed.replace(/%/g, "\\%")}%`;
+  const pattern = `%${trimmed.replace(/%/g, "\\%").replace(/_/g, "\\_")}%`;
 
-  const [ingredientsRes, recipesRes] = await Promise.all([
-    supabase
-      .from("ingredients")
-      .select("name")
-      .ilike("search_name", pattern)
-      .order("use_count", { ascending: false })
-      .limit(10),
-    supabase
-      .from("recipes")
-      .select("recipe_id, recipe_label")
-      .ilike("recipe_label", pattern)
-      .limit(5),
-  ]);
+  let ingredients: string[] = [];
+  try {
+    const svc = await createServiceRoleClient();
+    const { data: fdcRows, error: fdcErr } = await svc
+      .from("fdc_foods")
+      .select("description")
+      .ilike("description", pattern)
+      .order("description", { ascending: true })
+      .limit(12);
+    if (!fdcErr && fdcRows) {
+      const seen = new Set<string>();
+      for (const row of fdcRows) {
+        const name = (row as { description?: string }).description?.trim();
+        if (!name || seen.has(name)) continue;
+        seen.add(name);
+        ingredients.push(name);
+        if (ingredients.length >= 10) break;
+      }
+    }
+  } catch {
+    ingredients = [];
+  }
 
-  const ingredients =
-    ingredientsRes.data?.map((r) => r.name as string).filter(Boolean) ?? [];
+  const recipesRes = await supabase
+    .from("recipes")
+    .select("recipe_id, recipe_label")
+    .ilike("recipe_label", pattern)
+    .limit(5);
   const recipes =
     recipesRes.data?.map((r) => ({
       recipe_id: r.recipe_id as string,

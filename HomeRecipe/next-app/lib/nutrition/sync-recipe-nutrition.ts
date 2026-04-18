@@ -44,9 +44,15 @@ function cloneResolved(r: ResolvedLine): ResolvedLine {
   };
 }
 
+export type SyncRecipeNutritionOptions = {
+  /** Per line index: use this FDC id instead of automatic resolution (user pick). */
+  lineFdcOverrides?: Record<number, number>;
+};
+
 export async function syncRecipeNutritionForRecipe(
   svc: SupabaseClient,
-  recipeId: string
+  recipeId: string,
+  options?: SyncRecipeNutritionOptions
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { data: recipe, error: rErr } = await svc
     .from("recipes")
@@ -84,7 +90,12 @@ export async function syncRecipeNutritionForRecipe(
   /** Phase B: deterministic resolution for every line. */
   const deterministic: ResolvedLineWithCandidates[] = [];
   for (let i = 0; i < parsedLines.length; i++) {
-    deterministic.push(await resolveIngredientLine(svc, parsedLines[i]));
+    const override = options?.lineFdcOverrides?.[i];
+    deterministic.push(
+      await resolveIngredientLine(svc, parsedLines[i], {
+        forceFdcId: override != null ? override : undefined,
+      })
+    );
   }
 
   const working: WorkingLine[] = deterministic.map((d) => ({
@@ -177,6 +188,7 @@ export async function syncRecipeNutritionForRecipe(
     grams: number | null;
     ml: number | null;
     estimation_reason: string | null;
+    fdc_candidates: unknown | null;
   }> = [];
 
   const sourceAcc: Array<{
@@ -192,6 +204,11 @@ export async function syncRecipeNutritionForRecipe(
     totalF += w.nutrients_scaled.fat_g;
     totalC += w.nutrients_scaled.carb_g;
 
+    const cand =
+      w.line_nutrition_source === "unresolved" && working[i].fdc_candidates?.length
+        ? working[i].fdc_candidates
+        : null;
+
     lineRows.push({
       recipe_id: recipeId,
       line_index: i,
@@ -206,6 +223,7 @@ export async function syncRecipeNutritionForRecipe(
       grams: w.grams,
       ml: w.ml,
       estimation_reason: w.estimation_reason,
+      fdc_candidates: cand,
     });
 
     sourceAcc.push({ line_nutrition_source: w.line_nutrition_source });

@@ -5,6 +5,7 @@ import { DATA_TYPE_PRIORITY } from "@/lib/nutrition/constants";
 import {
   fdcFoodDetailCached,
   fdcSearchFoodsCached,
+  getFdcApiKey,
   type FdcSearchFood,
   type NutrientsPer100g,
 } from "@/lib/nutrition/fdc-api";
@@ -112,6 +113,109 @@ function rankApiHits(hits: FdcSearchFood[]): FdcSearchFood[] {
   });
 }
 
+type DataTypeKey = keyof typeof DATA_TYPE_PRIORITY | "unknown";
+
+function typeRankFromKey(k: DataTypeKey): number {
+  if (k === "unknown") return 40;
+  return DATA_TYPE_PRIORITY[k] ?? 35;
+}
+
+type MergedEntry = {
+  fdc_id: number;
+  description: string;
+  normScore: number;
+  typeKey: DataTypeKey;
+};
+
+function mapLocalDataType(dt: string): DataTypeKey {
+  if (dt in DATA_TYPE_PRIORITY) return dt as DataTypeKey;
+  return "unknown";
+}
+
+function mergedEntryFromLocal(r: {
+  fdc_id: number;
+  description: string;
+  data_type: string;
+  score: number;
+}): MergedEntry {
+  return {
+    fdc_id: r.fdc_id,
+    description: r.description,
+    normScore: Math.min(1, Math.max(0, r.score)),
+    typeKey: mapLocalDataType(r.data_type),
+  };
+}
+
+function mergedEntryFromApiHit(top: FdcSearchFood): MergedEntry {
+  return {
+    fdc_id: top.fdcId,
+    description: top.description,
+    normScore: normalizeApiScore(top.score ?? 0),
+    typeKey: mapApiDataTypeToKey(top.dataType),
+  };
+}
+
+/** Sort: lower type rank (Foundation first), then higher normScore. */
+function compareMerged(a: MergedEntry, b: MergedEntry): number {
+  const ta = typeRankFromKey(a.typeKey);
+  const tb = typeRankFromKey(b.typeKey);
+  if (ta !== tb) return ta - tb;
+  return b.normScore - a.normScore;
+}
+
+function dedupeMerged(entries: MergedEntry[]): MergedEntry[] {
+  const m = new Map<number, MergedEntry>();
+  for (const e of entries) {
+    const prev = m.get(e.fdc_id);
+    if (!prev || compareMerged(e, prev) < 0) {
+      m.set(e.fdc_id, e);
+    }
+  }
+  return [...m.values()].sort(compareMerged);
+}
+
+/**
+ * Merge local + general API + branded API hits. Foundation/SR outrank branded when scores are close
+ * because compareMerged uses data type before score.
+ */
+function mergeAllSources(
+  rankedLocal: ReturnType<typeof rankLocal>,
+  apiGeneralSorted: FdcSearchFood[],
+  apiBrandedSorted: FdcSearchFood[]
+): MergedEntry[] {
+  const raw: MergedEntry[] = [];
+  for (const r of rankedLocal) {
+    raw.push(mergedEntryFromLocal(r));
+  }
+  for (const h of apiGeneralSorted) {
+    raw.push(mergedEntryFromApiHit(h));
+  }
+  for (const h of apiBrandedSorted) {
+    raw.push(mergedEntryFromApiHit(h));
+  }
+  return dedupeMerged(raw);
+}
+
+const STRONG_LOCAL_SCORE = 0.92;
+const AMBIGUITY_GAP = 0.11;
+const AMBIGUITY_MIN_SECOND = 0.38;
+
+function isAmbiguousPair(a: MergedEntry, b: MergedEntry): boolean {
+  if (b.normScore < AMBIGUITY_MIN_SECOND) return false;
+  if (a.typeKey === b.typeKey) {
+    return a.normScore - b.normScore < AMBIGUITY_GAP;
+  }
+  return false;
+}
+
+function toFdcCandidates(merged: MergedEntry[]): FdcCandidate[] {
+  return merged.slice(0, 12).map((e) => ({
+    fdc_id: e.fdc_id,
+    description: e.description,
+    score: e.normScore,
+  }));
+}
+
 function dedupeCandidates(cands: FdcCandidate[]): FdcCandidate[] {
   const m = new Map<number, FdcCandidate>();
   for (const c of cands) {
@@ -121,24 +225,6 @@ function dedupeCandidates(cands: FdcCandidate[]): FdcCandidate[] {
     }
   }
   return [...m.values()].sort((a, b) => b.score - a.score).slice(0, 12);
-}
-
-function candidatesFromRankedLocal(
-  ranked: { fdc_id: number; description: string; score: number }[]
-): FdcCandidate[] {
-  return ranked.slice(0, 8).map((r) => ({
-    fdc_id: r.fdc_id,
-    description: r.description,
-    score: r.score,
-  }));
-}
-
-function candidatesFromApiHits(sorted: FdcSearchFood[]): FdcCandidate[] {
-  return sorted.slice(0, 8).map((top) => ({
-    fdc_id: top.fdcId,
-    description: top.description,
-    score: normalizeApiScore(top.score ?? 0),
-  }));
 }
 
 /**
@@ -166,11 +252,15 @@ export async function buildFdcResolvedLine(
   };
 }
 
-const LOCAL_SCORE_MIN = 0.55;
+export type ResolveLineOptions = {
+  /** Skip search and use this FDC id (user-confirmed pick). */
+  forceFdcId?: number;
+};
 
 export async function resolveIngredientLine(
   svc: SupabaseClient,
-  parsed: ParsedIngredientLine
+  parsed: ParsedIngredientLine,
+  options?: ResolveLineOptions
 ): Promise<ResolvedLineWithCandidates> {
   const empty: ResolvedLine = {
     fdc_id: null,
@@ -201,6 +291,19 @@ export async function resolveIngredientLine(
     };
   }
 
+  if (options?.forceFdcId != null) {
+    const forced = await buildFdcResolvedLine(svc, options.forceFdcId, grams, 1);
+    if (forced) {
+      return { ...forced, fdc_candidates: [] };
+    }
+    return {
+      ...empty,
+      grams,
+      estimation_reason: "Could not load nutrients for selected food.",
+      fdc_candidates: [],
+    };
+  }
+
   const pattern = `%${escapeIlike(term)}%`;
   const { data: localRows, error: localErr } = await svc
     .from("fdc_foods")
@@ -212,77 +315,94 @@ export async function resolveIngredientLine(
     console.warn("local fdc_foods search", localErr.message);
   }
 
-  let chosen: {
-    fdc_id: number;
-    score: number;
-    description: string;
-    data_type: string;
-  } | null = null;
-
   const locals = (localRows ?? []) as FdcFoodRow[];
-  let rankedLocal: ReturnType<typeof rankLocal> = [];
-  let apiSorted: FdcSearchFood[] = [];
+  const rankedLocal = locals.length ? rankLocal(locals, term) : [];
 
-  if (locals.length) {
-    rankedLocal = rankLocal(locals, term);
-    const best = rankedLocal[0];
-    if (best && best.score >= LOCAL_SCORE_MIN) {
-      chosen = {
-        fdc_id: best.fdc_id,
-        score: best.score,
-        description: best.description,
-        data_type: best.data_type,
+  const hasApi = Boolean(getFdcApiKey());
+  const strongLocal =
+    rankedLocal[0] != null && rankedLocal[0].score >= STRONG_LOCAL_SCORE;
+
+  let apiGeneralSorted: FdcSearchFood[] = [];
+  let apiBrandedSorted: FdcSearchFood[] = [];
+
+  if (hasApi && !strongLocal) {
+    const [gen, br] = await Promise.all([
+      fdcSearchFoodsCached(svc, term),
+      fdcSearchFoodsCached(svc, term, { dataType: "Branded" }),
+    ]);
+    apiGeneralSorted = rankApiHits(gen);
+    apiBrandedSorted = rankApiHits(br);
+  }
+
+  if (strongLocal && rankedLocal.length > 0) {
+    const sortedLocalOnly = dedupeMerged(rankedLocal.map(mergedEntryFromLocal));
+    if (
+      sortedLocalOnly.length >= 2 &&
+      isAmbiguousPair(sortedLocalOnly[0], sortedLocalOnly[1])
+    ) {
+      return {
+        ...empty,
+        grams,
+        estimation_reason: "Multiple plausible USDA matches — pick a food below.",
+        fdc_candidates: toFdcCandidates(sortedLocalOnly),
       };
     }
-  }
-
-  if (!chosen) {
-    let apiHits = await fdcSearchFoodsCached(svc, term);
-    if (apiHits.length === 0) {
-      apiHits = await fdcSearchFoodsCached(svc, term, { dataType: "Branded" });
+    const best = sortedLocalOnly[0]!;
+    const resolved = await buildFdcResolvedLine(svc, best.fdc_id, grams, best.normScore);
+    if (resolved) {
+      return { ...resolved, fdc_candidates: [] };
     }
-    apiSorted = rankApiHits(apiHits);
-    const top = apiSorted[0];
-    if (top) {
-      const normalizedScore = normalizeApiScore(top.score ?? 0);
-      chosen = {
-        fdc_id: top.fdcId,
-        score: normalizedScore,
-        description: top.description,
-        data_type: top.dataType ?? "api",
-      };
-    }
-  }
-
-  const failureCandidates = dedupeCandidates([
-    ...candidatesFromRankedLocal(rankedLocal),
-    ...candidatesFromApiHits(apiSorted),
-  ]);
-
-  if (!chosen) {
     return {
       ...empty,
-      grams,
-      estimation_reason: "No confident FDC food match.",
-      fdc_candidates: failureCandidates,
-    };
-  }
-
-  const resolved = await buildFdcResolvedLine(svc, chosen.fdc_id, grams, chosen.score);
-  if (!resolved) {
-    return {
-      ...empty,
-      fdc_id: chosen.fdc_id,
-      fdc_match_score: chosen.score,
+      fdc_id: best.fdc_id,
+      fdc_match_score: best.normScore,
       grams,
       line_nutrition_source: "unresolved",
       estimation_reason: "Nutrients unavailable for matched food.",
       fdc_candidates: dedupeCandidates([
-        ...failureCandidates,
+        { fdc_id: best.fdc_id, description: best.description, score: best.normScore },
+      ]),
+    };
+  }
+
+  const merged = mergeAllSources(rankedLocal, apiGeneralSorted, apiBrandedSorted);
+
+  if (merged.length === 0) {
+    return {
+      ...empty,
+      grams,
+      estimation_reason: "No confident FDC food match.",
+      fdc_candidates: [],
+    };
+  }
+
+  const top = merged[0];
+  const second = merged[1];
+  if (second && isAmbiguousPair(top, second)) {
+    return {
+      ...empty,
+      grams,
+      estimation_reason: "Multiple plausible USDA matches — pick a food below.",
+      fdc_candidates: toFdcCandidates(merged),
+    };
+  }
+
+  const chosen = top;
+  const resolved = await buildFdcResolvedLine(svc, chosen.fdc_id, grams, chosen.normScore);
+  if (!resolved) {
+    return {
+      ...empty,
+      fdc_id: chosen.fdc_id,
+      fdc_match_score: chosen.normScore,
+      grams,
+      line_nutrition_source: "unresolved",
+      estimation_reason: "Nutrients unavailable for matched food.",
+      fdc_candidates: dedupeCandidates([
+        ...toFdcCandidates(merged),
         {
           fdc_id: chosen.fdc_id,
           description: chosen.description,
-          score: chosen.score,
+          score: chosen.normScore,
         },
       ]),
     };

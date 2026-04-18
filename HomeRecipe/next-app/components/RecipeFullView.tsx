@@ -1,8 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
+import { pickRecipeIngredientFdc } from "@/app/actions/recipes";
+import { recipeDisplayEnergyKcal } from "@/lib/recipe-select";
 import type {
+  FdcCandidateSnapshot,
   RecipeIngredientLineSnapshot,
   RecipeNutritionSnapshot,
   RecipeRow,
@@ -34,6 +38,24 @@ function pickNutritionSnapshot(
   const n = Array.isArray(raw) ? raw[0] : raw;
   if (!n || typeof n !== "object") return null;
   return n as RecipeNutritionSnapshot;
+}
+
+function parseFdcCandidates(
+  raw: RecipeIngredientLineSnapshot["fdc_candidates"]
+): FdcCandidateSnapshot[] {
+  if (!raw || !Array.isArray(raw)) return [];
+  const out: FdcCandidateSnapshot[] = [];
+  for (const x of raw) {
+    if (
+      x &&
+      typeof x === "object" &&
+      typeof (x as FdcCandidateSnapshot).fdc_id === "number" &&
+      typeof (x as FdcCandidateSnapshot).description === "string"
+    ) {
+      out.push(x as FdcCandidateSnapshot);
+    }
+  }
+  return out;
 }
 
 function lineNutritionByIndex(row: RecipeRow): Map<number, RecipeIngredientLineSnapshot> {
@@ -103,11 +125,16 @@ function ViewSourceIcon() {
 }
 
 export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"ingredients" | "steps">("ingredients");
   const [groceryFeedback, setGroceryFeedback] = useState<string | null>(null);
   const [addAllBusy, setAddAllBusy] = useState(false);
   const [addAllDone, setAddAllDone] = useState(false);
   const [lastAddedItems, setLastAddedItems] = useState<string[]>([]);
+  const [fdcPickLine, setFdcPickLine] = useState<number | null>(null);
+  const [fdcPickChoice, setFdcPickChoice] = useState<number | null>(null);
+  const [fdcPickBusy, setFdcPickBusy] = useState(false);
+  const [fdcPickError, setFdcPickError] = useState<string | null>(null);
   const ingredientLines = (recipeData.ingredient_lines ?? "").split("***").map((s) => s.trim()).filter(Boolean);
   const stepsLines = (recipeData.steps ?? "").trim()
     ? (recipeData.steps ?? "").split("***").map((s) => s.trim()).filter(Boolean)
@@ -120,9 +147,7 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
 
   const nutritionSnap = pickNutritionSnapshot(recipeData);
   const lineNutritionMap = lineNutritionByIndex(recipeData);
-  const displayKcal = nutritionSnap
-    ? Math.round(Number(nutritionSnap.energy_kcal))
-    : Math.round(Number(recipeData.calories));
+  const displayKcal = recipeDisplayEnergyKcal(recipeData);
   const src = nutritionSnap?.nutrition_source ?? "incomplete";
   const nutritionSourceLabel =
     src === "fdc"
@@ -160,6 +185,25 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
     }
     setAddAllBusy(false);
     setTimeout(() => setGroceryFeedback(null), 2000);
+  }
+
+  async function handleConfirmFdcPick(lineIndex: number) {
+    if (fdcPickChoice == null || fdcPickBusy) return;
+    setFdcPickBusy(true);
+    setFdcPickError(null);
+    const res = await pickRecipeIngredientFdc({
+      recipeId: recipeData.id,
+      lineIndex,
+      fdcId: fdcPickChoice,
+    });
+    setFdcPickBusy(false);
+    if (res.error) {
+      setFdcPickError(res.error);
+      return;
+    }
+    setFdcPickLine(null);
+    setFdcPickChoice(null);
+    router.refresh();
   }
 
   async function handleUndoAddAll() {
@@ -350,7 +394,11 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
               <ul className="recipe-ingredients-list">
                 {ingredientLines.length > 0 ? (
                   ingredientLines.map((item, index) => {
-                    const nutBadge = lineNutritionBadge(lineNutritionMap.get(index));
+                    const lineSnap = lineNutritionMap.get(index);
+                    const nutBadge = lineNutritionBadge(lineSnap);
+                    const fdcCandidates = parseFdcCandidates(lineSnap?.fdc_candidates);
+                    const showFdcPicker =
+                      fdcCandidates.length > 0 && fdcPickLine === index;
                     return (
                     <li key={index} className="recipe-ingredient-item recipe-ingredient-item-with-add">
                       <span className="recipe-ingredient-text">{item}</span>
@@ -361,6 +409,25 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
                         >
                           {nutBadge.label}
                         </span>
+                      )}
+                      {fdcCandidates.length > 0 && (
+                        <button
+                          type="button"
+                          className="recipe-ingredient-fdc-pick-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFdcPickError(null);
+                            if (fdcPickLine === index) {
+                              setFdcPickLine(null);
+                              setFdcPickChoice(null);
+                            } else {
+                              setFdcPickLine(index);
+                              setFdcPickChoice(fdcCandidates[0]?.fdc_id ?? null);
+                            }
+                          }}
+                        >
+                          {fdcPickLine === index ? "Cancel" : "Pick food"}
+                        </button>
                       )}
                       <button
                         type="button"
@@ -373,6 +440,45 @@ export function RecipeFullView({ recipeData, onClose }: RecipeFullViewProps) {
                       >
                         <AddToGroceryIcon />
                       </button>
+                      {showFdcPicker && (
+                        <div
+                          className="recipe-ingredient-fdc-pick-panel"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <p className="recipe-ingredient-fdc-pick-hint">
+                            Choose the USDA food that best matches this line:
+                          </p>
+                          <ul className="recipe-ingredient-fdc-pick-list">
+                            {fdcCandidates.map((c) => (
+                              <li key={c.fdc_id}>
+                                <label className="recipe-ingredient-fdc-pick-option">
+                                  <input
+                                    type="radio"
+                                    name={`fdc-pick-${index}`}
+                                    checked={fdcPickChoice === c.fdc_id}
+                                    onChange={() => setFdcPickChoice(c.fdc_id)}
+                                  />
+                                  <span>{c.description}</span>
+                                  <span className="recipe-ingredient-fdc-pick-id">FDC {c.fdc_id}</span>
+                                </label>
+                              </li>
+                            ))}
+                          </ul>
+                          {fdcPickError && (
+                            <p role="alert" className="recipe-ingredient-fdc-pick-err">
+                              {fdcPickError}
+                            </p>
+                          )}
+                          <button
+                            type="button"
+                            className="recipe-ingredient-fdc-pick-confirm"
+                            disabled={fdcPickChoice == null || fdcPickBusy}
+                            onClick={() => handleConfirmFdcPick(index)}
+                          >
+                            {fdcPickBusy ? "Saving…" : "Use selected food"}
+                          </button>
+                        </div>
+                      )}
                     </li>
                     );
                   })
