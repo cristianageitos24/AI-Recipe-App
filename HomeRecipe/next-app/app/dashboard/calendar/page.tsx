@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 import { getMealDates, createOrUpdateMealDate, deleteMealDate } from "@/app/actions/meal-dates";
 import { getGroceryTrips, deleteGroceryTrip } from "@/app/actions/grocery-trips";
 import { getCalendarBootstrap } from "@/app/actions/dashboard";
+import { recipeDisplayEnergyKcal } from "@/lib/recipe-select";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/TabCalendar.css";
 import "@/app/styling/TabCalendarHeader.css";
@@ -28,6 +29,7 @@ type CalendarEvent = {
   allDay: boolean;
   editable: boolean;
   eventType?: "recipe" | "grocery";
+  /** Display kcal: prefers `recipe_nutrition.energy_kcal` when present (see `recipeDisplayEnergyKcal`). */
   calories?: number | null;
   cuisineType?: string | null;
   mealType?: string | null;
@@ -61,7 +63,7 @@ function mapEvents(
         allDay: true,
         editable: true,
         eventType: "recipe",
-        calories: recipe.calories,
+        calories: recipeDisplayEnergyKcal(recipe),
         cuisineType: recipe.cuisine_type,
         mealType: recipe.meal_type,
         timeInMinutes: recipe.time_in_minutes,
@@ -194,7 +196,7 @@ export default function CalendarPage() {
           title: selectedSearchOption.recipe_label,
           recipeID: selectedSearchOption.recipe_id,
           imageURL: selectedSearchOption.image_url ?? "",
-          calories: selectedSearchOption.calories,
+          calories: recipeDisplayEnergyKcal(selectedSearchOption),
           cuisineType: selectedSearchOption.cuisine_type,
           mealType: selectedSearchOption.meal_type,
           timeInMinutes: selectedSearchOption.time_in_minutes,
@@ -374,7 +376,7 @@ export default function CalendarPage() {
                                   </div>
                                   <div className="small-labels">
                                     <p>
-                                      <span>{Math.round(event.calories ?? 0)}</span> calories
+                                      <span>{event.calories ?? 0}</span> calories
                                     </p>
                                     <p className={`calendar-card-minutes calendar-card-minutes--${minutesTone}`}>
                                       {minutes} {minutes === 1 ? "minute" : "minutes"}
