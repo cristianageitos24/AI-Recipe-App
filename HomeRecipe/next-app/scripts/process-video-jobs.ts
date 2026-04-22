@@ -543,7 +543,8 @@ async function downloadTikTokVideo(tiktokUrl: string, jobId: string): Promise<st
   const { execa } = await import("execa");
 
   try {
-    await execa(ytDlp, ["-f", "mp4", "-o", tempPath, tiktokUrl], {
+    // Prefer TikTok's progressive "download" format; adaptive h264/bytevc1 CDN URLs often 404 from datacenters.
+    await execa(ytDlp, ["-f", "download/best", "-o", tempPath, tiktokUrl], {
       timeout: PROCESSING_TIMEOUT_MS,
     });
   } catch (error: any) {
