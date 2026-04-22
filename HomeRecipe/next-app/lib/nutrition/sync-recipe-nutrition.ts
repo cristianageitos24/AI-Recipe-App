@@ -37,9 +37,14 @@ type WorkingLine = ResolvedLine & {
   fdc_candidates: ResolvedLineWithCandidates["fdc_candidates"];
 };
 
-function cloneResolved(r: ResolvedLine): ResolvedLine {
+function cloneResolved(r: ResolvedLineWithCandidates): ResolvedLine {
   return {
-    ...r,
+    fdc_id: r.fdc_id,
+    fdc_match_score: r.fdc_match_score,
+    line_nutrition_source: r.line_nutrition_source,
+    grams: r.grams,
+    ml: r.ml,
+    estimation_reason: r.estimation_reason,
     nutrients_scaled: { ...r.nutrients_scaled },
   };
 }
@@ -87,15 +92,19 @@ export async function syncRecipeNutritionForRecipe(
 
   const parsedLines = rawLines.map((raw) => parseIngredientLine(raw));
 
-  /** Phase B: deterministic resolution for every line. */
+  /** Phase B: deterministic resolution for every line (API-first when quota allows; batch guard after search 429 / quota_exhausted). */
   const deterministic: ResolvedLineWithCandidates[] = [];
+  let apiSearchDisabled = false;
   for (let i = 0; i < parsedLines.length; i++) {
     const override = options?.lineFdcOverrides?.[i];
-    deterministic.push(
-      await resolveIngredientLine(svc, parsedLines[i], {
-        forceFdcId: override != null ? override : undefined,
-      })
-    );
+    const row = await resolveIngredientLine(svc, parsedLines[i], {
+      forceFdcId: override != null ? override : undefined,
+      apiSearchDisabled,
+    });
+    deterministic.push(row);
+    if (row.disableApiForRestOfSync) {
+      apiSearchDisabled = true;
+    }
   }
 
   const working: WorkingLine[] = deterministic.map((d) => ({
@@ -141,7 +150,9 @@ export async function syncRecipeNutritionForRecipe(
         if (!est) continue;
 
         if (est.source === "fdc" && est.fdc_id != null && est.grams != null) {
-          const fdcLine = await buildFdcResolvedLine(svc, est.fdc_id, est.grams, null);
+          const fdcLine = await buildFdcResolvedLine(svc, est.fdc_id, est.grams, null, {
+            skipLiveUsdaDetail: apiSearchDisabled,
+          });
           if (fdcLine) {
             working[idx] = {
               ...fdcLine,

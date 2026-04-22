@@ -4,7 +4,7 @@ import { normalizeIngredientName } from "@/lib/ingredient-normalize";
 import { DATA_TYPE_PRIORITY } from "@/lib/nutrition/constants";
 import {
   fdcFoodDetailCached,
-  fdcSearchFoodsCached,
+  fdcSearchFoodsWithOutcome,
   getFdcApiKey,
   type FdcSearchFood,
   type NutrientsPer100g,
@@ -62,6 +62,8 @@ export type FdcCandidate = { fdc_id: number; description: string; score: number 
 
 export type ResolvedLineWithCandidates = ResolvedLine & {
   fdc_candidates: FdcCandidate[];
+  /** True when a USDA search returned rate_limited or quota_exhausted; sync sets apiSearchDisabled for remaining lines. */
+  disableApiForRestOfSync: boolean;
 };
 
 export function scaleNutrientsToGrams(
@@ -196,7 +198,6 @@ function mergeAllSources(
   return dedupeMerged(raw);
 }
 
-const STRONG_LOCAL_SCORE = 0.92;
 const AMBIGUITY_GAP = 0.11;
 const AMBIGUITY_MIN_SECOND = 0.38;
 
@@ -227,6 +228,16 @@ function dedupeCandidates(cands: FdcCandidate[]): FdcCandidate[] {
   return [...m.values()].sort((a, b) => b.score - a.score).slice(0, 12);
 }
 
+const emptyResolved = (): ResolvedLine => ({
+  fdc_id: null,
+  fdc_match_score: null,
+  line_nutrition_source: "unresolved",
+  grams: null,
+  ml: null,
+  estimation_reason: null,
+  nutrients_scaled: { kcal: 0, protein_g: 0, fat_g: 0, carb_g: 0 },
+});
+
 /**
  * Fetch nutrients and build an FDC-backed line (used after deterministic resolution or AI-picked fdc_id).
  */
@@ -234,11 +245,14 @@ export async function buildFdcResolvedLine(
   svc: SupabaseClient,
   fdcId: number,
   grams: number,
-  matchScore: number | null
+  matchScore: number | null,
+  opts?: { skipLiveUsdaDetail?: boolean }
 ): Promise<ResolvedLine | null> {
   let per100 = await getNutrientsPer100gFromDb(svc, fdcId);
   if (!per100) {
-    per100 = await fdcFoodDetailCached(svc, fdcId);
+    per100 = await fdcFoodDetailCached(svc, fdcId, {
+      skipLiveUsdaDetail: opts?.skipLiveUsdaDetail,
+    });
   }
   if (!per100) return null;
   return {
@@ -252,9 +266,73 @@ export async function buildFdcResolvedLine(
   };
 }
 
+async function resolveFromMergedEntries(
+  svc: SupabaseClient,
+  merged: MergedEntry[],
+  grams: number,
+  skipLiveUsdaDetail: boolean,
+  disableApiForRestOfSync: boolean
+): Promise<ResolvedLineWithCandidates> {
+  const empty = emptyResolved();
+
+  if (merged.length === 0) {
+    return {
+      ...empty,
+      grams,
+      estimation_reason: "No confident FDC food match.",
+      fdc_candidates: [],
+      disableApiForRestOfSync,
+    };
+  }
+
+  const top = merged[0];
+  const second = merged[1];
+  if (second && isAmbiguousPair(top, second)) {
+    return {
+      ...empty,
+      grams,
+      estimation_reason: "Multiple plausible USDA matches — pick a food below.",
+      fdc_candidates: toFdcCandidates(merged),
+      disableApiForRestOfSync,
+    };
+  }
+
+  const chosen = top;
+  const resolved = await buildFdcResolvedLine(svc, chosen.fdc_id, grams, chosen.normScore, {
+    skipLiveUsdaDetail,
+  });
+  if (!resolved) {
+    return {
+      ...empty,
+      fdc_id: chosen.fdc_id,
+      fdc_match_score: chosen.normScore,
+      grams,
+      line_nutrition_source: "unresolved",
+      estimation_reason: "Nutrients unavailable for matched food.",
+      fdc_candidates: dedupeCandidates([
+        ...toFdcCandidates(merged),
+        {
+          fdc_id: chosen.fdc_id,
+          description: chosen.description,
+          score: chosen.normScore,
+        },
+      ]),
+      disableApiForRestOfSync,
+    };
+  }
+
+  return {
+    ...resolved,
+    fdc_candidates: [],
+    disableApiForRestOfSync,
+  };
+}
+
 export type ResolveLineOptions = {
   /** Skip search and use this FDC id (user-confirmed pick). */
   forceFdcId?: number;
+  /** When true, skip USDA search and live USDA detail (batch guard mid-sync). */
+  apiSearchDisabled?: boolean;
 };
 
 export async function resolveIngredientLine(
@@ -262,19 +340,11 @@ export async function resolveIngredientLine(
   parsed: ParsedIngredientLine,
   options?: ResolveLineOptions
 ): Promise<ResolvedLineWithCandidates> {
-  const empty: ResolvedLine = {
-    fdc_id: null,
-    fdc_match_score: null,
-    line_nutrition_source: "unresolved",
-    grams: null,
-    ml: null,
-    estimation_reason: null,
-    nutrients_scaled: { kcal: 0, protein_g: 0, fat_g: 0, carb_g: 0 },
-  };
+  const empty = emptyResolved();
 
   const term = searchTermFromParsed(parsed);
   if (!term || !parsed.item?.trim()) {
-    return { ...empty, fdc_candidates: [] };
+    return { ...empty, fdc_candidates: [], disableApiForRestOfSync: false };
   }
 
   const grams = estimateGrams({
@@ -288,19 +358,25 @@ export async function resolveIngredientLine(
       ...empty,
       estimation_reason: "Could not convert quantity/unit to grams.",
       fdc_candidates: [],
+      disableApiForRestOfSync: false,
     };
   }
 
+  const apiSearchDisabled = options?.apiSearchDisabled ?? false;
+
   if (options?.forceFdcId != null) {
-    const forced = await buildFdcResolvedLine(svc, options.forceFdcId, grams, 1);
+    const forced = await buildFdcResolvedLine(svc, options.forceFdcId, grams, 1, {
+      skipLiveUsdaDetail: apiSearchDisabled,
+    });
     if (forced) {
-      return { ...forced, fdc_candidates: [] };
+      return { ...forced, fdc_candidates: [], disableApiForRestOfSync: false };
     }
     return {
       ...empty,
       grams,
       estimation_reason: "Could not load nutrients for selected food.",
       fdc_candidates: [],
+      disableApiForRestOfSync: false,
     };
   }
 
@@ -319,97 +395,37 @@ export async function resolveIngredientLine(
   const rankedLocal = locals.length ? rankLocal(locals, term) : [];
 
   const hasApi = Boolean(getFdcApiKey());
-  const strongLocal =
-    rankedLocal[0] != null && rankedLocal[0].score >= STRONG_LOCAL_SCORE;
 
-  let apiGeneralSorted: FdcSearchFood[] = [];
-  let apiBrandedSorted: FdcSearchFood[] = [];
-
-  if (hasApi && !strongLocal) {
-    const [gen, br] = await Promise.all([
-      fdcSearchFoodsCached(svc, term),
-      fdcSearchFoodsCached(svc, term, { dataType: "Branded" }),
-    ]);
-    apiGeneralSorted = rankApiHits(gen);
-    apiBrandedSorted = rankApiHits(br);
+  if (!hasApi || apiSearchDisabled) {
+    const merged = mergeAllSources(rankedLocal, [], []);
+    return resolveFromMergedEntries(svc, merged, grams, apiSearchDisabled, false);
   }
 
-  if (strongLocal && rankedLocal.length > 0) {
-    const sortedLocalOnly = dedupeMerged(rankedLocal.map(mergedEntryFromLocal));
-    if (
-      sortedLocalOnly.length >= 2 &&
-      isAmbiguousPair(sortedLocalOnly[0], sortedLocalOnly[1])
-    ) {
-      return {
-        ...empty,
-        grams,
-        estimation_reason: "Multiple plausible USDA matches — pick a food below.",
-        fdc_candidates: toFdcCandidates(sortedLocalOnly),
-      };
-    }
-    const best = sortedLocalOnly[0]!;
-    const resolved = await buildFdcResolvedLine(svc, best.fdc_id, grams, best.normScore);
-    if (resolved) {
-      return { ...resolved, fdc_candidates: [] };
-    }
-    return {
-      ...empty,
-      fdc_id: best.fdc_id,
-      fdc_match_score: best.normScore,
-      grams,
-      line_nutrition_source: "unresolved",
-      estimation_reason: "Nutrients unavailable for matched food.",
-      fdc_candidates: dedupeCandidates([
-        { fdc_id: best.fdc_id, description: best.description, score: best.normScore },
-      ]),
-    };
+  const [gen, br] = await Promise.all([
+    fdcSearchFoodsWithOutcome(svc, term),
+    fdcSearchFoodsWithOutcome(svc, term, { dataType: "Branded" }),
+  ]);
+
+  const searchLimited =
+    gen.kind === "rate_limited" ||
+    gen.kind === "quota_exhausted" ||
+    br.kind === "rate_limited" ||
+    br.kind === "quota_exhausted";
+
+  if (searchLimited) {
+    const merged = mergeAllSources(rankedLocal, [], []);
+    return resolveFromMergedEntries(svc, merged, grams, false, true);
   }
 
-  const merged = mergeAllSources(rankedLocal, apiGeneralSorted, apiBrandedSorted);
+  const genHits = gen.kind === "ok" ? rankApiHits(gen.foods) : [];
+  const brHits = br.kind === "ok" ? rankApiHits(br.foods) : [];
 
-  if (merged.length === 0) {
-    return {
-      ...empty,
-      grams,
-      estimation_reason: "No confident FDC food match.",
-      fdc_candidates: [],
-    };
+  const apiMerged = mergeAllSources([], genHits, brHits);
+
+  if (apiMerged.length > 0) {
+    return resolveFromMergedEntries(svc, apiMerged, grams, false, false);
   }
 
-  const top = merged[0];
-  const second = merged[1];
-  if (second && isAmbiguousPair(top, second)) {
-    return {
-      ...empty,
-      grams,
-      estimation_reason: "Multiple plausible USDA matches — pick a food below.",
-      fdc_candidates: toFdcCandidates(merged),
-    };
-  }
-
-  const chosen = top;
-  const resolved = await buildFdcResolvedLine(svc, chosen.fdc_id, grams, chosen.normScore);
-  if (!resolved) {
-    return {
-      ...empty,
-      fdc_id: chosen.fdc_id,
-      fdc_match_score: chosen.normScore,
-      grams,
-      line_nutrition_source: "unresolved",
-      estimation_reason: "Nutrients unavailable for matched food.",
-      fdc_candidates: dedupeCandidates([
-        ...toFdcCandidates(merged),
-        {
-          fdc_id: chosen.fdc_id,
-          description: chosen.description,
-          score: chosen.normScore,
-        },
-      ]),
-    };
-  }
-
-  return {
-    ...resolved,
-    fdc_candidates: [],
-  };
+  const merged = mergeAllSources(rankedLocal, [], []);
+  return resolveFromMergedEntries(svc, merged, grams, false, false);
 }

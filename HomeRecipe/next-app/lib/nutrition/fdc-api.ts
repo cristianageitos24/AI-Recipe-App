@@ -4,10 +4,18 @@ import { FDC_NUTRIENT } from "@/lib/nutrition/constants";
 
 const FDC_BASE = "https://api.nal.usda.gov/fdc/v1";
 const CACHE_TTL_MS = 90 * 24 * 60 * 60 * 1000;
+const MAX_429_ATTEMPTS = 5;
 
 export function getFdcApiKey(): string | null {
   const k = process.env.USDA_FDC_API_KEY || process.env.FDC_API_KEY;
   return k?.trim() || null;
+}
+
+export function getFdcHourlySoftCap(): number {
+  const raw = process.env.FDC_HOURLY_SOFT_CAP?.trim();
+  if (!raw) return 900;
+  const n = parseInt(raw, 10);
+  return Number.isFinite(n) && n >= 1 ? n : 900;
 }
 
 function normalizeSearchQuery(q: string): string {
@@ -45,23 +53,64 @@ export type FdcSearchResponse = {
   }>;
 };
 
+export type FdcSearchOutcome =
+  | { kind: "ok"; foods: FdcSearchFood[] }
+  | { kind: "rate_limited" }
+  | { kind: "quota_exhausted" }
+  | { kind: "error" };
+
 async function sleep(ms: number): Promise<void> {
   await new Promise((r) => setTimeout(r, ms));
 }
 
-async function fetchWithRetry(url: string, init: RequestInit, label: string): Promise<Response> {
-  let attempt = 0;
-  let delay = 800;
-  while (attempt < 5) {
-    const res = await fetch(url, { ...init, cache: "no-store" });
-    if (res.status !== 429) return res;
-    const retryAfter = res.headers.get("retry-after");
-    const wait = retryAfter ? parseInt(retryAfter, 10) * 1000 : delay;
-    await sleep(Number.isFinite(wait) && wait > 0 ? wait : delay);
-    delay = Math.min(delay * 2, 30_000);
-    attempt += 1;
+type ReserveJson = { allowed?: boolean; outbound_calls_after?: number };
+
+async function reserveOutboundSlot(svc: SupabaseClient): Promise<ReserveJson> {
+  const cap = getFdcHourlySoftCap();
+  const { data, error } = await svc.rpc("fdc_reserve_outbound_slot", { p_cap: cap });
+  if (error) {
+    console.warn("fdc_reserve_outbound_slot", error.message);
+    return { allowed: false, outbound_calls_after: 0 };
   }
-  throw new Error(`${label}: too many 429 responses`);
+  return (data ?? {}) as ReserveJson;
+}
+
+/**
+ * Reserve quota then fetch USDA; each 429 retry reserves again and issues another fetch (per spec).
+ */
+async function fetchUsdaWithQuota(
+  svc: SupabaseClient,
+  url: string,
+  init: RequestInit
+): Promise<
+  | { kind: "response"; res: Response }
+  | { kind: "quota_exhausted" }
+  | { kind: "rate_limited" }
+  | { kind: "fetch_error"; err: unknown }
+> {
+  let delay = 800;
+  for (let attempt = 0; attempt < MAX_429_ATTEMPTS; attempt++) {
+    const slot = await reserveOutboundSlot(svc);
+    if (!slot.allowed) {
+      return { kind: "quota_exhausted" };
+    }
+    try {
+      const res = await fetch(url, { ...init, cache: "no-store" });
+      if (res.status !== 429) {
+        return { kind: "response", res };
+      }
+      if (attempt === MAX_429_ATTEMPTS - 1) {
+        return { kind: "rate_limited" };
+      }
+      const retryAfter = res.headers.get("retry-after");
+      const wait = retryAfter ? parseInt(retryAfter, 10) * 1000 : delay;
+      await sleep(Number.isFinite(wait) && wait > 0 ? wait : delay);
+      delay = Math.min(delay * 2, 30_000);
+    } catch (err) {
+      return { kind: "fetch_error", err };
+    }
+  }
+  return { kind: "rate_limited" };
 }
 
 function searchCacheDataTypeKey(options?: FdcSearchOptions): string {
@@ -71,14 +120,16 @@ function searchCacheDataTypeKey(options?: FdcSearchOptions): string {
   return `search_${slug}_v1`;
 }
 
-export async function fdcSearchFoodsCached(
+export async function fdcSearchFoodsWithOutcome(
   svc: SupabaseClient,
   query: string,
   options?: FdcSearchOptions
-): Promise<FdcSearchFood[]> {
+): Promise<FdcSearchOutcome> {
   const apiKey = getFdcApiKey();
   const qn = normalizeSearchQuery(query);
-  if (!qn) return [];
+  if (!qn) {
+    return { kind: "ok", foods: [] };
+  }
 
   const cacheFilter = searchCacheDataTypeKey(options);
 
@@ -91,11 +142,11 @@ export async function fdcSearchFoodsCached(
 
   if (cached?.payload && isCacheFresh(cached.fetched_at as string)) {
     const parsed = cached.payload as FdcSearchResponse;
-    return mapSearchFoods(parsed);
+    return { kind: "ok", foods: mapSearchFoods(parsed) };
   }
 
   if (!apiKey) {
-    return [];
+    return { kind: "ok", foods: [] };
   }
 
   const params = new URLSearchParams({
@@ -110,14 +161,31 @@ export async function fdcSearchFoodsCached(
 
   const url = `${FDC_BASE}/foods/search?${params.toString()}`;
 
-  const res = await fetchWithRetry(url, { method: "GET" }, "fdcSearch");
-  if (!res.ok) {
-    console.warn("fdcSearchFoodsCached HTTP", res.status);
-    return [];
+  const fetched = await fetchUsdaWithQuota(svc, url, { method: "GET" });
+  if (fetched.kind === "quota_exhausted") {
+    return { kind: "quota_exhausted" };
+  }
+  if (fetched.kind === "rate_limited") {
+    return { kind: "rate_limited" };
+  }
+  if (fetched.kind === "fetch_error") {
+    return { kind: "error" };
   }
 
-  const json = (await res.json()) as FdcSearchResponse;
-  await svc.from("fdc_api_cache").upsert(
+  const res = fetched.res;
+  if (!res.ok) {
+    console.warn("fdcSearchFoodsWithOutcome HTTP", res.status);
+    return { kind: "error" };
+  }
+
+  let json: FdcSearchResponse;
+  try {
+    json = (await res.json()) as FdcSearchResponse;
+  } catch {
+    return { kind: "error" };
+  }
+
+  const { error: upsertErr } = await svc.from("fdc_api_cache").upsert(
     {
       query_normalized: `search:${qn}`,
       data_type_filter: cacheFilter,
@@ -126,8 +194,22 @@ export async function fdcSearchFoodsCached(
     },
     { onConflict: "query_normalized,data_type_filter" }
   );
+  if (upsertErr) {
+    console.warn("fdc_api_cache search upsert", upsertErr.message);
+  }
 
-  return mapSearchFoods(json);
+  return { kind: "ok", foods: mapSearchFoods(json) };
+}
+
+/** Legacy helper: maps non-quota outcomes to an empty list. Prefer `fdcSearchFoodsWithOutcome`. */
+export async function fdcSearchFoodsCached(
+  svc: SupabaseClient,
+  query: string,
+  options?: FdcSearchOptions
+): Promise<FdcSearchFood[]> {
+  const o = await fdcSearchFoodsWithOutcome(svc, query, options);
+  if (o.kind === "ok") return o.foods;
+  return [];
 }
 
 function mapSearchFoods(json: FdcSearchResponse): FdcSearchFood[] {
@@ -179,9 +261,15 @@ function nutrientsFromFoodNutrients(
   return { kcal, protein_g: p, fat_g: f, carb_g: c };
 }
 
+export type FdcFoodDetailOptions = {
+  /** When true, do not call USDA (cache read only after DB miss at caller). */
+  skipLiveUsdaDetail?: boolean;
+};
+
 export async function fdcFoodDetailCached(
   svc: SupabaseClient,
-  fdcId: number
+  fdcId: number,
+  opts?: FdcFoodDetailOptions
 ): Promise<NutrientsPer100g | null> {
   const apiKey = getFdcApiKey();
   const key = `food:${fdcId}`;
@@ -203,19 +291,33 @@ export async function fdcFoodDetailCached(
     if (n) return n;
   }
 
-  if (!apiKey) {
+  if (opts?.skipLiveUsdaDetail || !apiKey) {
     return null;
   }
 
   const url = `${FDC_BASE}/food/${fdcId}?api_key=${encodeURIComponent(apiKey)}`;
-  const res = await fetchWithRetry(url, { method: "GET" }, "fdcFoodDetail");
+  const fetched = await fetchUsdaWithQuota(svc, url, { method: "GET" });
+  if (fetched.kind === "quota_exhausted" || fetched.kind === "rate_limited") {
+    return null;
+  }
+  if (fetched.kind === "fetch_error") {
+    return null;
+  }
+
+  const res = fetched.res;
   if (!res.ok) {
     console.warn("fdcFoodDetailCached HTTP", res.status);
     return null;
   }
 
-  const json = (await res.json()) as { foodNutrients?: Parameters<typeof nutrientsFromFoodNutrients>[0] };
-  await svc.from("fdc_api_cache").upsert(
+  let json: { foodNutrients?: Parameters<typeof nutrientsFromFoodNutrients>[0] };
+  try {
+    json = (await res.json()) as { foodNutrients?: Parameters<typeof nutrientsFromFoodNutrients>[0] };
+  } catch {
+    return null;
+  }
+
+  const { error: upsertErr } = await svc.from("fdc_api_cache").upsert(
     {
       query_normalized: key,
       data_type_filter: "detail_v1",
@@ -224,6 +326,9 @@ export async function fdcFoodDetailCached(
     },
     { onConflict: "query_normalized,data_type_filter" }
   );
+  if (upsertErr) {
+    console.warn("fdc_api_cache detail upsert", upsertErr.message);
+  }
 
   return nutrientsFromFoodNutrients(json.foodNutrients ?? []);
 }
