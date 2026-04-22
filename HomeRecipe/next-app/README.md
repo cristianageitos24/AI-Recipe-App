@@ -61,6 +61,11 @@ Apply migrations with the **Supabase CLI** (`supabase link` and `supabase db pus
 | 6 | `006_drop_user_recipes.sql` | Drop unused user_recipes |
 | 7 | `007_ingredients_table.sql` | Legacy `ingredients` table (historical; **dropped by `030`** on linked DBs) |
 | 8 | `008_recipes_search_indexes.sql` | Search indexes + recommended RPC |
+| 9 | `009_ensure_search_indexes.sql` | Idempotent search index safety |
+| 10-30 | `010` through `030` | Video jobs, storage, user scoping, grocery, FDC nutrition, and cleanup migrations |
+| 31 | `031_legacy_recipes_archive.sql` | Archive table + RLS hardening (`legacy_recipes_archive`) |
+| 32 | `032_backfill_legacy_recipes_archive.sql` | Snapshot backfill + strict pre-wipe verification gate |
+| 33 | `033_cross_table_alignment_indexes.sql` | Additive cross-table recipe-centric indexes |
 
 See `supabase/README.md` for schema and RLS details. If you haven’t applied `008` yet, the app still works: “Recommended for you” uses a fallback query until the `get_random_recipes` RPC exists.
 
@@ -72,9 +77,16 @@ Migration **`027_grocery_tables.sql`** defines `grocery_items` (checklist rows) 
 
 Migration **`030_drop_legacy_ingredients_table.sql`** drops **`public.ingredients`**. **`007_ingredients_table.sql`** remains in the chain for fresh databases (create → later drop). Autocomplete uses **`fdc_foods`** only.
 
-## Recipe data (Open Recipes)
+## Recipe data strategy (MVP)
 
-To populate the app with recipes and enable search/suggestions:
+The default launch model is **user-generated growth** (manual, URL import, video extraction) with optional small curated seeds.
+
+- Bulk shared-catalog import is **not required** for day-one correctness.
+- Shared/seed recipes without nutrition sync should be shown as incomplete/not-computed in product UX.
+
+### Optional bulk Open Recipes import (deferred by default)
+
+If you explicitly want a large shared catalog for testing or a later product phase:
 
 1. Apply all migrations (including `007` then `030`, which removes the legacy `ingredients` table).
 2. Run the import script (requires `SUPABASE_SECRET_KEY` in `.env.local`):
@@ -84,6 +96,12 @@ npm run import:recipes    # Imports recipes from Open Recipes (~230k recipes)
 ```
 
 The script downloads `recipeitems-latest.json.gz` (~200MB) and imports into the `recipes` table.
+
+### Archive + wipe operational flow
+
+- Apply migrations through `033`.
+- Run `supabase/ops/archive_verify_and_wipe_recipes.sql` as database owner or service role when you are ready for a full reset.
+- Follow `supabase/archive-and-fdc-alignment-checklist.md` for phased execution and smoke checks.
 
 ## Build
 
