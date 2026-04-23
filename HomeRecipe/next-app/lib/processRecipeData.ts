@@ -293,6 +293,47 @@ export function urlImportToDraftRecipeRow(payload: RecipePayload): RecipeRow {
   };
 }
 
+/** Draft row for video/TikTok extraction preview — same template id as URL import draft. */
+export function videoExtractionToDraftRecipeRow(
+  edited: {
+    title: string;
+    ingredientLines: string[];
+    steps: string[];
+    cookTimeMinutes: number;
+    servings: number | null;
+    imageUrl: string;
+  },
+  jobId: string,
+  opts: { sourceUrl: string | null; thumbnailUrl: string | null }
+): RecipeRow {
+  const payload = buildVideoRecipePayload(
+    {
+      title: edited.title,
+      ingredientLines: edited.ingredientLines,
+      cookTimeMinutes: edited.cookTimeMinutes,
+      steps: edited.steps,
+    },
+    jobId,
+    {
+      sourceUrl: opts.sourceUrl,
+      imageUrl: edited.imageUrl?.trim() || opts.thumbnailUrl?.trim() || null,
+    }
+  );
+  return {
+    id: URL_IMPORT_DRAFT_ROW_ID,
+    recipe_id: payload.recipeID,
+    recipe_label: payload.recipe_label,
+    calories: payload.calories,
+    cuisine_type: payload.cuisine_type,
+    meal_type: edited.servings != null ? String(edited.servings) : null,
+    time_in_minutes: payload.time_in_minutes,
+    ingredient_lines: payload.ingredient_lines,
+    steps: payload.steps,
+    website_url: payload.website_url,
+    image_url: payload.image_url,
+  };
+}
+
 export function isUrlImportSaveable(imported: UrlImportedRecipe | null): boolean {
   if (!imported) return false;
   const title = imported.title?.trim() ?? "";

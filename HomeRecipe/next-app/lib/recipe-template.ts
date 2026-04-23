@@ -160,7 +160,7 @@ export function buildRecipeTemplateData(row: RecipeRow): RecipeTemplateData {
         .map((text, i) => ({ index: i, text }))
     : [];
 
-  const cookMinutes = row.time_in_minutes < 1 ? 1 : row.time_in_minutes;
+  const cookMinutes = Math.max(0, Number(row.time_in_minutes) || 0);
   const snap = pickNutritionSnapshot(row);
   const energy = formatRecipeEnergyKcalDisplay(row);
 

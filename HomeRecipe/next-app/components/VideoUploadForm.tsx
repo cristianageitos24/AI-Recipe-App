@@ -3,13 +3,20 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { getVideoJob, type VideoJob } from "@/app/actions/video-jobs";
-import { buildVideoRecipePayload } from "@/lib/processRecipeData";
+import { addGroceryItem, addGroceryItems } from "@/app/actions/grocery-items";
+import {
+  buildVideoRecipePayload,
+  videoExtractionToDraftRecipeRow,
+} from "@/lib/processRecipeData";
+import { buildRecipeTemplateData, splitIngredientLineForTemplate } from "@/lib/recipe-template";
 import type { ExtractedRecipe, ExtractedRecipeIngredient } from "@/lib/types";
 import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
+import { RecipeTemplateShell } from "@/components/RecipeTemplateShell";
 import { formatInstantLocal } from "@/lib/formatTimestamps";
 import { classifyUrlForIngest } from "@/lib/url-ingest-classification";
 import "@/app/styling/VideoUpload.css";
 import "@/app/styling/RecipeTemplateShell.css";
+import "@/app/styling/RecipeFullView.css";
 
 const JOB_POLL_MS = 1750;
 
@@ -54,20 +61,12 @@ function formatElapsedMs(ms: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function parseTikTokSourceLine(url: string | null): { handle: string | null; line: string } {
-  if (!url?.trim()) return { handle: null, line: "" };
-  const t = url.trim();
-  let handle: string | null = null;
-  try {
-    const m = new URL(t).pathname.match(/@([^/]+)/);
-    if (m) handle = `@${m[1]}`;
-  } catch {
-    /* ignore */
-  }
-  const short = t.length > 52 ? `${t.slice(0, 49)}…` : t;
-  const line =
-    handle != null ? `${handle} · Recipe on TikTok` : short;
-  return { handle, line };
+function mergeIngredientParts(qty: string, name: string): string {
+  const q = qty.trim();
+  const n = name.trim();
+  if (!q) return n;
+  if (!n) return q;
+  return `${q} ${n}`;
 }
 
 function buildRecipePlainText(
@@ -113,65 +112,14 @@ function IconLink() {
   );
 }
 
-function IconUser() {
+function AddToGroceryIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="none">
-      <path
-        d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function IconChefHat() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="none">
-      <path
-        d="M6 13.87A4 4 0 0 1 7.41 6a4 4 0 0 1 6.93 1.5A4 4 0 0 1 18 9c0 2.22-1.8 4-4 4H6M6 17v4h12v-4"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function IconForkKnife() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="none">
-      <path
-        d="M8 3v9a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V3M8 3c0 2 1.5 3 2 3s2-1 2-3M8 3h4M16 3v18M16 3c0-1 1.5-2 3-2s3 1 3 2v6c0 1-1 2-3 2"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function IconServings() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden fill="none">
-      <path
-        d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function IconClock() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden fill="none">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-      <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="9" cy="21" r="1" />
+      <circle cx="20" cy="21" r="1" />
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+      <line x1="12" y1="8" x2="12" y2="12" />
+      <line x1="10" y1="10" x2="14" y2="10" />
     </svg>
   );
 }
@@ -303,9 +251,9 @@ export function VideoUploadForm({
   const [jobStatus, setJobStatus] = useState<VideoJob | null>(null);
   const [editedRecipe, setEditedRecipe] = useState<EditedRecipeState | null>(null);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"recipe" | "nutrition">("recipe");
   const [copyHint, setCopyHint] = useState<string | null>(null);
-  const [recipeThumbFailed, setRecipeThumbFailed] = useState(false);
+  const [groceryFeedback, setGroceryFeedback] = useState<string | null>(null);
+  const [addAllBusy, setAddAllBusy] = useState(false);
   const copyHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [elapsedTick, setElapsedTick] = useState(0);
@@ -338,21 +286,21 @@ export function VideoUploadForm({
     return Math.max(0, Math.min(100, Math.round(raw)));
   }, [jobStatus?.processing_progress]);
 
-  const sourceLine = useMemo(
-    () => parseTikTokSourceLine(jobStatus?.tiktok_url ?? null),
-    [jobStatus?.tiktok_url]
+  const draftRecipeRow = useMemo(
+    () =>
+      jobId && editedRecipe
+        ? videoExtractionToDraftRecipeRow(editedRecipe, jobId, {
+            sourceUrl: jobStatus?.tiktok_url ?? null,
+            thumbnailUrl: jobStatus?.thumbnail_url ?? null,
+          })
+        : null,
+    [jobId, editedRecipe, jobStatus?.tiktok_url, jobStatus?.thumbnail_url]
   );
 
-  const recipeThumbSrc = useMemo(() => {
-    const fromEdited = editedRecipe?.imageUrl?.trim();
-    const fromJob = jobStatus?.thumbnail_url?.trim();
-    const u = fromEdited || fromJob;
-    return u || null;
-  }, [editedRecipe?.imageUrl, jobStatus?.thumbnail_url]);
-
-  useEffect(() => {
-    setRecipeThumbFailed(false);
-  }, [recipeThumbSrc]);
+  const recipeTemplate = useMemo(
+    () => (draftRecipeRow ? buildRecipeTemplateData(draftRecipeRow) : null),
+    [draftRecipeRow]
+  );
 
   const copyRecipe = useCallback(async () => {
     if (!editedRecipe) return;
@@ -371,6 +319,35 @@ export function VideoUploadForm({
       copyHintTimer.current = setTimeout(() => setCopyHint(null), 2200);
     }
   }, [editedRecipe, jobStatus?.tiktok_url]);
+
+  const handleAddIngredient = useCallback(async (item: string) => {
+    const res = await addGroceryItem(item);
+    if (res.error) {
+      setGroceryFeedback(res.error);
+    } else if (res.duplicate) {
+      setGroceryFeedback("Already in list");
+    } else {
+      setGroceryFeedback("Added");
+    }
+    setTimeout(() => setGroceryFeedback(null), 2000);
+  }, []);
+
+  const handleAddAllIngredients = useCallback(async () => {
+    if (!editedRecipe || addAllBusy) return;
+    const lines = editedRecipe.ingredientLines.map((s) => s.trim()).filter(Boolean);
+    if (lines.length === 0) return;
+    setAddAllBusy(true);
+    const res = await addGroceryItems(lines);
+    if (res.error) {
+      setGroceryFeedback(res.error);
+    } else if (res.added === 0 && res.skipped > 0) {
+      setGroceryFeedback("All already in list");
+    } else if (res.added > 0) {
+      setGroceryFeedback(null);
+    }
+    setAddAllBusy(false);
+    setTimeout(() => setGroceryFeedback(null), 2000);
+  }, [editedRecipe, addAllBusy]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -444,7 +421,6 @@ export function VideoUploadForm({
 
       setJobId(data.jobId);
       setEditedRecipe(null);
-      setActiveTab("recipe");
       setJobStatus({
         id: data.jobId,
         status: data.status,
@@ -680,142 +656,163 @@ export function VideoUploadForm({
           )}
 
           <AnimatePresence initial={false}>
-            {jobStatus.status === "done" && editedRecipe ? (
+            {jobStatus.status === "done" && editedRecipe && recipeTemplate && jobId ? (
               <motion.div
                 key="video-editor"
-                className="video-recipe-editor"
+                className="video-recipe-template-embed"
                 layout={homeMotionEnabled}
                 initial={homeMotionEnabled ? { opacity: 0, y: 8 } : false}
                 animate={homeMotionEnabled ? { opacity: 1, y: 0 } : undefined}
                 transition={layoutTransition}
               >
-              <label htmlFor="video-recipe-title" className="video-recipe-editor-label">
-                Recipe name
-              </label>
-              <div className="video-recipe-header-row">
-                {recipeThumbSrc && !recipeThumbFailed ? (
-                  <div className="video-recipe-thumb-wrap">
-                    <img
-                      src={recipeThumbSrc}
-                      alt={editedRecipe.title.trim() || "Recipe thumbnail"}
-                      className="video-recipe-thumb"
-                      onError={() => setRecipeThumbFailed(true)}
-                    />
-                  </div>
-                ) : null}
-                <div className="video-recipe-title-block">
-                  <input
-                    id="video-recipe-title"
-                    type="text"
-                    className="form-input video-recipe-title-input"
-                    value={editedRecipe.title}
-                    onChange={(e) =>
-                      setEditedRecipe((prev) =>
-                        prev ? { ...prev, title: e.target.value } : null
-                      )
-                    }
-                    placeholder="Recipe name"
-                  />
-                  {jobStatus.tiktok_url ? (
-                    <p className="video-recipe-source" title={jobStatus.tiktok_url}>
-                      <IconUser />
-                      <span className="video-recipe-source-text">{sourceLine.line}</span>
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-
-              <div
-                className="recipe-template-stats"
-                style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", marginTop: 12 }}
-              >
-                <div className="recipe-template-stat-card">
-                  <div className="recipe-template-stat-icon" aria-hidden>
-                    <IconServings />
-                  </div>
-                  <div className="recipe-template-stat-value">
-                    {editedRecipe.servings != null ? editedRecipe.servings : "—"}
-                  </div>
-                  <div className="recipe-template-stat-label">Servings</div>
-                </div>
-                <div className="recipe-template-stat-card">
-                  <div className="recipe-template-stat-icon" aria-hidden>
-                    <IconClock />
-                  </div>
-                  <div className="recipe-template-stat-value">
-                    {editedRecipe.cookTimeMinutes > 0
-                      ? `${editedRecipe.cookTimeMinutes} min`
-                      : "—"}
-                  </div>
-                  <div className="recipe-template-stat-label">Cook time</div>
-                </div>
-              </div>
-
-              <div
-                className="recipe-template-tabs"
-                style={{ marginTop: 20, borderBottom: "2px solid var(--gray-200)" }}
-              >
-                <button
-                  type="button"
-                  className={`recipe-template-tab ${activeTab === "recipe" ? "is-active" : ""}`}
-                  onClick={() => setActiveTab("recipe")}
-                >
-                  Cook
-                </button>
-                <button
-                  type="button"
-                  className={`recipe-template-tab ${activeTab === "nutrition" ? "is-active" : ""}`}
-                  onClick={() => setActiveTab("nutrition")}
-                >
-                  Nutrition &amp; Details
-                </button>
-              </div>
-
-              <div className="video-recipe-tab-panel">
-                {activeTab === "recipe" && (
-                  <div className="video-recipe-split">
-                    <div className="video-recipe-ingredients">
-                      <h4 className="video-recipe-column-title">
-                        <IconChefHat />
-                        Ingredients
-                      </h4>
-                      {editedRecipe.ingredientLines.map((line, i) => (
-                        <div key={i} className="video-recipe-line-row">
-                          <span className="video-recipe-ingredient-bullet" aria-hidden />
-                          <input
-                            type="text"
-                            className="form-input video-recipe-line-input"
-                            value={line}
-                            onChange={(e) => {
-                              const next = [...editedRecipe.ingredientLines];
-                              next[i] = e.target.value;
-                              setEditedRecipe((prev) =>
-                                prev ? { ...prev, ingredientLines: next } : null
-                              );
-                            }}
-                            placeholder="Ingredient"
-                          />
-                          <button
-                            type="button"
-                            className="video-recipe-remove-btn"
-                            onClick={() => {
-                              const next = editedRecipe.ingredientLines.filter(
-                                (_, idx) => idx !== i
-                              );
-                              if (next.length === 0) next.push("");
-                              setEditedRecipe((prev) =>
-                                prev ? { ...prev, ingredientLines: next } : null
-                              );
-                            }}
-                            aria-label="Remove ingredient"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
+                <RecipeTemplateShell
+                  template={recipeTemplate}
+                  draftTitle={{
+                    value: editedRecipe.title,
+                    onChange: (value) =>
+                      setEditedRecipe((prev) => (prev ? { ...prev, title: value } : null)),
+                    placeholder: "Recipe name",
+                  }}
+                  favoriteSlot={
+                    <div className="video-draft-header-actions">
                       <button
                         type="button"
-                        className="video-recipe-add-btn"
+                        className="video-recipe-copy-btn"
+                        onClick={() => void copyRecipe()}
+                      >
+                        Copy recipe
+                      </button>
+                      {copyHint ? (
+                        <span className="video-recipe-copy-hint" role="status">
+                          {copyHint}
+                        </span>
+                      ) : null}
+                      <button
+                        type="button"
+                        className="submit-button video-recipe-save-btn"
+                        onClick={() => setSaveModalOpen(true)}
+                      >
+                        Save to cookbook
+                      </button>
+                    </div>
+                  }
+                  mobileSaveSlot={
+                    <div className="video-draft-mobile-cta">
+                      <button
+                        type="button"
+                        className="video-recipe-copy-btn"
+                        onClick={() => void copyRecipe()}
+                      >
+                        Copy recipe
+                      </button>
+                      <button
+                        type="button"
+                        className="submit-button video-recipe-save-btn"
+                        onClick={() => setSaveModalOpen(true)}
+                      >
+                        Save to cookbook
+                      </button>
+                    </div>
+                  }
+                  cookIngredientsPanel={
+                    <>
+                      <div className="recipe-template-panel-head">
+                        <h2 className="recipe-template-panel-title">
+                          <span aria-hidden>🛒</span> Ingredients
+                        </h2>
+                        {editedRecipe.ingredientLines.some((s) => s.trim()) ? (
+                          <button
+                            type="button"
+                            className="recipe-template-link-accent"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void handleAddAllIngredients();
+                            }}
+                            disabled={addAllBusy}
+                          >
+                            {addAllBusy ? "Adding…" : "+ Add to grocery list"}
+                          </button>
+                        ) : null}
+                      </div>
+                      {groceryFeedback ? (
+                        <p role="status" className="recipe-fullview-grocery-feedback">
+                          {groceryFeedback}
+                        </p>
+                      ) : null}
+                      <ul
+                        className="recipe-ingredients-list"
+                        style={{ listStyle: "none", margin: 0, padding: 0 }}
+                      >
+                        {editedRecipe.ingredientLines.map((line, i) => {
+                          const { displayName, displayQuantity } =
+                            splitIngredientLineForTemplate(line);
+                          const rawLine = line.trim();
+                          return (
+                            <li key={i} className="recipe-template-ingredient-row">
+                              <input type="checkbox" disabled aria-hidden />
+                              <input
+                                type="text"
+                                className="recipe-template-ingredient-name video-draft-input-plain"
+                                value={displayName}
+                                onChange={(e) => {
+                                  const next = [...editedRecipe.ingredientLines];
+                                  next[i] = mergeIngredientParts(displayQuantity, e.target.value);
+                                  setEditedRecipe((prev) =>
+                                    prev ? { ...prev, ingredientLines: next } : null
+                                  );
+                                }}
+                                placeholder="Ingredient"
+                                aria-label={`Ingredient ${i + 1} name`}
+                              />
+                              <input
+                                type="text"
+                                className="recipe-template-ingredient-qty video-draft-input-plain"
+                                value={displayQuantity}
+                                onChange={(e) => {
+                                  const next = [...editedRecipe.ingredientLines];
+                                  next[i] = mergeIngredientParts(e.target.value, displayName);
+                                  setEditedRecipe((prev) =>
+                                    prev ? { ...prev, ingredientLines: next } : null
+                                  );
+                                }}
+                                placeholder="Qty"
+                                aria-label={`Ingredient ${i + 1} quantity`}
+                              />
+                              <button
+                                type="button"
+                                className="recipe-ingredient-add-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (rawLine) void handleAddIngredient(rawLine);
+                                }}
+                                disabled={!rawLine}
+                                aria-label={`Add ${rawLine || "ingredient"} to grocery list`}
+                              >
+                                <AddToGroceryIcon />
+                              </button>
+                              <button
+                                type="button"
+                                className="video-recipe-remove-btn"
+                                onClick={() => {
+                                  const next = editedRecipe.ingredientLines.filter(
+                                    (_, idx) => idx !== i
+                                  );
+                                  if (next.length === 0) next.push("");
+                                  setEditedRecipe((prev) =>
+                                    prev ? { ...prev, ingredientLines: next } : null
+                                  );
+                                }}
+                                aria-label="Remove ingredient"
+                              >
+                                ×
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <button
+                        type="button"
+                        className="recipe-template-show-more"
                         onClick={() =>
                           setEditedRecipe((prev) =>
                             prev
@@ -826,47 +823,52 @@ export function VideoUploadForm({
                       >
                         + Add ingredient
                       </button>
-                    </div>
-                    <div className="video-recipe-steps">
-                      <h4 className="video-recipe-column-title">
-                        <IconForkKnife />
-                        Instructions
-                      </h4>
-                      {editedRecipe.steps.map((step, i) => (
-                        <div key={i} className="video-recipe-step-row">
-                          <span className="video-recipe-step-num">{i + 1}</span>
-                          <textarea
-                            className="form-input video-recipe-step-input"
-                            value={step}
-                            onChange={(e) => {
-                              const next = [...editedRecipe.steps];
-                              next[i] = e.target.value;
-                              setEditedRecipe((prev) =>
-                                prev ? { ...prev, steps: next } : null
-                              );
-                            }}
-                            placeholder="Step"
-                            rows={3}
-                          />
-                          <button
-                            type="button"
-                            className="video-recipe-remove-btn"
-                            onClick={() => {
-                              const next = editedRecipe.steps.filter((_, idx) => idx !== i);
-                              if (next.length === 0) next.push("");
-                              setEditedRecipe((prev) =>
-                                prev ? { ...prev, steps: next } : null
-                              );
-                            }}
-                            aria-label="Remove step"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
+                    </>
+                  }
+                  cookInstructionsPanel={
+                    <>
+                      <div className="recipe-template-panel-head">
+                        <h2 className="recipe-template-panel-title">
+                          <span aria-hidden>👨‍🍳</span> Instructions
+                        </h2>
+                      </div>
+                      <ol className="recipe-template-steps-list">
+                        {editedRecipe.steps.map((step, i) => (
+                          <li key={i} className="recipe-template-step-card">
+                            <span className="recipe-template-step-num">{i + 1}</span>
+                            <textarea
+                              className="recipe-template-step-text video-draft-step-textarea"
+                              value={step}
+                              onChange={(e) => {
+                                const next = [...editedRecipe.steps];
+                                next[i] = e.target.value;
+                                setEditedRecipe((prev) =>
+                                  prev ? { ...prev, steps: next } : null
+                                );
+                              }}
+                              placeholder="Step"
+                              aria-label={`Step ${i + 1}`}
+                            />
+                            <button
+                              type="button"
+                              className="video-recipe-remove-btn"
+                              onClick={() => {
+                                const next = editedRecipe.steps.filter((_, idx) => idx !== i);
+                                if (next.length === 0) next.push("");
+                                setEditedRecipe((prev) =>
+                                  prev ? { ...prev, steps: next } : null
+                                );
+                              }}
+                              aria-label="Remove step"
+                            >
+                              ×
+                            </button>
+                          </li>
+                        ))}
+                      </ol>
                       <button
                         type="button"
-                        className="video-recipe-add-btn"
+                        className="recipe-template-show-more"
                         onClick={() =>
                           setEditedRecipe((prev) =>
                             prev ? { ...prev, steps: [...prev.steps, ""] } : null
@@ -875,99 +877,75 @@ export function VideoUploadForm({
                       >
                         + Add step
                       </button>
+                    </>
+                  }
+                  nutritionPanel={
+                    <div className="video-recipe-cooktime">
+                      <p className="video-recipe-nutrition-note">
+                        Full nutrition facts (calories, macros) are not extracted from video yet.
+                        You can adjust servings and timing here before saving.
+                      </p>
+                      <div className="form-group">
+                        <label htmlFor="video-recipe-servings">Servings (optional)</label>
+                        <input
+                          id="video-recipe-servings"
+                          type="number"
+                          min={1}
+                          className="form-input"
+                          value={editedRecipe.servings ?? ""}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            setEditedRecipe((prev) => {
+                              if (!prev) return null;
+                              if (raw === "") return { ...prev, servings: null };
+                              const n = parseInt(raw, 10);
+                              if (!Number.isFinite(n) || n < 1) return prev;
+                              return { ...prev, servings: n };
+                            });
+                          }}
+                          placeholder="e.g. 4"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor="video-recipe-cook-time">Cook time (minutes)</label>
+                        <input
+                          id="video-recipe-cook-time"
+                          type="number"
+                          min={0}
+                          className="form-input"
+                          value={editedRecipe.cookTimeMinutes || ""}
+                          onChange={(e) => {
+                            const v = e.target.value === "" ? 0 : parseInt(e.target.value, 10);
+                            setEditedRecipe((prev) =>
+                              prev
+                                ? {
+                                    ...prev,
+                                    cookTimeMinutes: Number.isFinite(v) ? v : 0,
+                                  }
+                                : null
+                            );
+                          }}
+                          placeholder="Not specified"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor="video-recipe-image-url">Image URL (optional)</label>
+                        <input
+                          id="video-recipe-image-url"
+                          type="url"
+                          className="form-input"
+                          value={editedRecipe.imageUrl}
+                          onChange={(e) =>
+                            setEditedRecipe((prev) =>
+                              prev ? { ...prev, imageUrl: e.target.value } : null
+                            )
+                          }
+                          placeholder="https://... or leave blank to use video frame"
+                        />
+                      </div>
                     </div>
-                  </div>
-                )}
-
-                {activeTab === "nutrition" && (
-                  <div className="video-recipe-cooktime">
-                    <p className="video-recipe-nutrition-note">
-                      Full nutrition facts (calories, macros) are not extracted from video yet.
-                      You can adjust servings and timing here before saving.
-                    </p>
-                    <div className="form-group">
-                      <label htmlFor="video-recipe-servings">Servings (optional)</label>
-                      <input
-                        id="video-recipe-servings"
-                        type="number"
-                        min={1}
-                        className="form-input"
-                        value={editedRecipe.servings ?? ""}
-                        onChange={(e) => {
-                          const raw = e.target.value;
-                          setEditedRecipe((prev) => {
-                            if (!prev) return null;
-                            if (raw === "") return { ...prev, servings: null };
-                            const n = parseInt(raw, 10);
-                            if (!Number.isFinite(n) || n < 1) return prev;
-                            return { ...prev, servings: n };
-                          });
-                        }}
-                        placeholder="e.g. 4"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="video-recipe-cook-time">Cook time (minutes)</label>
-                      <input
-                        id="video-recipe-cook-time"
-                        type="number"
-                        min={0}
-                        className="form-input"
-                        value={editedRecipe.cookTimeMinutes || ""}
-                        onChange={(e) => {
-                          const v = e.target.value === "" ? 0 : parseInt(e.target.value, 10);
-                          setEditedRecipe((prev) =>
-                            prev
-                              ? {
-                                  ...prev,
-                                  cookTimeMinutes: Number.isFinite(v) ? v : 0,
-                                }
-                              : null
-                          );
-                        }}
-                        placeholder="Not specified"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="video-recipe-image-url">Image URL (optional)</label>
-                      <input
-                        id="video-recipe-image-url"
-                        type="url"
-                        className="form-input"
-                        value={editedRecipe.imageUrl}
-                        onChange={(e) =>
-                          setEditedRecipe((prev) =>
-                            prev ? { ...prev, imageUrl: e.target.value } : null
-                          )
-                        }
-                        placeholder="https://... or leave blank to use video frame"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="video-recipe-actions-row">
-                <button
-                  type="button"
-                  className="video-recipe-copy-btn"
-                  onClick={() => void copyRecipe()}
-                >
-                  Copy recipe
-                </button>
-                {copyHint ? (
-                  <span className="video-recipe-copy-hint" role="status">
-                    {copyHint}
-                  </span>
-                ) : null}
-                <button
-                  type="button"
-                  className="submit-button video-recipe-save-btn"
-                  onClick={() => setSaveModalOpen(true)}
-                >
-                  Save to cookbook
-                </button>
-              </div>
+                  }
+                />
               </motion.div>
             ) : null}
           </AnimatePresence>

@@ -19,6 +19,12 @@ export type RecipeTemplateShellProps = {
   nutritionPanel: React.ReactNode;
   /** Optional sticky mobile CTA (e.g. full-width Save / Heart). */
   mobileSaveSlot?: React.ReactNode;
+  /** Replaces the static title (e.g. video extraction draft). */
+  draftTitle?: {
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+  };
 };
 
 function IconFlame() {
@@ -83,6 +89,7 @@ export function RecipeTemplateShell({
   cookInstructionsPanel,
   nutritionPanel,
   mobileSaveSlot,
+  draftTitle,
 }: RecipeTemplateShellProps) {
   const [tab, setTab] = useState<"cook" | "nutrition">("cook");
   const [moreOpen, setMoreOpen] = useState(false);
@@ -199,7 +206,19 @@ export function RecipeTemplateShell({
         </div>
 
         <div className="recipe-template-summary">
-          <h1 className="recipe-template-title">{template.title}</h1>
+          {draftTitle ? (
+            <input
+              type="text"
+              className="recipe-template-title recipe-template-title-input"
+              value={draftTitle.value}
+              onChange={(e) => draftTitle.onChange(e.target.value)}
+              placeholder={draftTitle.placeholder ?? "Recipe name"}
+              aria-label="Recipe name"
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <h1 className="recipe-template-title">{template.title}</h1>
+          )}
           {(template.sourceLine || template.creatorLine) && (
             <p className="recipe-template-meta-line">
               {template.sourceLine || template.creatorLine}
@@ -288,7 +307,9 @@ export function RecipeTemplateShell({
             </div>
             <div className="recipe-template-stat-card">
               <div className="recipe-template-stat-icon"><IconClock /></div>
-              <div className="recipe-template-stat-value">{template.times.totalMinutes} min</div>
+              <div className="recipe-template-stat-value">
+                {template.times.totalMinutes > 0 ? `${template.times.totalMinutes} min` : "—"}
+              </div>
               <div className="recipe-template-stat-label">Total time</div>
             </div>
             <div className="recipe-template-stat-card">

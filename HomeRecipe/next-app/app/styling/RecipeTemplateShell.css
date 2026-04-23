@@ -135,6 +135,22 @@
   letter-spacing: -0.02em;
 }
 
+.recipe-template-title-input {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.15s ease;
+}
+
+.recipe-template-title-input:focus {
+  outline: none;
+  border-bottom-color: var(--accent);
+}
+
+.recipe-template-title-input::placeholder {
+  color: var(--gray-400);
+}
+
 .recipe-template-meta-line {
   margin: 0;
   font-size: var(--text-sm);
