@@ -94,6 +94,9 @@ export type ExtractedRecipe = {
   cook_time_minutes: number | null;
   ingredients: ExtractedRecipeIngredient[];
   steps: string[];
+  /** Filled by the video worker via the same resolver used after save (FDC + AI). */
+  recipe_nutrition?: RecipeNutritionSnapshot | null;
+  recipe_ingredient_lines?: RecipeIngredientLineSnapshot[] | null;
 };
 
 /** JSON returned by the static URL recipe import service (`/api/recipes/import-url`) */

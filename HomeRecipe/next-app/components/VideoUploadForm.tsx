@@ -6,10 +6,12 @@ import { getVideoJob, type VideoJob } from "@/app/actions/video-jobs";
 import { addGroceryItem, addGroceryItems } from "@/app/actions/grocery-items";
 import {
   buildVideoRecipePayload,
+  formatExtractedIngredientLine,
   videoExtractionToDraftRecipeRow,
 } from "@/lib/processRecipeData";
+import { recipeNutritionSourceDetail } from "@/lib/nutrition/nutrition-display";
 import { buildRecipeTemplateData, splitIngredientLineForTemplate } from "@/lib/recipe-template";
-import type { ExtractedRecipe, ExtractedRecipeIngredient } from "@/lib/types";
+import type { ExtractedRecipe } from "@/lib/types";
 import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
 import { RecipeTemplateShell } from "@/components/RecipeTemplateShell";
 import { formatInstantLocal } from "@/lib/formatTimestamps";
@@ -67,6 +69,11 @@ function mergeIngredientParts(qty: string, name: string): string {
   if (!q) return n;
   if (!n) return q;
   return `${q} ${n}`;
+}
+
+function macroGDisplay(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return "—";
+  return `${Number(n).toFixed(0)}g`;
 }
 
 function buildRecipePlainText(
@@ -212,15 +219,6 @@ type EditedRecipeState = {
   imageUrl: string;
 };
 
-function formatIngredientLine(ing: ExtractedRecipeIngredient): string {
-  const parts: string[] = [];
-  if (ing.quantity != null) parts.push(String(ing.quantity));
-  if (ing.unit?.trim()) parts.push(ing.unit.trim());
-  parts.push(ing.item.trim());
-  if (ing.notes?.trim()) parts.push(ing.notes.trim());
-  return parts.join(" ");
-}
-
 function initialEditedFromExtracted(
   extracted: ExtractedRecipe,
   thumbnailUrl?: string | null
@@ -229,7 +227,7 @@ function initialEditedFromExtracted(
     title: extracted.title.trim() || "Untitled Recipe",
     ingredientLines:
       extracted.ingredients.length > 0
-        ? extracted.ingredients.map(formatIngredientLine)
+        ? extracted.ingredients.map(formatExtractedIngredientLine)
         : [""],
     cookTimeMinutes: extracted.cook_time_minutes ?? 0,
     servings: extracted.servings ?? null,
@@ -286,15 +284,41 @@ export function VideoUploadForm({
     return Math.max(0, Math.min(100, Math.round(raw)));
   }, [jobStatus?.processing_progress]);
 
+  const extractedNutritionEmbedded = useMemo(() => {
+    const ex = jobStatus?.extracted_recipe;
+    if (!ex?.recipe_nutrition || !editedRecipe) return null;
+    const baseLines = ex.ingredients.map((ing) => formatExtractedIngredientLine(ing));
+    const editedLines = editedRecipe.ingredientLines.map((s) => s.trim()).filter(Boolean);
+    if (baseLines.length !== editedLines.length) return null;
+    for (let i = 0; i < baseLines.length; i++) {
+      if (baseLines[i] !== editedLines[i]) return null;
+    }
+    return {
+      recipe_nutrition: ex.recipe_nutrition,
+      recipe_ingredient_lines: ex.recipe_ingredient_lines ?? null,
+    };
+  }, [jobStatus?.extracted_recipe, editedRecipe]);
+
   const draftRecipeRow = useMemo(
     () =>
       jobId && editedRecipe
-        ? videoExtractionToDraftRecipeRow(editedRecipe, jobId, {
-            sourceUrl: jobStatus?.tiktok_url ?? null,
-            thumbnailUrl: jobStatus?.thumbnail_url ?? null,
-          })
+        ? videoExtractionToDraftRecipeRow(
+            editedRecipe,
+            jobId,
+            {
+              sourceUrl: jobStatus?.tiktok_url ?? null,
+              thumbnailUrl: jobStatus?.thumbnail_url ?? null,
+            },
+            extractedNutritionEmbedded
+          )
         : null,
-    [jobId, editedRecipe, jobStatus?.tiktok_url, jobStatus?.thumbnail_url]
+    [
+      jobId,
+      editedRecipe,
+      jobStatus?.tiktok_url,
+      jobStatus?.thumbnail_url,
+      extractedNutritionEmbedded,
+    ]
   );
 
   const recipeTemplate = useMemo(
@@ -898,35 +922,53 @@ export function VideoUploadForm({
                           <div className="recipe-template-stat-icon">
                             <span aria-hidden>🔥</span>
                           </div>
-                          <div className="recipe-template-stat-value">
+                          <div
+                            className="recipe-template-stat-value"
+                            title={recipeTemplate.nutrition.caloriesTitle}
+                          >
                             {recipeTemplate.nutrition.caloriesDisplay}
                           </div>
                           <div className="recipe-template-stat-label">Calories</div>
                         </div>
                         <div className="recipe-template-stat-card">
-                          <div className="recipe-template-stat-value">—</div>
+                          <div className="recipe-template-stat-value">
+                            {macroGDisplay(recipeTemplate.nutrition.proteinG)}
+                          </div>
                           <div className="recipe-template-stat-label">Protein</div>
                         </div>
                         <div className="recipe-template-stat-card">
-                          <div className="recipe-template-stat-value">—</div>
+                          <div className="recipe-template-stat-value">
+                            {macroGDisplay(recipeTemplate.nutrition.carbG)}
+                          </div>
                           <div className="recipe-template-stat-label">Carbs</div>
                         </div>
                         <div className="recipe-template-stat-card">
-                          <div className="recipe-template-stat-value">—</div>
+                          <div className="recipe-template-stat-value">
+                            {macroGDisplay(recipeTemplate.nutrition.fatG)}
+                          </div>
                           <div className="recipe-template-stat-label">Fat</div>
                         </div>
                         <div className="recipe-template-stat-card">
-                          <div className="recipe-template-stat-value">—</div>
+                          <div className="recipe-template-stat-value">
+                            {macroGDisplay(recipeTemplate.nutrition.fiberG)}
+                          </div>
                           <div className="recipe-template-stat-label">Fiber</div>
                         </div>
                         <div className="recipe-template-stat-card">
-                          <div className="recipe-template-stat-value">—</div>
+                          <div className="recipe-template-stat-value">
+                            {macroGDisplay(recipeTemplate.nutrition.sugarG)}
+                          </div>
                           <div className="recipe-template-stat-label">Sugar</div>
                         </div>
                       </div>
                       <p
                         className={`recipe-fullview-nutrition-source recipe-fullview-nutrition-source--${nutritionSource}`}
                         style={{ marginBottom: 16 }}
+                        title={
+                          draftRecipeRow
+                            ? recipeNutritionSourceDetail(draftRecipeRow, nutritionSource)
+                            : undefined
+                        }
                       >
                         Nutrition: {nutritionSourceLabel}
                       </p>

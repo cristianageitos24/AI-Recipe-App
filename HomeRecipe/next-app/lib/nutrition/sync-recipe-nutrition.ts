@@ -12,6 +12,7 @@ import {
   type ResolvedLine,
   type ResolvedLineWithCandidates,
 } from "@/lib/nutrition/resolve-line";
+import type { FdcCandidateSnapshot, RecipeIngredientLineSnapshot } from "@/lib/types";
 
 export type RecipeNutritionSourceRollup = "fdc" | "estimated" | "mixed" | "incomplete";
 
@@ -49,54 +50,85 @@ function cloneResolved(r: ResolvedLineWithCandidates): ResolvedLine {
   };
 }
 
-export type SyncRecipeNutritionOptions = {
-  /** Per line index: use this FDC id instead of automatic resolution (user pick). */
-  lineFdcOverrides?: Record<number, number>;
+export type ComputedRecipeNutritionLineRow = {
+  line_index: number;
+  raw_text: string | null;
+  quantity: number | null;
+  unit: string | null;
+  item: string | null;
+  notes: string | null;
+  fdc_id: number | null;
+  fdc_match_score: number | null;
+  line_nutrition_source: "fdc" | "estimated" | "unresolved";
+  grams: number | null;
+  ml: number | null;
+  estimation_reason: string | null;
+  fdc_candidates: unknown | null;
 };
 
-export async function syncRecipeNutritionForRecipe(
+export type ComputedRecipeNutrition = {
+  energy_kcal: number;
+  protein_g: number;
+  fat_g: number;
+  carb_g: number;
+  nutrition_source: RecipeNutritionSourceRollup;
+  lines: ComputedRecipeNutritionLineRow[];
+};
+
+export function computedNutritionToIngredientSnapshots(
+  lines: ComputedRecipeNutritionLineRow[]
+): RecipeIngredientLineSnapshot[] {
+  return lines.map((r) => ({
+    line_index: r.line_index,
+    item: r.item,
+    raw_text: r.raw_text,
+    line_nutrition_source: r.line_nutrition_source,
+    fdc_id: r.fdc_id,
+    estimation_reason: r.estimation_reason,
+    fdc_candidates: Array.isArray(r.fdc_candidates)
+      ? (r.fdc_candidates as FdcCandidateSnapshot[])
+      : null,
+  }));
+}
+
+/**
+ * Resolve ingredient lines to totals + per-line FDC/AI rows (no DB writes).
+ * Used by the video worker to embed nutrition on `extracted_recipe` before the recipe row exists.
+ */
+export async function computeRecipeNutritionFromLines(
   svc: SupabaseClient,
-  recipeId: string,
-  options?: SyncRecipeNutritionOptions
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { data: recipe, error: rErr } = await svc
-    .from("recipes")
-    .select("id, ingredient_lines, recipe_label")
-    .eq("id", recipeId)
-    .single();
-
-  if (rErr || !recipe) {
-    return { ok: false, error: rErr?.message ?? "Recipe not found" };
+  params: {
+    rawLines: string[];
+    recipeTitle: string;
+    /** Passed to AI estimate context (e.g. extracted servings). */
+    servings: number | null | undefined;
+    lineFdcOverrides?: Record<number, number>;
   }
+): Promise<ComputedRecipeNutrition> {
+  const rawLines = params.rawLines.map((s) => s.trim()).filter(Boolean);
+  const recipeTitle = params.recipeTitle.trim() || "Recipe";
+  const servings =
+    params.servings != null && Number.isFinite(Number(params.servings))
+      ? Number(params.servings)
+      : null;
 
-  const { data: existingNut } = await svc
-    .from("recipe_nutrition")
-    .select("servings")
-    .eq("recipe_id", recipeId)
-    .maybeSingle();
-
-  let servings: number | null = null;
-  if (existingNut?.servings != null) {
-    const n = Number(existingNut.servings);
-    if (Number.isFinite(n)) servings = n;
+  if (rawLines.length === 0) {
+    return {
+      energy_kcal: 0,
+      protein_g: 0,
+      fat_g: 0,
+      carb_g: 0,
+      nutrition_source: "incomplete",
+      lines: [],
+    };
   }
-
-  const text = (recipe.ingredient_lines as string | null)?.trim() ?? "";
-  const rawLines = text
-    ? text.split("***").map((s) => s.trim()).filter(Boolean)
-    : [];
-
-  await svc.from("recipe_ingredient_lines").delete().eq("recipe_id", recipeId);
-
-  const recipeTitle = String(recipe.recipe_label ?? "").trim() || "Recipe";
 
   const parsedLines = rawLines.map((raw) => parseIngredientLine(raw));
 
-  /** Phase B: deterministic resolution for every line (API-first when quota allows; batch guard after search 429 / quota_exhausted). */
   const deterministic: ResolvedLineWithCandidates[] = [];
   let apiSearchDisabled = false;
   for (let i = 0; i < parsedLines.length; i++) {
-    const override = options?.lineFdcOverrides?.[i];
+    const override = params.lineFdcOverrides?.[i];
     const row = await resolveIngredientLine(svc, parsedLines[i], {
       forceFdcId: override != null ? override : undefined,
       apiSearchDisabled,
@@ -120,7 +152,6 @@ export async function syncRecipeNutritionForRecipe(
     .map((w, i) => (w.line_nutrition_source === "fdc" ? i : -1))
     .filter((i) => i >= 0);
 
-  /** Phase C: AI only for unresolved lines; never modify FDC-resolved lines. */
   const apiKey = getNutritionEstimateApiKey();
   if (apiKey && unresolvedIndices.length > 0) {
     const lines_to_estimate: StructuredLineForAi[] = unresolvedIndices.map((idx) => {
@@ -185,23 +216,7 @@ export async function syncRecipeNutritionForRecipe(
   let totalF = 0;
   let totalC = 0;
 
-  const lineRows: Array<{
-    recipe_id: string;
-    line_index: number;
-    raw_text: string | null;
-    quantity: number | null;
-    unit: string | null;
-    item: string | null;
-    notes: string | null;
-    fdc_id: number | null;
-    fdc_match_score: number | null;
-    line_nutrition_source: "fdc" | "estimated" | "unresolved";
-    grams: number | null;
-    ml: number | null;
-    estimation_reason: string | null;
-    fdc_candidates: unknown | null;
-  }> = [];
-
+  const lines: ComputedRecipeNutritionLineRow[] = [];
   const sourceAcc: Array<{
     line_nutrition_source: "fdc" | "estimated" | "unresolved";
   }> = [];
@@ -220,8 +235,7 @@ export async function syncRecipeNutritionForRecipe(
         ? working[i].fdc_candidates
         : null;
 
-    lineRows.push({
-      recipe_id: recipeId,
+    lines.push({
       line_index: i,
       raw_text: parsed.raw_text || null,
       quantity: parsed.quantity,
@@ -242,6 +256,69 @@ export async function syncRecipeNutritionForRecipe(
 
   const nutrition_source = rollupLineSources(sourceAcc);
 
+  return {
+    energy_kcal: Math.round(totalK * 10000) / 10000,
+    protein_g: Math.round(totalP * 10000) / 10000,
+    fat_g: Math.round(totalF * 10000) / 10000,
+    carb_g: Math.round(totalC * 10000) / 10000,
+    nutrition_source,
+    lines,
+  };
+}
+
+export type SyncRecipeNutritionOptions = {
+  /** Per line index: use this FDC id instead of automatic resolution (user pick). */
+  lineFdcOverrides?: Record<number, number>;
+};
+
+export async function syncRecipeNutritionForRecipe(
+  svc: SupabaseClient,
+  recipeId: string,
+  options?: SyncRecipeNutritionOptions
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { data: recipe, error: rErr } = await svc
+    .from("recipes")
+    .select("id, ingredient_lines, recipe_label")
+    .eq("id", recipeId)
+    .single();
+
+  if (rErr || !recipe) {
+    return { ok: false, error: rErr?.message ?? "Recipe not found" };
+  }
+
+  const { data: existingNut } = await svc
+    .from("recipe_nutrition")
+    .select("servings")
+    .eq("recipe_id", recipeId)
+    .maybeSingle();
+
+  let servings: number | null = null;
+  if (existingNut?.servings != null) {
+    const n = Number(existingNut.servings);
+    if (Number.isFinite(n)) servings = n;
+  }
+
+  const text = (recipe.ingredient_lines as string | null)?.trim() ?? "";
+  const rawLines = text
+    ? text.split("***").map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  await svc.from("recipe_ingredient_lines").delete().eq("recipe_id", recipeId);
+
+  const recipeTitle = String(recipe.recipe_label ?? "").trim() || "Recipe";
+
+  const computed = await computeRecipeNutritionFromLines(svc, {
+    rawLines,
+    recipeTitle,
+    servings,
+    lineFdcOverrides: options?.lineFdcOverrides,
+  });
+
+  const lineRows = computed.lines.map((row) => ({
+    recipe_id: recipeId,
+    ...row,
+  }));
+
   if (lineRows.length) {
     const { error: insErr } = await svc.from("recipe_ingredient_lines").insert(lineRows);
     if (insErr) {
@@ -249,19 +326,14 @@ export async function syncRecipeNutritionForRecipe(
     }
   }
 
-  const energy_kcal = Math.round(totalK * 10000) / 10000;
-  const protein_g = Math.round(totalP * 10000) / 10000;
-  const fat_g = Math.round(totalF * 10000) / 10000;
-  const carb_g = Math.round(totalC * 10000) / 10000;
-
   const { error: nutErr } = await svc.from("recipe_nutrition").upsert(
     {
       recipe_id: recipeId,
-      energy_kcal,
-      protein_g,
-      fat_g,
-      carb_g,
-      nutrition_source,
+      energy_kcal: computed.energy_kcal,
+      protein_g: computed.protein_g,
+      fat_g: computed.fat_g,
+      carb_g: computed.carb_g,
+      nutrition_source: computed.nutrition_source,
       computed_at: new Date().toISOString(),
       fdc_release_label: FDC_RELEASE_LABEL,
       servings: existingNut?.servings ?? null,
@@ -275,7 +347,7 @@ export async function syncRecipeNutritionForRecipe(
 
   const { error: calErr } = await svc
     .from("recipes")
-    .update({ calories: energy_kcal })
+    .update({ calories: computed.energy_kcal })
     .eq("id", recipeId);
 
   if (calErr) {

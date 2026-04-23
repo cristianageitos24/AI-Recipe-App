@@ -3,6 +3,8 @@ import { recipeDisplayEnergyKcal } from "@/lib/recipe-select";
 import type {
   ExtractedRecipe,
   ExtractedRecipeIngredient,
+  RecipeIngredientLineSnapshot,
+  RecipeNutritionSnapshot,
   RecipePayload,
   RecipeRow,
   UrlImportedRecipe,
@@ -115,7 +117,7 @@ export function buildManualRecipePayload(params: {
 }
 
 /** Format a single extracted ingredient as a display/storage line */
-function formatIngredientLine(ing: ExtractedRecipeIngredient): string {
+export function formatExtractedIngredientLine(ing: ExtractedRecipeIngredient): string {
   const parts: string[] = [];
   if (ing.quantity != null) parts.push(String(ing.quantity));
   if (ing.unit?.trim()) parts.push(ing.unit.trim());
@@ -137,7 +139,7 @@ export function extractedRecipeToPayload(
   const recipe_id = `video-recipe-${jobId}`;
   const ingredient_lines =
     extracted.ingredients.length > 0
-      ? extracted.ingredients.map(formatIngredientLine).join("***")
+      ? extracted.ingredients.map(formatExtractedIngredientLine).join("***")
       : null;
   const steps =
     extracted.steps.length > 0 ? extracted.steps.join("***") : null;
@@ -304,7 +306,11 @@ export function videoExtractionToDraftRecipeRow(
     imageUrl: string;
   },
   jobId: string,
-  opts: { sourceUrl: string | null; thumbnailUrl: string | null }
+  opts: { sourceUrl: string | null; thumbnailUrl: string | null },
+  embedded?: {
+    recipe_nutrition: RecipeNutritionSnapshot;
+    recipe_ingredient_lines: RecipeIngredientLineSnapshot[] | null;
+  } | null
 ): RecipeRow {
   const payload = buildVideoRecipePayload(
     {
@@ -319,18 +325,33 @@ export function videoExtractionToDraftRecipeRow(
       imageUrl: edited.imageUrl?.trim() || opts.thumbnailUrl?.trim() || null,
     }
   );
+  const nut = embedded?.recipe_nutrition
+    ? {
+        ...embedded.recipe_nutrition,
+        servings: edited.servings ?? embedded.recipe_nutrition.servings ?? null,
+      }
+    : null;
+  const calories = nut
+    ? Math.round(Number(nut.energy_kcal))
+    : Math.round(Number(payload.calories));
   return {
     id: URL_IMPORT_DRAFT_ROW_ID,
     recipe_id: payload.recipeID,
     recipe_label: payload.recipe_label,
-    calories: payload.calories,
+    calories,
     cuisine_type: payload.cuisine_type,
-    meal_type: edited.servings != null ? String(edited.servings) : null,
+    meal_type: nut ? null : edited.servings != null ? String(edited.servings) : null,
     time_in_minutes: payload.time_in_minutes,
     ingredient_lines: payload.ingredient_lines,
     steps: payload.steps,
     website_url: payload.website_url,
     image_url: payload.image_url,
+    ...(nut
+      ? {
+          recipe_nutrition: nut,
+          recipe_ingredient_lines: embedded?.recipe_ingredient_lines ?? undefined,
+        }
+      : {}),
   };
 }
 
