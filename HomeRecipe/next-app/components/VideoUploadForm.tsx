@@ -519,6 +519,15 @@ export function VideoUploadForm({
   const homeMotionEnabled =
     (variant === "embedded" || variant === "embedded-unified") && !reduceMotion;
   const layoutTransition = { duration: 0.22, ease: "easeOut" as const };
+  const nutritionSource = recipeTemplate?.nutrition.nutritionSource ?? "incomplete";
+  const nutritionSourceLabel =
+    nutritionSource === "fdc"
+      ? "USDA"
+      : nutritionSource === "estimated"
+        ? "Estimated"
+        : nutritionSource === "mixed"
+          ? "Mixed"
+          : "Incomplete";
 
   return (
     <motion.div
@@ -880,70 +889,130 @@ export function VideoUploadForm({
                     </>
                   }
                   nutritionPanel={
-                    <div className="video-recipe-cooktime">
-                      <p className="video-recipe-nutrition-note">
-                        Full nutrition facts (calories, macros) are not extracted from video yet.
-                        You can adjust servings and timing here before saving.
+                    <>
+                      <div className="recipe-template-panel-head">
+                        <h2 className="recipe-template-panel-title">Nutrition</h2>
+                      </div>
+                      <div className="recipe-template-nutrition-macros">
+                        <div className="recipe-template-stat-card">
+                          <div className="recipe-template-stat-icon">
+                            <span aria-hidden>🔥</span>
+                          </div>
+                          <div className="recipe-template-stat-value">
+                            {recipeTemplate.nutrition.caloriesDisplay}
+                          </div>
+                          <div className="recipe-template-stat-label">Calories</div>
+                        </div>
+                        <div className="recipe-template-stat-card">
+                          <div className="recipe-template-stat-value">—</div>
+                          <div className="recipe-template-stat-label">Protein</div>
+                        </div>
+                        <div className="recipe-template-stat-card">
+                          <div className="recipe-template-stat-value">—</div>
+                          <div className="recipe-template-stat-label">Carbs</div>
+                        </div>
+                        <div className="recipe-template-stat-card">
+                          <div className="recipe-template-stat-value">—</div>
+                          <div className="recipe-template-stat-label">Fat</div>
+                        </div>
+                        <div className="recipe-template-stat-card">
+                          <div className="recipe-template-stat-value">—</div>
+                          <div className="recipe-template-stat-label">Fiber</div>
+                        </div>
+                        <div className="recipe-template-stat-card">
+                          <div className="recipe-template-stat-value">—</div>
+                          <div className="recipe-template-stat-label">Sugar</div>
+                        </div>
+                      </div>
+                      <p
+                        className={`recipe-fullview-nutrition-source recipe-fullview-nutrition-source--${nutritionSource}`}
+                        style={{ marginBottom: 16 }}
+                      >
+                        Nutrition: {nutritionSourceLabel}
                       </p>
-                      <div className="form-group">
-                        <label htmlFor="video-recipe-servings">Servings (optional)</label>
-                        <input
-                          id="video-recipe-servings"
-                          type="number"
-                          min={1}
-                          className="form-input"
-                          value={editedRecipe.servings ?? ""}
-                          onChange={(e) => {
-                            const raw = e.target.value;
-                            setEditedRecipe((prev) => {
-                              if (!prev) return null;
-                              if (raw === "") return { ...prev, servings: null };
-                              const n = parseInt(raw, 10);
-                              if (!Number.isFinite(n) || n < 1) return prev;
-                              return { ...prev, servings: n };
-                            });
-                          }}
-                          placeholder="e.g. 4"
-                        />
+                      <div className="recipe-template-nutrition-meta">
+                        <h3
+                          className="recipe-template-panel-title"
+                          style={{ fontSize: "15px", marginBottom: 8 }}
+                        >
+                          Recipe details
+                        </h3>
+                        <dl className="recipe-template-meta-dl">
+                          <dt className="recipe-template-meta-dt">Prep time</dt>
+                          <dd className="recipe-template-meta-dd">—</dd>
+                          <dt className="recipe-template-meta-dt">Cook time</dt>
+                          <dd className="recipe-template-meta-dd">
+                            <input
+                              id="video-recipe-cook-time"
+                              type="number"
+                              min={0}
+                              className="video-draft-meta-input"
+                              value={editedRecipe.cookTimeMinutes || ""}
+                              onChange={(e) => {
+                                const v = e.target.value === "" ? 0 : parseInt(e.target.value, 10);
+                                setEditedRecipe((prev) =>
+                                  prev
+                                    ? {
+                                        ...prev,
+                                        cookTimeMinutes: Number.isFinite(v) ? v : 0,
+                                      }
+                                    : null
+                                );
+                              }}
+                              placeholder="Not specified"
+                            />
+                          </dd>
+                          <dt className="recipe-template-meta-dt">Total time</dt>
+                          <dd className="recipe-template-meta-dd">
+                            {editedRecipe.cookTimeMinutes > 0 ? `${editedRecipe.cookTimeMinutes} min` : "—"}
+                          </dd>
+                          <dt className="recipe-template-meta-dt">Servings</dt>
+                          <dd className="recipe-template-meta-dd">
+                            <input
+                              id="video-recipe-servings"
+                              type="number"
+                              min={1}
+                              className="video-draft-meta-input"
+                              value={editedRecipe.servings ?? ""}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                setEditedRecipe((prev) => {
+                                  if (!prev) return null;
+                                  if (raw === "") return { ...prev, servings: null };
+                                  const n = parseInt(raw, 10);
+                                  if (!Number.isFinite(n) || n < 1) return prev;
+                                  return { ...prev, servings: n };
+                                });
+                              }}
+                              placeholder="e.g. 4"
+                            />
+                          </dd>
+                          <dt className="recipe-template-meta-dt">Cuisine</dt>
+                          <dd className="recipe-template-meta-dd">{recipeTemplate.metadata.cuisine ?? "—"}</dd>
+                          <dt className="recipe-template-meta-dt">Meal type</dt>
+                          <dd className="recipe-template-meta-dd">{recipeTemplate.metadata.mealType ?? "—"}</dd>
+                          <dt className="recipe-template-meta-dt">Difficulty</dt>
+                          <dd className="recipe-template-meta-dd">—</dd>
+                          <dt className="recipe-template-meta-dt">Source URL</dt>
+                          <dd className="recipe-template-meta-dd">
+                            {recipeTemplate.metadata.sourceUrl ? (
+                              <a
+                                href={recipeTemplate.metadata.sourceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                Open link
+                              </a>
+                            ) : (
+                              "—"
+                            )}
+                          </dd>
+                          <dt className="recipe-template-meta-dt">Creator</dt>
+                          <dd className="recipe-template-meta-dd">{recipeTemplate.metadata.creatorLine ?? "—"}</dd>
+                        </dl>
                       </div>
-                      <div className="form-group">
-                        <label htmlFor="video-recipe-cook-time">Cook time (minutes)</label>
-                        <input
-                          id="video-recipe-cook-time"
-                          type="number"
-                          min={0}
-                          className="form-input"
-                          value={editedRecipe.cookTimeMinutes || ""}
-                          onChange={(e) => {
-                            const v = e.target.value === "" ? 0 : parseInt(e.target.value, 10);
-                            setEditedRecipe((prev) =>
-                              prev
-                                ? {
-                                    ...prev,
-                                    cookTimeMinutes: Number.isFinite(v) ? v : 0,
-                                  }
-                                : null
-                            );
-                          }}
-                          placeholder="Not specified"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label htmlFor="video-recipe-image-url">Image URL (optional)</label>
-                        <input
-                          id="video-recipe-image-url"
-                          type="url"
-                          className="form-input"
-                          value={editedRecipe.imageUrl}
-                          onChange={(e) =>
-                            setEditedRecipe((prev) =>
-                              prev ? { ...prev, imageUrl: e.target.value } : null
-                            )
-                          }
-                          placeholder="https://... or leave blank to use video frame"
-                        />
-                      </div>
-                    </div>
+                    </>
                   }
                 />
               </motion.div>
