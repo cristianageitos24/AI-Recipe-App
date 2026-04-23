@@ -108,3 +108,13 @@ export type UrlImportedRecipe = {
   calories: string | null;
   yields: string | null;
 };
+
+/** Normalized web result returned by Tavily search. */
+export type WebRecipeSearchResult = {
+  id: string;
+  title: string;
+  url: string;
+  source: string;
+  snippet: string | null;
+  image: string | null;
+};

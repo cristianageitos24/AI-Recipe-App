@@ -21,14 +21,14 @@ import {
   isUrlImportSaveable,
   urlImportToDraftRecipeRow,
 } from "@/lib/processRecipeData";
-import type { RecipeRow, UrlImportedRecipe } from "@/lib/types";
+import type { RecipeRow, UrlImportedRecipe, WebRecipeSearchResult } from "@/lib/types";
 import "@/app/styling/TabHome.css";
 import "@/app/styling/VideoUpload.css";
 import "@/app/styling/CookbookFolderPage.css";
 import "@/app/styling/CookbookPageRecipeCard.css";
 
 type FolderWithCount = { folderName: string; count: number };
-type SearchMode = "recipe" | "ingredients";
+type SearchMode = "recipe" | "ingredients" | "web";
 type MealDay = { date: string; recipes: Array<RecipeRow & { eventID: string }> };
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -57,14 +57,34 @@ function formatDateKey(dateKey: string): string {
   }).format(dt);
 }
 
+async function searchWebRecipes(query: string): Promise<WebRecipeSearchResult[]> {
+  const res = await fetch("/api/recipes/web-search", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
+  const data = (await res.json()) as {
+    results?: WebRecipeSearchResult[];
+    error?: string;
+  };
+
+  if (!res.ok) {
+    throw new Error(data.error || "Web recipe search failed.");
+  }
+
+  return data.results ?? [];
+}
+
 export default function DashboardHomePage() {
   const [searchMode, setSearchMode] = useState<SearchMode>("recipe");
   const [text, setText] = useState("");
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [displayQuery, setDisplayQuery] = useState("");
   const [searchResults, setSearchResults] = useState<RecipeRow[] | null>(null);
+  const [webSearchResults, setWebSearchResults] = useState<WebRecipeSearchResult[] | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [importingWebUrl, setImportingWebUrl] = useState<string | null>(null);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [urlPreview, setUrlPreview] = useState<UrlImportedRecipe | null>(null);
   const [showUrlPreviewModal, setShowUrlPreviewModal] = useState(false);
@@ -248,6 +268,11 @@ export default function DashboardHomePage() {
     if (searchInProgressRef.current) return;
     const trimmed = debouncedTextForSuggestions.trim();
     const isIngredientMode = searchMode === "ingredients";
+    if (searchMode === "web") {
+      setSuggestions({ ingredients: [], recipes: [] });
+      setShowSuggestions(false);
+      return;
+    }
     const minLength = isIngredientMode ? 1 : 2;
     if (trimmed.length < minLength) {
       setSuggestions({ ingredients: [], recipes: [] });
@@ -301,6 +326,13 @@ export default function DashboardHomePage() {
   useEffect(() => {
     const trimmed = debouncedTextForSearch.trim();
     const isIngredientMode = searchMode === "ingredients";
+    if (searchMode === "web") {
+      if (trimmed.length < 3) {
+        setWebSearchResults(null);
+        setDisplayQuery("");
+      }
+      return;
+    }
     const ings =
       selectedIngredients.length > 0
         ? selectedIngredients
@@ -312,12 +344,14 @@ export default function DashboardHomePage() {
     if (isIngredientMode) {
       if (ings.length === 0) {
         setSearchResults(null);
+        setWebSearchResults(null);
         setDisplayQuery("");
         setSearchError(null);
         return;
       }
     } else if (trimmed.length < 2) {
       setSearchResults(null);
+      setWebSearchResults(null);
       setDisplayQuery("");
       setSearchError(null);
       return;
@@ -330,6 +364,7 @@ export default function DashboardHomePage() {
 
     if (isIngredientMode) {
       setDisplayQuery(ings.join(", "));
+      setWebSearchResults(null);
       searchByIngredients(ings)
         .then((res) => {
           if (requestId !== liveSearchRequestIdRef.current) return;
@@ -349,6 +384,7 @@ export default function DashboardHomePage() {
         });
     } else {
       setDisplayQuery(trimmed);
+      setWebSearchResults(null);
       searchRecipes(trimmed)
         .then((res) => {
           if (requestId !== liveSearchRequestIdRef.current) return;
@@ -384,12 +420,35 @@ export default function DashboardHomePage() {
       }
       setSearchLoading(true);
       setDisplayQuery(query);
+      setWebSearchResults(null);
       try {
         const res = await searchRecipes(query);
         setSearchResults(res.data ?? []);
       } catch {
         setSearchResults([]);
         setSearchError("Search failed. Try again.");
+      } finally {
+        setSearchLoading(false);
+        setSearchSlowMessage(false);
+        searchInProgressRef.current = false;
+      }
+    } else if (searchMode === "web") {
+      const query = text.trim();
+      if (query.length < 3) {
+        searchInProgressRef.current = false;
+        setWebSearchResults(null);
+        setDisplayQuery("");
+        return;
+      }
+      setSearchLoading(true);
+      setDisplayQuery(query);
+      setSearchResults(null);
+      try {
+        const results = await searchWebRecipes(query);
+        setWebSearchResults(results);
+      } catch (error) {
+        setWebSearchResults([]);
+        setSearchError(error instanceof Error ? error.message : "Web search failed. Try again.");
       } finally {
         setSearchLoading(false);
         setSearchSlowMessage(false);
@@ -409,6 +468,7 @@ export default function DashboardHomePage() {
       }
       setSearchLoading(true);
       setDisplayQuery(ings.join(", "));
+      setWebSearchResults(null);
       try {
         const res = await searchByIngredients(ings);
         setSearchResults(res.data ?? []);
@@ -457,12 +517,24 @@ export default function DashboardHomePage() {
     setSelectedIngredients(selectedIngredients.filter((i) => i !== ing));
   }
 
+  function changeSearchMode(mode: SearchMode) {
+    setSearchMode(mode);
+    setSearchResults(null);
+    setWebSearchResults(null);
+    setSearchError(null);
+    setSearchSlowMessage(false);
+    setSuggestions({ ingredients: [], recipes: [] });
+    setShowSuggestions(false);
+    searchInProgressRef.current = false;
+  }
+
   function closeSearchModalAndReset() {
     setSearchModalOpen(false);
     setShowSuggestions(false);
     setText("");
     setDisplayQuery("");
     setSearchResults(null);
+    setWebSearchResults(null);
     setSearchError(null);
     setSearchSlowMessage(false);
     searchInProgressRef.current = false;
@@ -495,6 +567,21 @@ export default function DashboardHomePage() {
     setShowUrlPreviewModal(true);
   }, []);
 
+  const handleImportWebResult = useCallback(
+    async (url: string) => {
+      setImportingWebUrl(url);
+      setSearchError(null);
+      try {
+        await importRecipeFromWebUrl(url);
+      } catch (error) {
+        setSearchError(error instanceof Error ? error.message : "Import failed. Try another result.");
+      } finally {
+        setImportingWebUrl(null);
+      }
+    },
+    [importRecipeFromWebUrl],
+  );
+
   const hasSuggestions = suggestions.ingredients.length > 0 || suggestions.recipes.length > 0;
   const hasSearchInputText = text.trim().length > 0;
   const cardHoverMotion = { y: -4 };
@@ -517,16 +604,23 @@ export default function DashboardHomePage() {
                 <button
                   type="button"
                   className={`search-mode-tab ${searchMode === "recipe" ? "active" : ""}`}
-                  onClick={() => setSearchMode("recipe")}
+                  onClick={() => changeSearchMode("recipe")}
                 >
                   Recipe name
                 </button>
                 <button
                   type="button"
                   className={`search-mode-tab ${searchMode === "ingredients" ? "active" : ""}`}
-                  onClick={() => setSearchMode("ingredients")}
+                  onClick={() => changeSearchMode("ingredients")}
                 >
                   Ingredients
+                </button>
+                <button
+                  type="button"
+                  className={`search-mode-tab ${searchMode === "web" ? "active" : ""}`}
+                  onClick={() => changeSearchMode("web")}
+                >
+                  Web
                 </button>
               </div>
 
@@ -557,6 +651,8 @@ export default function DashboardHomePage() {
                       placeholder={
                         searchMode === "recipe"
                           ? "Search your recipes..."
+                          : searchMode === "web"
+                            ? "Search the web for recipes..."
                           : "Search by ingredient to find recipes"
                       }
                       value={text}
@@ -695,10 +791,15 @@ export default function DashboardHomePage() {
                           <p className="search-empty search-empty-copy">Start typing to search recipes.</p>
                         </div>
                       )}
-                      {searchLoading && searchResults === null && <p className="search-loading">Searching...</p>}
+                      {searchLoading &&
+                        (searchMode === "web" ? webSearchResults === null : searchResults === null) && (
+                          <p className="search-loading">Searching...</p>
+                        )}
                       {searchSlowMessage && (
                         <p className="search-loading search-slow-hint" role="status">
-                          Taking longer than usual. If this persists, ensure migration 008 (search indexes) is applied.
+                          {searchMode === "web"
+                            ? "Still searching the web. Some recipe sites take a little longer to resolve."
+                            : "Taking longer than usual. If this persists, ensure migration 008 (search indexes) is applied."}
                         </p>
                       )}
                       {searchError && !searchLoading && (
@@ -707,7 +808,64 @@ export default function DashboardHomePage() {
                         </p>
                       )}
 
-                      {searchResults !== null && !searchError && (
+                      {searchMode === "web" && webSearchResults !== null && !searchError && (
+                        <>
+                          {searchLoading && <p className="search-updating">Updating results...</p>}
+                          {webSearchResults.length === 0 ? (
+                            <p className="search-empty">No web recipes found. Try a different search.</p>
+                          ) : (
+                            <div className="web-recipe-results-grid">
+                              {webSearchResults.map((result) => (
+                                <motion.article
+                                  key={result.id}
+                                  className="web-recipe-result-card"
+                                  whileHover={cardHoverMotion}
+                                  transition={cardHoverTransition}
+                                >
+                                  <div className="web-recipe-result-image-wrap">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                      src={result.image || "/images/recipe-placeholder.png"}
+                                      alt=""
+                                      className="web-recipe-result-image"
+                                      onError={(event) => {
+                                        event.currentTarget.src = "/images/recipe-placeholder.png";
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="web-recipe-result-body">
+                                    <p className="web-recipe-result-source">{result.source}</p>
+                                    <h3 className="web-recipe-result-title">{result.title}</h3>
+                                    {result.snippet && (
+                                      <p className="web-recipe-result-snippet">{result.snippet}</p>
+                                    )}
+                                    <div className="web-recipe-result-actions">
+                                      <a
+                                        href={result.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="web-recipe-result-link"
+                                      >
+                                        View source
+                                      </a>
+                                      <button
+                                        type="button"
+                                        className="web-recipe-import-btn"
+                                        onClick={() => handleImportWebResult(result.url)}
+                                        disabled={importingWebUrl !== null}
+                                      >
+                                        {importingWebUrl === result.url ? "Importing..." : "Import"}
+                                      </button>
+                                    </div>
+                                  </div>
+                                </motion.article>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {searchMode !== "web" && searchResults !== null && !searchError && (
                         <>
                           {searchLoading && <p className="search-updating">Updating results...</p>}
                           {searchResults.length === 0 ? (

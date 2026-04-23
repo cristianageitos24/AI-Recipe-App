@@ -37,9 +37,11 @@
   --text-5xl: 64px;
   --text-display: 106px;
 
-  /* Font: single font for entire app (Work Sans) */
-  --font-body: var(--font-work-sans), "Work Sans", system-ui, sans-serif;
+  /* Font: single font for entire app (Creato Display) */
+  --font-body: var(--font-creato-display), "Creato Display", system-ui, sans-serif;
   --font-display: var(--font-body);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-body);
 
   /* Colors: base */
   --color-bg: #ffffff;
@@ -139,10 +141,19 @@
 }
 
 /* App uses light theme to match design; dark mode not applied */
+html,
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body);
+  font-weight: 400;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 /* Focus: use accent for visible focus ring (accessibility) */
