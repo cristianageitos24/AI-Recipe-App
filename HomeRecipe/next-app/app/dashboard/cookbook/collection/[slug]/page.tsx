@@ -138,6 +138,8 @@ export default function CollectionPage() {
               <RecipeFullView
                 recipeData={recipe}
                 onClose={() => setSelectedRecipeId(null)}
+                isHearted={favoriteIds.has(recipe.recipe_id)}
+                onFavoriteChange={handleFavoriteChange}
               />
             </div>
           </div>

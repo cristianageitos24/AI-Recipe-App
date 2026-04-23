@@ -122,17 +122,19 @@ Env template: `HomeRecipe/next-app/.env.local.example`
 
 ## Daily shortcuts (copy when needed)
 
+These assume your shell’s current directory is the **git root** for this project: the folder that contains `HomeRecipe/`, `data/`, and `.git` (on this machine that may live under `~/Documents/HomeRecipe/AI-Recipe-App` or anywhere else you cloned it).
+
 **Start app only**
 
 ```bash
-cd ~/Documents/Projects/AI-Recipe-App/HomeRecipe/next-app
+cd HomeRecipe/next-app
 npm run dev
 ```
 
 **Docker workers (from repo)**
 
 ```bash
-cd ~/Documents/Projects/AI-Recipe-App/HomeRecipe
+cd HomeRecipe
 docker compose up -d
 docker compose ps
 ```
@@ -140,7 +142,7 @@ docker compose ps
 **Local video worker (second terminal)**
 
 ```bash
-cd ~/Documents/Projects/AI-Recipe-App/HomeRecipe/next-app
+cd HomeRecipe/next-app
 npm run worker:video
 ```
 

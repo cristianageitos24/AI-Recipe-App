@@ -75,7 +75,12 @@ export function CookbookPageRecipeCard({
           onClick={() => setIsMoreInformationOpen(false)}
         >
           <div className="recipe-full-view-scroll-wrapper" onClick={(e) => e.stopPropagation()}>
-            <RecipeFullView recipeData={recipeData} onClose={() => setIsMoreInformationOpen(false)} />
+            <RecipeFullView
+              recipeData={recipeData}
+              onClose={() => setIsMoreInformationOpen(false)}
+              isHearted={isHearted}
+              onFavoriteChange={onFavoriteChange}
+            />
           </div>
         </div>
       )}

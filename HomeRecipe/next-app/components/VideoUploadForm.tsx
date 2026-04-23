@@ -9,6 +9,7 @@ import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModa
 import { formatInstantLocal } from "@/lib/formatTimestamps";
 import { classifyUrlForIngest } from "@/lib/url-ingest-classification";
 import "@/app/styling/VideoUpload.css";
+import "@/app/styling/RecipeTemplateShell.css";
 
 const JOB_POLL_MS = 1750;
 
@@ -724,43 +725,49 @@ export function VideoUploadForm({
                 </div>
               </div>
 
-              <div className="video-recipe-chips">
-                <div className="video-recipe-chip">
-                  <span className="video-recipe-chip-icon" aria-hidden>
+              <div
+                className="recipe-template-stats"
+                style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", marginTop: 12 }}
+              >
+                <div className="recipe-template-stat-card">
+                  <div className="recipe-template-stat-icon" aria-hidden>
                     <IconServings />
-                  </span>
-                  <span className="video-recipe-chip-label">Servings</span>
-                  <span className="video-recipe-chip-value">
+                  </div>
+                  <div className="recipe-template-stat-value">
                     {editedRecipe.servings != null ? editedRecipe.servings : "—"}
-                  </span>
+                  </div>
+                  <div className="recipe-template-stat-label">Servings</div>
                 </div>
-                <div className="video-recipe-chip">
-                  <span className="video-recipe-chip-icon" aria-hidden>
+                <div className="recipe-template-stat-card">
+                  <div className="recipe-template-stat-icon" aria-hidden>
                     <IconClock />
-                  </span>
-                  <span className="video-recipe-chip-label">Cook time</span>
-                  <span className="video-recipe-chip-value">
+                  </div>
+                  <div className="recipe-template-stat-value">
                     {editedRecipe.cookTimeMinutes > 0
                       ? `${editedRecipe.cookTimeMinutes} min`
                       : "—"}
-                  </span>
+                  </div>
+                  <div className="recipe-template-stat-label">Cook time</div>
                 </div>
               </div>
 
-              <div className="video-recipe-tabs">
+              <div
+                className="recipe-template-tabs"
+                style={{ marginTop: 20, borderBottom: "2px solid var(--gray-200)" }}
+              >
                 <button
                   type="button"
-                  className={`video-recipe-tab ${activeTab === "recipe" ? "active" : ""}`}
+                  className={`recipe-template-tab ${activeTab === "recipe" ? "is-active" : ""}`}
                   onClick={() => setActiveTab("recipe")}
                 >
-                  Recipe
+                  Cook
                 </button>
                 <button
                   type="button"
-                  className={`video-recipe-tab ${activeTab === "nutrition" ? "active" : ""}`}
+                  className={`recipe-template-tab ${activeTab === "nutrition" ? "is-active" : ""}`}
                   onClick={() => setActiveTab("nutrition")}
                 >
-                  Nutrition
+                  Nutrition &amp; Details
                 </button>
               </div>
 

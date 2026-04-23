@@ -116,42 +116,36 @@ export default function CreateRecipePage() {
           className="recipe-full-view-scroll-wrapper"
           onClick={(e) => e.stopPropagation()}
         >
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              alignItems: "center",
-              gap: "var(--space-3)",
-              marginBottom: "var(--space-4)",
-            }}
-          >
-            <Link
-              href="/dashboard/home"
-              className="add-recipe-manual-submit"
-              style={{
-                textDecoration: "none",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              Back to Home
-            </Link>
-            <button
-              type="button"
-              onClick={resetToForm}
-              className="add-recipe-manual-submit"
-              style={{ background: "var(--gray-600)" }}
-            >
-              Create another recipe
-            </button>
-            <SaveToFolderButton
-              folders={[]}
-              recipeData={recipeRowToProcessed(createdRecipe)}
-            />
-          </div>
           <RecipeFullView
             recipeData={createdRecipe}
+            toolbar={
+              <>
+                <Link
+                  href="/dashboard/home"
+                  className="add-recipe-manual-submit"
+                  style={{
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  Back to Home
+                </Link>
+                <button
+                  type="button"
+                  onClick={resetToForm}
+                  className="add-recipe-manual-submit"
+                  style={{ background: "var(--gray-600)" }}
+                >
+                  Create another recipe
+                </button>
+                <SaveToFolderButton
+                  folders={[]}
+                  recipeData={recipeRowToProcessed(createdRecipe)}
+                />
+              </>
+            }
             onClose={() => router.push("/dashboard/home")}
           />
         </div>

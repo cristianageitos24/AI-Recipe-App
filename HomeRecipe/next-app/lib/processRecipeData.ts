@@ -205,8 +205,8 @@ export function buildVideoRecipePayload(
   };
 }
 
-/** Placeholder UUID for `RecipeFullView` before a URL import is persisted (never use with `getRecipeFull`). */
-const URL_IMPORT_DRAFT_ROW_ID = "00000000-0000-4000-8000-000000000001";
+/** Placeholder UUID for recipe template / full view before a URL import is persisted (never use with `getRecipeFull`). */
+export const URL_IMPORT_DRAFT_ROW_ID = "00000000-0000-4000-8000-000000000001";
 
 function normalizeSourceUrlForHash(url: string): string {
   try {

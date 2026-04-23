@@ -6,6 +6,8 @@ export type RecipeNutritionSnapshot = {
   fat_g: number;
   carb_g: number;
   nutrition_source: "fdc" | "estimated" | "mixed" | "incomplete";
+  /** From `recipe_nutrition.servings` when selected; optional on older rows. */
+  servings?: number | null;
 };
 
 /** Per-line nutrition provenance from `recipe_ingredient_lines` (embedded select). */

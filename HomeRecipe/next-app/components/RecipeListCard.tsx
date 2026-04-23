@@ -168,7 +168,12 @@ export function RecipeListCard({
               </div>
             )}
             {showFullView && (
-              <RecipeFullView recipeData={displayRecipe} onClose={handleClose} />
+              <RecipeFullView
+                recipeData={displayRecipe}
+                onClose={handleClose}
+                isHearted={isHearted}
+                onFavoriteChange={onFavoriteChange}
+              />
             )}
           </div>
         </div>,
