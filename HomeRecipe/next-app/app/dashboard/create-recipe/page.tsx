@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createRecipeAndReturn } from "@/app/actions/recipes";
 import { RecipeFullView } from "@/components/RecipeFullView";
-import { SaveToFolderButton } from "@/components/SaveToFolderButton";
-import { buildManualRecipePayload, recipeRowToProcessed } from "@/lib/processRecipeData";
+import { buildManualRecipePayload } from "@/lib/processRecipeData";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/CookbookFolderPage.css";
 import "@/app/styling/CookbookPageRecipeCard.css";
@@ -29,6 +28,42 @@ export default function CreateRecipePage() {
   const [manualWebsiteUrl, setManualWebsiteUrl] = useState("");
   const [manualSubmitting, setManualSubmitting] = useState(false);
   const [manualError, setManualError] = useState("");
+
+  const previewRecipe = useMemo<RecipeRow>(() => {
+    const ingredient_lines = manualIngredientLines
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join("***");
+    const steps = manualStepsLines
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join("***");
+    const time = Number(manualTimeInMinutes);
+    const calories = Number(manualCalories);
+    return {
+      id: "create-recipe-preview",
+      recipe_id: "create-recipe-preview",
+      recipe_label: manualRecipeLabel.trim() || "Untitled Recipe",
+      calories: Number.isFinite(calories) && calories >= 0 ? calories : 0,
+      cuisine_type: manualCuisineType.trim() || null,
+      meal_type: manualMealType.trim() || null,
+      time_in_minutes: Number.isFinite(time) && time >= 0 ? time : 0,
+      ingredient_lines: ingredient_lines || null,
+      steps: steps || null,
+      website_url: manualWebsiteUrl.trim() || null,
+      image_url: manualImageUrl.trim() || null,
+    };
+  }, [
+    manualCalories,
+    manualCuisineType,
+    manualImageUrl,
+    manualIngredientLines,
+    manualMealType,
+    manualRecipeLabel,
+    manualStepsLines,
+    manualTimeInMinutes,
+    manualWebsiteUrl,
+  ]);
 
   function clearError() {
     setManualError("");
@@ -116,38 +151,17 @@ export default function CreateRecipePage() {
           className="recipe-full-view-scroll-wrapper"
           onClick={(e) => e.stopPropagation()}
         >
-          <RecipeFullView
-            recipeData={createdRecipe}
-            toolbar={
-              <>
-                <Link
-                  href="/dashboard/home"
-                  className="add-recipe-manual-submit"
-                  style={{
-                    textDecoration: "none",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  Back to Home
-                </Link>
-                <button
-                  type="button"
-                  onClick={resetToForm}
-                  className="add-recipe-manual-submit"
-                  style={{ background: "var(--gray-600)" }}
-                >
-                  Create another recipe
-                </button>
-                <SaveToFolderButton
-                  folders={[]}
-                  recipeData={recipeRowToProcessed(createdRecipe)}
-                />
-              </>
-            }
-            onClose={() => router.push("/dashboard/home")}
-          />
+          <RecipeFullView recipeData={createdRecipe} onClose={() => router.push("/dashboard/home")} />
+          <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+            <button
+              type="button"
+              onClick={resetToForm}
+              className="add-recipe-manual-submit"
+              style={{ background: "var(--gray-600)" }}
+            >
+              Create another recipe
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -169,7 +183,27 @@ export default function CreateRecipePage() {
         Fill in the details below to add a new recipe. You can then save it to a
         cookbook.
       </p>
+      <div className="recipe-full-view-scroll-wrapper" style={{ marginBottom: 20 }}>
+        <RecipeFullView
+          recipeData={previewRecipe}
+          hideFavoriteAction
+          primaryActionSlot={
+            <button
+              type="button"
+              className="submit-button video-recipe-save-btn"
+              style={{ margin: 0 }}
+              onClick={() => {
+                const form = document.getElementById("create-recipe-form");
+                form?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+              Fill recipe data
+            </button>
+          }
+        />
+      </div>
       <form
+        id="create-recipe-form"
         className="add-recipe-manual-form manual-recipe-tabbed-form"
         onSubmit={handleSubmit}
       >

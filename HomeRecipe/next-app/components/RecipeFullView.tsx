@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { pickRecipeIngredientFdc } from "@/app/actions/recipes";
 import {
@@ -31,8 +31,10 @@ type RecipeFullViewProps = {
   onClose?: () => void;
   isHearted?: boolean;
   onFavoriteChange?: (recipe: RecipeRow, isFavorited: boolean) => void;
-  /** Renders inside the template card (e.g. Close + Save to cookbook for URL/create flows). */
-  toolbar?: ReactNode;
+  /** Optional primary action in header (e.g. Save to cookbook for URL draft preview). */
+  primaryActionSlot?: React.ReactNode;
+  /** Hide heart even for persisted rows (used by create-recipe draft preview). */
+  hideFavoriteAction?: boolean;
 };
 
 function pickNutritionSnapshot(
@@ -121,7 +123,8 @@ export function RecipeFullView({
   onClose,
   isHearted = false,
   onFavoriteChange,
-  toolbar,
+  primaryActionSlot,
+  hideFavoriteAction = false,
 }: RecipeFullViewProps) {
   const router = useRouter();
   const template = useMemo(() => buildRecipeTemplateData(recipeData), [recipeData]);
@@ -155,7 +158,7 @@ export function RecipeFullView({
           : "Incomplete";
 
   const draft = isRecipeTemplateDraftRow(recipeData);
-  const showFavorite = !draft;
+  const showFavorite = !draft && !hideFavoriteAction;
 
   const ingredientRows = template.ingredients;
   const visibleIngredients =
@@ -234,7 +237,9 @@ export function RecipeFullView({
     onFavoriteChange,
   };
 
-  const favoriteSlot = showFavorite ? <HeartButton {...heartProps} /> : undefined;
+  const favoriteSlot = showFavorite
+    ? <HeartButton {...heartProps} />
+    : (primaryActionSlot ?? undefined);
   const mobileFavoriteSlot = showFavorite ? (
     <HeartButton {...heartProps} heartStyle={{ transform: "scale(1.2)" }} />
   ) : undefined;
@@ -570,7 +575,6 @@ export function RecipeFullView({
     <RecipeTemplateShell
       template={template}
       onClose={onClose}
-      toolbar={toolbar}
       favoriteSlot={favoriteSlot}
       mobileSaveSlot={
         mobileFavoriteSlot ? (

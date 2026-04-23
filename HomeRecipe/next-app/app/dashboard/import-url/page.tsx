@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { RecipeFullView } from "@/components/RecipeFullView";
@@ -100,38 +99,16 @@ export default function ImportRecipeUrlPage() {
           >
             <RecipeFullView
               recipeData={draftRecipeRow}
-              toolbar={
-                <>
-                  <Link
-                    href="/dashboard/home"
-                    className="add-recipe-manual-submit"
-                    style={{
-                      textDecoration: "none",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    Back to Home
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={clearResult}
-                    className="add-recipe-manual-submit"
-                    style={{ background: "var(--gray-600)" }}
-                  >
-                    Import another URL
-                  </button>
-                  <button
-                    type="button"
-                    className="submit-button video-recipe-save-btn"
-                    style={{ margin: 0 }}
-                    disabled={!canSave}
-                    onClick={() => setSaveModalOpen(true)}
-                  >
-                    Save to cookbook
-                  </button>
-                </>
+              primaryActionSlot={
+                <button
+                  type="button"
+                  className="submit-button video-recipe-save-btn"
+                  style={{ margin: 0 }}
+                  disabled={!canSave}
+                  onClick={() => setSaveModalOpen(true)}
+                >
+                  Save
+                </button>
               }
               onClose={() => router.push("/dashboard/home")}
             />

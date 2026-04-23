@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { RecipeTemplateData } from "@/lib/recipe-template";
 import {
@@ -12,8 +12,6 @@ import "@/app/styling/RecipeTemplateShell.css";
 export type RecipeTemplateShellProps = {
   template: RecipeTemplateData;
   onClose?: () => void;
-  /** Primary actions inside the card (Close, Save to cookbook, etc.) — keeps overlay flows visually unified. */
-  toolbar?: ReactNode;
   /** Save / favorite control (e.g. HeartButton). Hidden when omitted. */
   favoriteSlot?: React.ReactNode;
   cookIngredientsPanel: React.ReactNode;
@@ -80,7 +78,6 @@ function macroText(n: number | null, suffix = "g"): string {
 export function RecipeTemplateShell({
   template,
   onClose,
-  toolbar,
   favoriteSlot,
   cookIngredientsPanel,
   cookInstructionsPanel,
@@ -136,7 +133,7 @@ export function RecipeTemplateShell({
       {onClose && (
         <button
           type="button"
-          className={`recipe-template-close${toolbar ? " recipe-template-close--with-toolbar" : ""}`}
+          className="recipe-template-close"
           onClick={(e) => {
             e.stopPropagation();
             onClose();
@@ -148,8 +145,6 @@ export function RecipeTemplateShell({
           </svg>
         </button>
       )}
-
-      {toolbar && <div className="recipe-template-toolbar">{toolbar}</div>}
 
       <div className="recipe-template-mobile-bar">
         {onClose && (

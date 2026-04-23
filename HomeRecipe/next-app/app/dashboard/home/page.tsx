@@ -931,28 +931,16 @@ export default function DashboardHomePage() {
                 >
                   <RecipeFullView
                     recipeData={urlDraftRecipeRow}
-                    toolbar={
-                      <>
-                        <button
-                          type="button"
-                          className="search-results-clear"
-                          onClick={() => {
-                            setShowUrlPreviewModal(false);
-                            setUrlSaveModalOpen(false);
-                          }}
-                        >
-                          Close
-                        </button>
-                        <button
-                          type="button"
-                          className="submit-button video-recipe-save-btn"
-                          style={{ margin: 0 }}
-                          disabled={!urlImportCanSave}
-                          onClick={() => setUrlSaveModalOpen(true)}
-                        >
-                          Save to cookbook
-                        </button>
-                      </>
+                    primaryActionSlot={
+                      <button
+                        type="button"
+                        className="submit-button video-recipe-save-btn"
+                        style={{ margin: 0 }}
+                        disabled={!urlImportCanSave}
+                        onClick={() => setUrlSaveModalOpen(true)}
+                      >
+                        Save
+                      </button>
                     }
                     onClose={() => {
                       setShowUrlPreviewModal(false);
