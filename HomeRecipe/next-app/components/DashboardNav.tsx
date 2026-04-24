@@ -49,6 +49,17 @@ export function DashboardNav() {
 
   return (
     <header className="dashboard-header">
+      <Link href="/dashboard/home" className="dashboard-brand">
+        <Image
+          src="/images/homerecipelogo1-removebg.png"
+          alt=""
+          width={38}
+          height={38}
+          className="dashboard-brand-logo"
+          priority
+        />
+        <span>HomeRecipe</span>
+      </Link>
       <nav className="dock-nav">
         <ul className="dock-tabs">
           {navItems.map(({ href, label, icon }) => {

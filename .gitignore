@@ -8,3 +8,6 @@ data/import_full_dataset.py
 
 # macOS Finder metadata
 .DS_Store
+
+.claude
+.cursor

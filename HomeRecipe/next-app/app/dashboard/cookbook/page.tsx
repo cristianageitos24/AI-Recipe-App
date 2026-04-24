@@ -7,7 +7,6 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { getCookbookBootstrap } from "@/app/actions/dashboard";
 import { Cookbooks } from "@/components/Cookbooks";
 import { CuratedCookbooks } from "@/components/CuratedCookbooks";
-import { LoadingScreen } from "@/components/LoadingScreen";
 import { RecipeListCard } from "@/components/RecipeListCard";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/TabCookbook.css";
@@ -17,16 +16,13 @@ type FoldersData = { folders: string[]; results: Record<string, unknown[]> } | n
 export default function CookbookPage() {
   const [likedRecipes, setLikedRecipes] = useState<RecipeRow[]>([]);
   const [foldersData, setFoldersData] = useState<FoldersData>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
   useEffect(() => {
     getCookbookBootstrap()
       .then((res) => {
         if (!res.data) return;
         setLikedRecipes([...res.data.favorites].reverse());
         setFoldersData({ folders: res.data.folders, results: res.data.results });
-      })
-      .finally(() => setIsLoading(false));
+      });
   }, []);
 
   const handleFavoriteChange = useCallback((recipe: RecipeRow, isFavorited: boolean) => {
@@ -39,9 +35,7 @@ export default function CookbookPage() {
     <div className="main-panel">
       <DndProvider backend={HTML5Backend}>
         <div className="cookbook-canvas">
-        {isLoading ? (
-          <LoadingScreen />
-        ) : likedRecipes.length > 0 ? (
+        {likedRecipes.length > 0 ? (
           <motion.div
             className="cookbook-content"
             initial={{ opacity: 0, y: 8 }}

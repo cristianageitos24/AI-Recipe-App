@@ -5,7 +5,6 @@ import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
-import { LoadingScreen } from "@/components/LoadingScreen";
 import { RecipeListCard } from "@/components/RecipeListCard";
 import { RecipeFullView } from "@/components/RecipeFullView";
 import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
@@ -616,10 +615,7 @@ export default function DashboardHomePage() {
   const cardHoverTransition = { duration: 0.18, ease: "easeOut" as const };
 
   return (
-    <div className="main-panel">
-      {bootstrapLoading ? (
-        <LoadingScreen />
-      ) : (
+    <div className="main-panel home-main-panel">
         <motion.div
           className="recipe-search-content"
           initial={{ opacity: 0, y: 8 }}
@@ -653,26 +649,25 @@ export default function DashboardHomePage() {
                 </button>
               </div>
 
-              <div className="search-container">
-                {searchMode === "ingredients" && selectedIngredients.length > 0 && (
-                  <div className="ingredient-chips">
-                    {selectedIngredients.map((ing) => (
-                      <span key={ing} className="ingredient-chip">
-                        {ing}
-                        <button
-                          type="button"
-                          className="ingredient-chip-remove"
-                          onClick={() => removeIngredient(ing)}
-                          aria-label={`Remove ${ing}`}
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
+              {searchMode === "ingredients" && selectedIngredients.length > 0 && (
+                <div className="ingredient-chips">
+                  {selectedIngredients.map((ing) => (
+                    <span key={ing} className="ingredient-chip">
+                      {ing}
+                      <button
+                        type="button"
+                        className="ingredient-chip-remove"
+                        onClick={() => removeIngredient(ing)}
+                        aria-label={`Remove ${ing}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
 
-                <div className="search-input-dropdown-wrapper">
+              <div className="search-input-dropdown-wrapper">
                   <div className="search-input-row">
                     <input
                       ref={inputRef}
@@ -713,11 +708,13 @@ export default function DashboardHomePage() {
                       {searchModalOpen ? (
                         <span aria-hidden>×</span>
                       ) : (
-                        <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path
-                            d="M17.71 16.29L14.31 12.9C15.407 11.5025 16.0022 9.77666 16 8C16 6.41775 15.5308 4.87103 14.6518 3.55544C13.7727 2.23985 12.5233 1.21447 11.0615 0.608967C9.59966 0.00346625 7.99113 -0.15496 6.43928 0.153721C4.88743 0.462403 3.46197 1.22433 2.34315 2.34315C1.22433 3.46197 0.462403 4.88743 0.153721 6.43928C-0.15496 7.99113 0.00346625 9.59966 0.608967 11.0615C1.21447 12.5233 2.23985 13.7727 3.55544 14.6518C4.87103 15.5308 6.41775 16 8 16C9.77666 16.0022 11.5025 15.407 12.9 14.31L16.29 17.71C16.383 17.8037 16.4936 17.8781 16.6154 17.9289C16.7373 17.9797 16.868 18.0058 17 18.0058C17.132 18.0058 17.2627 17.9797 17.3846 17.9289C17.5064 17.8781 17.617 17.8037 17.71 17.71C17.8037 17.617 17.8781 17.5064 17.9289 17.3846C17.9797 17.2627 18.0058 17.132 18.0058 17C18.0058 16.868 17.9797 16.7373 17.9289 16.6154C17.8781 16.4936 17.8037 16.383 17.71 16.29ZM2 8C2 6.81332 2.3519 5.65328 3.01119 4.66658C3.67047 3.67989 4.60755 2.91085 5.7039 2.45673C6.80026 2.0026 8.00666 1.88378 9.17055 2.11529C10.3344 2.3468 11.4035 2.91825 12.2426 3.75736C13.0818 4.59648 13.6532 5.66558 13.8847 6.82946C14.1162 7.99335 13.9974 9.19975 13.5433 10.2961C13.0892 11.3925 12.3201 12.3295 11.3334 12.9888C10.3467 13.6481 9.18669 14 8 14C6.4087 14 4.88258 13.3679 3.75736 12.2426C2.63214 11.1174 2 9.5913 2 8Z"
-                            fill="var(--color-fg)"
-                          />
+                        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" strokeLinecap="round">
+                          <line x1="3" y1="5" x2="17" y2="5" stroke="currentColor" strokeWidth="1.5"/>
+                          <line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" strokeWidth="1.5"/>
+                          <line x1="3" y1="15" x2="17" y2="15" stroke="currentColor" strokeWidth="1.5"/>
+                          <circle cx="7" cy="5" r="2" fill="var(--color-bg)" stroke="currentColor" strokeWidth="1.5"/>
+                          <circle cx="13" cy="10" r="2" fill="var(--color-bg)" stroke="currentColor" strokeWidth="1.5"/>
+                          <circle cx="9" cy="15" r="2" fill="var(--color-bg)" stroke="currentColor" strokeWidth="1.5"/>
                         </svg>
                       )}
                     </button>
@@ -787,7 +784,6 @@ export default function DashboardHomePage() {
                       )}
                     </div>
                   )}
-                </div>
               </div>
 
               <AnimatePresence>
@@ -928,7 +924,7 @@ export default function DashboardHomePage() {
           {/* Welcome row */}
           <div className="home-welcome-row">
             <div>
-              <h1 className="home-welcome-heading">Welcome back, {firstName} 👋</h1>
+              <h1 className="home-welcome-heading">Welcome back, {firstName} <span style={{ marginLeft: "4px" }}>👋</span></h1>
               <p className="home-welcome-sub">Let&apos;s make today delicious.</p>
             </div>
             <Link href="/dashboard/create-recipe" className="home-create-recipe-btn">
@@ -1027,7 +1023,7 @@ export default function DashboardHomePage() {
             </div>
             <div className="home-import-decoration" aria-hidden="true">
               <Image
-                src="/images/eat-healthy--work-eat-healthy.svg"
+                src="/images/dashboard/salad_stock.png"
                 alt=""
                 width={220}
                 height={220}
@@ -1107,71 +1103,6 @@ export default function DashboardHomePage() {
             </section>
           </div>
 
-          {/* Recommended For You */}
-          <section className="home-surface-card home-block-card home-recommended-panel">
-            <div className="home-recommended-header">
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--brand-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="home-collections-icon" aria-hidden="true">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-              </svg>
-              <h2 className="home-section-title">Recommended For You</h2>
-            </div>
-            {suggestedLoading ? (
-              <p className="home-section-loading">Loading recommendations...</p>
-            ) : suggestedRecipes.length > 0 ? (
-              <div className="home-recommendations-wrapper">
-                {recommendationsScroll.canScrollLeft && (
-                  <button
-                    type="button"
-                    className="home-recommendations-arrow home-recommendations-arrow-left"
-                    onClick={() => scrollRecommendations("left")}
-                    aria-label="Scroll left"
-                  >
-                    <span aria-hidden>‹</span>
-                  </button>
-                )}
-                <div ref={recommendationsScrollRef} className="home-section-scroll home-recommendations-scroll">
-                  {suggestedRecipes.map((recipe) => (
-                    <motion.div
-                      key={recipe.id}
-                      className="home-recommendation-card"
-                      whileHover={cardHoverMotion}
-                      transition={cardHoverTransition}
-                    >
-                      <RecipeListCard
-                        recipe={recipe}
-                        isHearted={favoriteIds.has(recipe.recipe_id)}
-                        onFavoriteChange={handleFavoriteChange}
-                      />
-                    </motion.div>
-                  ))}
-                </div>
-                {recommendationsScroll.canScrollRight && (
-                  <button
-                    type="button"
-                    className="home-recommendations-arrow home-recommendations-arrow-right"
-                    onClick={() => scrollRecommendations("right")}
-                    aria-label="Scroll right"
-                  >
-                    <span aria-hidden>›</span>
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="home-recommended-empty">
-                <p className="home-section-caption">Import recipes and we&apos;ll show personalized recommendations here.</p>
-                <div className="home-recommended-empty-art" aria-hidden="true">
-                  <Image
-                    src="/images/eat-healthy--work-eat-healthy.svg"
-                    alt=""
-                    width={120}
-                    height={120}
-                    className="home-recommended-empty-img"
-                  />
-                </div>
-              </div>
-            )}
-          </section>
-
           {showUrlPreviewModal && urlPreview && urlDraftRecipeRow && (
             <>
               <div
@@ -1240,7 +1171,6 @@ export default function DashboardHomePage() {
             </>
           )}
         </motion.div>
-      )}
     </div>
   );
 }
