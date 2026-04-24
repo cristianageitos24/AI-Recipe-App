@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
@@ -47,6 +48,15 @@ function getLocalDateKey(date = new Date()): string {
   return `${y}-${m}-${d}`;
 }
 
+function parseDateKey(dateKey: string): { monthAbbr: string; dayNum: number } {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const dt = new Date(year, month - 1, day, 12);
+  return {
+    monthAbbr: dt.toLocaleDateString("en", { month: "short" }).toUpperCase(),
+    dayNum: dt.getDate(),
+  };
+}
+
 function formatDateKey(dateKey: string): string {
   const [year, month, day] = dateKey.split("-").map(Number);
   const dt = new Date(year, month - 1, day, 12);
@@ -76,6 +86,9 @@ async function searchWebRecipes(query: string): Promise<WebRecipeSearchResult[]>
 }
 
 export default function DashboardHomePage() {
+  const { user } = useUser();
+  const firstName = user?.firstName ?? "there";
+
   const [searchMode, setSearchMode] = useState<SearchMode>("recipe");
   const [text, setText] = useState("");
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
@@ -171,11 +184,26 @@ export default function DashboardHomePage() {
       .slice(0, 2)
       .map((item) => item.recipe);
 
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    let recipesThisWeek = 0;
+    let importedThisMonth = 0;
+    for (const recipe of savedMap.values()) {
+      if (recipe.created_at) {
+        const createdAt = new Date(recipe.created_at);
+        if (createdAt >= oneWeekAgo) recipesThisWeek++;
+        if (createdAt >= startOfMonth) importedThisMonth++;
+      }
+    }
+
     return {
       totalRecipesSaved: savedMap.size,
       favoritesCount: favorites.length,
       mostCommonCuisine,
       topViewed,
+      recipesThisWeek,
+      importedThisMonth,
     };
   }, [favorites, folderRecipesByName, mealDates]);
 
@@ -598,6 +626,7 @@ export default function DashboardHomePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
         >
+          {/* Search bar */}
           <section className="home-dashboard-header">
             <div className="home-search-shell">
               <div className="search-mode-tabs">
@@ -650,7 +679,7 @@ export default function DashboardHomePage() {
                       type="text"
                       placeholder={
                         searchMode === "recipe"
-                          ? "Search your recipes..."
+                          ? "Search recipes, ingredients, cuisines..."
                           : searchMode === "web"
                             ? "Search the web for recipes..."
                           : "Search by ingredient to find recipes"
@@ -896,174 +925,252 @@ export default function DashboardHomePage() {
             </div>
           </section>
 
-          <div className="home-dashboard-grid">
-            <section className="home-surface-card home-block-card home-stats-panel">
-              <div className="home-stats-row">
-                <div className="home-stats-grid">
-                  <div className="home-stat-box">
-                    <p className="home-stat-label">Total Recipes Saved</p>
-                    <p className="home-stat-value">{homeStats.totalRecipesSaved}</p>
-                  </div>
-                  <div className="home-stat-box">
-                    <p className="home-stat-label">Favorites Count</p>
-                    <p className="home-stat-value">{homeStats.favoritesCount}</p>
-                  </div>
-                  <div className="home-stat-box">
-                    <p className="home-stat-label">Most Common Cuisine</p>
-                    <p className="home-stat-value home-stat-text">{homeStats.mostCommonCuisine}</p>
-                  </div>
-                <div className="home-stat-box">
-                    <p className="home-stat-label">Top 2 Most Viewed</p>
-                    {homeStats.topViewed.length > 0 ? (
-                      <ol className="home-top-viewed-list">
-                        {homeStats.topViewed.map((recipe) => (
-                          <li key={recipe.recipe_id}>{recipe.recipe_label}</li>
-                        ))}
-                      </ol>
-                    ) : (
-                      <p className="home-section-empty">No recipe activity yet.</p>
-                    )}
-                  </div>
-                </div>
-                <Link href="/dashboard/create-recipe" className="home-create-recipe-btn">
-                  <span aria-hidden>+</span>
-                  Create Recipe
+          {/* Welcome row */}
+          <div className="home-welcome-row">
+            <div>
+              <h1 className="home-welcome-heading">Welcome back, {firstName} 👋</h1>
+              <p className="home-welcome-sub">Let&apos;s make today delicious.</p>
+            </div>
+            <Link href="/dashboard/create-recipe" className="home-create-recipe-btn">
+              <span aria-hidden>+</span> Create Recipe
+            </Link>
+          </div>
+
+          {/* Stats cards */}
+          <div className="home-stat-cards-row">
+            {/* Total Recipes */}
+            <div className="home-stat-card">
+              <div className="home-stat-icon-circle home-stat-icon-blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                </svg>
+              </div>
+              <div className="home-stat-card-body">
+                <p className="home-stat-card-label">Total Recipes</p>
+                <p className="home-stat-card-value">{homeStats.totalRecipesSaved}</p>
+                <Link href="/dashboard/recipes" className="home-stat-card-link home-stat-card-link-blue">
+                  Start building your cookbook
                 </Link>
               </div>
-            </section>
+            </div>
 
-            <section className="home-surface-card home-block-card home-video-panel">
-              <h2 className="home-section-title">Recipe Extraction</h2>
-              <p className="home-section-caption">
-                Paste a TikTok link or any recipe webpage URL, then tap Cook It! to extract.
-              </p>
-              <div className="home-inline-video-form">
-                <VideoUploadForm
-                  variant="embedded-unified"
-                  onWebRecipeUrlImport={importRecipeFromWebUrl}
-                />
+            {/* Favorites */}
+            <div className="home-stat-card">
+              <div className="home-stat-icon-circle home-stat-icon-green">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
               </div>
-            </section>
+              <div className="home-stat-card-body">
+                <p className="home-stat-card-label">Favorites</p>
+                <p className="home-stat-card-value">{homeStats.favoritesCount}</p>
+                <p className="home-stat-card-link home-stat-card-link-green">
+                  {homeStats.favoritesCount === 0 ? "No favorites yet" : "View your favorites"}
+                </p>
+              </div>
+            </div>
 
-            <section className="home-surface-card home-block-card home-liked-panel">
-              <h2 className="home-section-title">Liked Recipes and Folders</h2>
+            {/* Recipes This Week */}
+            <div className="home-stat-card">
+              <div className="home-stat-icon-circle home-stat-icon-red">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+              </div>
+              <div className="home-stat-card-body">
+                <p className="home-stat-card-label">Recipes This Week</p>
+                <p className="home-stat-card-value">{homeStats.recipesThisWeek}</p>
+                <p className="home-stat-card-link home-stat-card-link-red">Keep cooking!</p>
+              </div>
+            </div>
 
-              <div className="home-folder-pill-row">
+            {/* Imported This Month */}
+            <div className="home-stat-card">
+              <div className="home-stat-icon-circle home-stat-icon-purple">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              </div>
+              <div className="home-stat-card-body">
+                <p className="home-stat-card-label">Imported This Month</p>
+                <p className="home-stat-card-value">{homeStats.importedThisMonth}</p>
+                <Link href="/dashboard/recipes" className="home-stat-card-link home-stat-card-link-blue">
+                  Add some new recipes
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Import a Recipe card */}
+          <section className="home-surface-card home-import-card">
+            <div className="home-import-content">
+              <div className="home-import-icon-circle" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                </svg>
+              </div>
+              <h2 className="home-section-title">Import a Recipe</h2>
+              <p className="home-section-caption">
+                Paste a TikTok link or any recipe webpage URL and we&apos;ll do the rest.
+              </p>
+            </div>
+            <div className="home-import-form">
+              <VideoUploadForm
+                variant="embedded-unified"
+                onWebRecipeUrlImport={importRecipeFromWebUrl}
+              />
+            </div>
+            <div className="home-import-decoration" aria-hidden="true">
+              <Image
+                src="/images/eat-healthy--work-eat-healthy.svg"
+                alt=""
+                width={220}
+                height={220}
+                className="home-import-decoration-img"
+              />
+            </div>
+          </section>
+
+          {/* Collections + Upcoming side by side */}
+          <div className="home-lower-grid">
+            {/* Your Collections */}
+            <section className="home-surface-card home-collections-panel">
+              <div className="home-collections-header">
+                <div>
+                  <div className="home-collections-title-row">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--brand-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="home-collections-icon" aria-hidden="true">
+                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                    </svg>
+                    <h2 className="home-section-title">Your Collections</h2>
+                  </div>
+                  <p className="home-section-caption">Quick access to your saved collections</p>
+                </div>
+                <Link href="/dashboard/cookbook" className="home-view-all-btn">View all</Link>
+              </div>
+              <div className="home-collections-grid">
                 {foldersWithCounts.length > 0 ? (
                   foldersWithCounts.map((f) => (
                     <Link
                       key={f.folderName}
                       href={`/dashboard/cookbook/${encodeURIComponent(f.folderName)}`}
-                      className="home-folder-pill"
+                      className="home-collection-card"
                     >
-                      <span>{f.folderName}</span>
-                      <strong>{f.count}</strong>
+                      <p className="home-collection-name">{f.folderName}</p>
+                      <p className="home-collection-count">{f.count}</p>
                     </Link>
                   ))
                 ) : (
                   <p className="home-section-empty">Create folders in Cookbooks to organize your recipes.</p>
                 )}
               </div>
-
-              {favorites.length > 0 ? (
-                <div className="home-section-scroll home-liked-scroll">
-                  {favorites.map((recipe) => (
-                    <motion.div
-                      key={recipe.id}
-                      className="home-card"
-                      whileHover={cardHoverMotion}
-                      transition={cardHoverTransition}
-                    >
-                      <RecipeListCard recipe={recipe} isHearted onFavoriteChange={handleFavoriteChange} />
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <p className="home-section-empty">Like recipes to pin them here.</p>
-              )}
             </section>
 
-            <section className="home-surface-card home-block-card home-upcoming-panel">
-              <h2 className="home-section-title">Upcoming Recipes</h2>
+            {/* Upcoming Recipes */}
+            <section className="home-surface-card home-upcoming-panel">
+              <div className="home-upcoming-panel-header">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="home-collections-icon" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <h2 className="home-section-title">Upcoming Recipes</h2>
+              </div>
+              <p className="home-section-caption">See what&apos;s cooking next</p>
               {upcomingMealPlans.length > 0 ? (
-                <div className="home-upcoming-days">
-                  {upcomingMealPlans.map((day) => (
-                    <div key={day.date} className="home-upcoming-day-group">
-                      <p className="home-upcoming-label">
-                        {day.isToday ? "Scheduled for Today" : `Scheduled for ${day.label}`}
-                      </p>
-                      <ul className="home-upcoming-list">
-                        {day.recipes.map((recipe, idx) => (
-                          <li
-                            key={`${day.date}-${recipe.eventID}-${recipe.recipe_id}-${idx}`}
-                            className="home-upcoming-list-item"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={recipe.image_url || "/images/recipe-placeholder.png"}
-                              alt={recipe.recipe_label}
-                              className="home-upcoming-list-image"
-                            />
-                            <span className="home-upcoming-list-title">{recipe.recipe_label}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
+                <div className="home-upcoming-entries">
+                  {upcomingMealPlans.map((day) => {
+                    const { monthAbbr, dayNum } = parseDateKey(day.date);
+                    return (
+                      <Link key={day.date} href="/dashboard/calendar" className="home-upcoming-entry">
+                        <div className="home-upcoming-date-badge">
+                          <span className="home-upcoming-month">{monthAbbr}</span>
+                          <span className="home-upcoming-day">{dayNum}</span>
+                        </div>
+                        <div className="home-upcoming-entry-text">
+                          <p className="home-upcoming-entry-label">Scheduled for</p>
+                          <p className="home-upcoming-entry-date">{day.label}</p>
+                        </div>
+                        <span className="home-upcoming-chevron" aria-hidden="true">›</span>
+                      </Link>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="home-section-empty">No meals scheduled yet. Add recipes in Calendar.</p>
               )}
             </section>
-
-            <section className="home-surface-card home-block-card home-recommended-panel">
-              <h2 className="home-section-title">Recommended Recipes</h2>
-              {suggestedLoading ? (
-                <p className="home-section-loading">Loading recommendations...</p>
-              ) : suggestedRecipes.length > 0 ? (
-                <div className="home-recommendations-wrapper">
-                  {recommendationsScroll.canScrollLeft && (
-                    <button
-                      type="button"
-                      className="home-recommendations-arrow home-recommendations-arrow-left"
-                      onClick={() => scrollRecommendations("left")}
-                      aria-label="Scroll left"
-                    >
-                      <span aria-hidden>‹</span>
-                    </button>
-                  )}
-                  <div ref={recommendationsScrollRef} className="home-section-scroll home-recommendations-scroll">
-                    {suggestedRecipes.map((recipe) => (
-                      <motion.div
-                        key={recipe.id}
-                        className="home-recommendation-card"
-                        whileHover={cardHoverMotion}
-                        transition={cardHoverTransition}
-                      >
-                        <RecipeListCard
-                          recipe={recipe}
-                          isHearted={favoriteIds.has(recipe.recipe_id)}
-                          onFavoriteChange={handleFavoriteChange}
-                        />
-                      </motion.div>
-                    ))}
-                  </div>
-                  {recommendationsScroll.canScrollRight && (
-                    <button
-                      type="button"
-                      className="home-recommendations-arrow home-recommendations-arrow-right"
-                      onClick={() => scrollRecommendations("right")}
-                      aria-label="Scroll right"
-                    >
-                      <span aria-hidden>›</span>
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <p className="home-section-empty">Run import scripts to add recipes and unlock recommendations.</p>
-              )}
-            </section>
           </div>
+
+          {/* Recommended For You */}
+          <section className="home-surface-card home-block-card home-recommended-panel">
+            <div className="home-recommended-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--brand-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="home-collections-icon" aria-hidden="true">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+              <h2 className="home-section-title">Recommended For You</h2>
+            </div>
+            {suggestedLoading ? (
+              <p className="home-section-loading">Loading recommendations...</p>
+            ) : suggestedRecipes.length > 0 ? (
+              <div className="home-recommendations-wrapper">
+                {recommendationsScroll.canScrollLeft && (
+                  <button
+                    type="button"
+                    className="home-recommendations-arrow home-recommendations-arrow-left"
+                    onClick={() => scrollRecommendations("left")}
+                    aria-label="Scroll left"
+                  >
+                    <span aria-hidden>‹</span>
+                  </button>
+                )}
+                <div ref={recommendationsScrollRef} className="home-section-scroll home-recommendations-scroll">
+                  {suggestedRecipes.map((recipe) => (
+                    <motion.div
+                      key={recipe.id}
+                      className="home-recommendation-card"
+                      whileHover={cardHoverMotion}
+                      transition={cardHoverTransition}
+                    >
+                      <RecipeListCard
+                        recipe={recipe}
+                        isHearted={favoriteIds.has(recipe.recipe_id)}
+                        onFavoriteChange={handleFavoriteChange}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+                {recommendationsScroll.canScrollRight && (
+                  <button
+                    type="button"
+                    className="home-recommendations-arrow home-recommendations-arrow-right"
+                    onClick={() => scrollRecommendations("right")}
+                    aria-label="Scroll right"
+                  >
+                    <span aria-hidden>›</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="home-recommended-empty">
+                <p className="home-section-caption">Import recipes and we&apos;ll show personalized recommendations here.</p>
+                <div className="home-recommended-empty-art" aria-hidden="true">
+                  <Image
+                    src="/images/eat-healthy--work-eat-healthy.svg"
+                    alt=""
+                    width={120}
+                    height={120}
+                    className="home-recommended-empty-img"
+                  />
+                </div>
+              </div>
+            )}
+          </section>
 
           {showUrlPreviewModal && urlPreview && urlDraftRecipeRow && (
             <>
