@@ -3,6 +3,8 @@ import { recipeDisplayEnergyKcal } from "@/lib/recipe-select";
 import type {
   ExtractedRecipe,
   ExtractedRecipeIngredient,
+  RecipeIngredientLineSnapshot,
+  RecipeNutritionSnapshot,
   RecipePayload,
   RecipeRow,
   UrlImportedRecipe,
@@ -115,7 +117,7 @@ export function buildManualRecipePayload(params: {
 }
 
 /** Format a single extracted ingredient as a display/storage line */
-function formatIngredientLine(ing: ExtractedRecipeIngredient): string {
+export function formatExtractedIngredientLine(ing: ExtractedRecipeIngredient): string {
   const parts: string[] = [];
   if (ing.quantity != null) parts.push(String(ing.quantity));
   if (ing.unit?.trim()) parts.push(ing.unit.trim());
@@ -137,7 +139,7 @@ export function extractedRecipeToPayload(
   const recipe_id = `video-recipe-${jobId}`;
   const ingredient_lines =
     extracted.ingredients.length > 0
-      ? extracted.ingredients.map(formatIngredientLine).join("***")
+      ? extracted.ingredients.map(formatExtractedIngredientLine).join("***")
       : null;
   const steps =
     extracted.steps.length > 0 ? extracted.steps.join("***") : null;
@@ -205,8 +207,8 @@ export function buildVideoRecipePayload(
   };
 }
 
-/** Placeholder UUID for `RecipeFullView` before a URL import is persisted (never use with `getRecipeFull`). */
-const URL_IMPORT_DRAFT_ROW_ID = "00000000-0000-4000-8000-000000000001";
+/** Placeholder UUID for recipe template / full view before a URL import is persisted (never use with `getRecipeFull`). */
+export const URL_IMPORT_DRAFT_ROW_ID = "00000000-0000-4000-8000-000000000001";
 
 function normalizeSourceUrlForHash(url: string): string {
   try {
@@ -290,6 +292,66 @@ export function urlImportToDraftRecipeRow(payload: RecipePayload): RecipeRow {
     steps: payload.steps,
     website_url: payload.website_url,
     image_url: payload.image_url,
+  };
+}
+
+/** Draft row for video/TikTok extraction preview — same template id as URL import draft. */
+export function videoExtractionToDraftRecipeRow(
+  edited: {
+    title: string;
+    ingredientLines: string[];
+    steps: string[];
+    cookTimeMinutes: number;
+    servings: number | null;
+    imageUrl: string;
+  },
+  jobId: string,
+  opts: { sourceUrl: string | null; thumbnailUrl: string | null },
+  embedded?: {
+    recipe_nutrition: RecipeNutritionSnapshot;
+    recipe_ingredient_lines: RecipeIngredientLineSnapshot[] | null;
+  } | null
+): RecipeRow {
+  const payload = buildVideoRecipePayload(
+    {
+      title: edited.title,
+      ingredientLines: edited.ingredientLines,
+      cookTimeMinutes: edited.cookTimeMinutes,
+      steps: edited.steps,
+    },
+    jobId,
+    {
+      sourceUrl: opts.sourceUrl,
+      imageUrl: edited.imageUrl?.trim() || opts.thumbnailUrl?.trim() || null,
+    }
+  );
+  const nut = embedded?.recipe_nutrition
+    ? {
+        ...embedded.recipe_nutrition,
+        servings: edited.servings ?? embedded.recipe_nutrition.servings ?? null,
+      }
+    : null;
+  const calories = nut
+    ? Math.round(Number(nut.energy_kcal))
+    : Math.round(Number(payload.calories));
+  return {
+    id: URL_IMPORT_DRAFT_ROW_ID,
+    recipe_id: payload.recipeID,
+    recipe_label: payload.recipe_label,
+    calories,
+    cuisine_type: payload.cuisine_type,
+    meal_type: nut ? null : edited.servings != null ? String(edited.servings) : null,
+    time_in_minutes: payload.time_in_minutes,
+    ingredient_lines: payload.ingredient_lines,
+    steps: payload.steps,
+    website_url: payload.website_url,
+    image_url: payload.image_url,
+    ...(nut
+      ? {
+          recipe_nutrition: nut,
+          recipe_ingredient_lines: embedded?.recipe_ingredient_lines ?? undefined,
+        }
+      : {}),
   };
 }
 

@@ -277,7 +277,12 @@ export default function CookbookFolderPage() {
             tabIndex={0}
           >
             <div className="recipe-full-view-scroll-wrapper" onClick={(e) => e.stopPropagation()}>
-              <RecipeFullView recipeData={recipe} onClose={() => setSelectedRecipeId(null)} />
+              <RecipeFullView
+                recipeData={recipe}
+                onClose={() => setSelectedRecipeId(null)}
+                isHearted={favoriteIds.has(recipe.recipe_id)}
+                onFavoriteChange={handleFavoriteChange}
+              />
             </div>
           </div>
         ) : null;

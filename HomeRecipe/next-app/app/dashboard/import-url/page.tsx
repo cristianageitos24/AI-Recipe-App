@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { RecipeFullView } from "@/components/RecipeFullView";
@@ -98,47 +97,19 @@ export default function ImportRecipeUrlPage() {
             className="recipe-full-view-scroll-wrapper"
             onClick={(e) => e.stopPropagation()}
           >
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                alignItems: "center",
-                gap: "var(--space-3)",
-                marginBottom: "var(--space-4)",
-              }}
-            >
-              <Link
-                href="/dashboard/home"
-                className="add-recipe-manual-submit"
-                style={{
-                  textDecoration: "none",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                Back to Home
-              </Link>
-              <button
-                type="button"
-                onClick={clearResult}
-                className="add-recipe-manual-submit"
-                style={{ background: "var(--gray-600)" }}
-              >
-                Import another URL
-              </button>
-              <button
-                type="button"
-                className="submit-button video-recipe-save-btn"
-                style={{ margin: 0 }}
-                disabled={!canSave}
-                onClick={() => setSaveModalOpen(true)}
-              >
-                Save to cookbook
-              </button>
-            </div>
             <RecipeFullView
               recipeData={draftRecipeRow}
+              primaryActionSlot={
+                <button
+                  type="button"
+                  className="submit-button video-recipe-save-btn"
+                  style={{ margin: 0 }}
+                  disabled={!canSave}
+                  onClick={() => setSaveModalOpen(true)}
+                >
+                  Save
+                </button>
+              }
               onClose={() => router.push("/dashboard/home")}
             />
           </div>

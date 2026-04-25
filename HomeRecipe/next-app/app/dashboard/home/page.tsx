@@ -99,34 +99,19 @@ export default function DashboardHomePage() {
               className="recipe-full-view-scroll-wrapper"
               onClick={(e) => e.stopPropagation()}
             >
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  alignItems: "center",
-                  gap: "var(--space-3)",
-                  marginBottom: "var(--space-4)",
-                }}
-              >
-                <button
-                  type="button"
-                  className="search-results-clear"
-                  onClick={search.closeUrlPreview}
-                >
-                  Close
-                </button>
-                <button
-                  type="button"
-                  className="submit-button video-recipe-save-btn"
-                  style={{ margin: 0 }}
-                  disabled={!search.urlImportCanSave}
-                  onClick={() => search.setUrlSaveModalOpen(true)}
-                >
-                  Save to cookbook
-                </button>
-              </div>
               <RecipeFullView
                 recipeData={search.urlDraftRecipeRow}
+                primaryActionSlot={
+                  <button
+                    type="button"
+                    className="submit-button video-recipe-save-btn"
+                    style={{ margin: 0 }}
+                    disabled={!search.urlImportCanSave}
+                    onClick={() => search.setUrlSaveModalOpen(true)}
+                  >
+                    Save
+                  </button>
+                }
                 onClose={search.closeUrlPreview}
               />
             </div>

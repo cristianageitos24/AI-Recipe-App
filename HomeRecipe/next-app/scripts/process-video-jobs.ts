@@ -23,6 +23,11 @@ import {
 } from "../lib/video-processing";
 import { extractAudioToWav, transcribeWithWhisper } from "../lib/transcription";
 import { extractRecipeFromVideo } from "../lib/recipe-reasoning";
+import {
+  computeRecipeNutritionFromLines,
+  computedNutritionToIngredientSnapshots,
+} from "../lib/nutrition/sync-recipe-nutrition";
+import { formatExtractedIngredientLine } from "../lib/processRecipeData";
 import type { ExtractedRecipe } from "../lib/types";
 import {
   readVisionConfig,
@@ -323,6 +328,46 @@ async function updateJobTranscript(jobId: string, transcriptText: string | null)
       jobId,
       error: error.message,
     });
+  }
+}
+
+/**
+ * Resolve FDC / AI nutrition for extracted ingredients (same pipeline as post-save sync).
+ * Non-fatal: logs and returns the recipe unchanged on failure.
+ */
+async function enrichExtractedRecipeWithNutrition(
+  recipe: ExtractedRecipe
+): Promise<ExtractedRecipe> {
+  const rawLines = recipe.ingredients
+    .map((ing) => formatExtractedIngredientLine(ing))
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (rawLines.length === 0) {
+    return recipe;
+  }
+  try {
+    const computed = await computeRecipeNutritionFromLines(supabase, {
+      rawLines,
+      recipeTitle: recipe.title.trim() || "Recipe",
+      servings: recipe.servings,
+    });
+    return {
+      ...recipe,
+      recipe_nutrition: {
+        energy_kcal: computed.energy_kcal,
+        protein_g: computed.protein_g,
+        fat_g: computed.fat_g,
+        carb_g: computed.carb_g,
+        nutrition_source: computed.nutrition_source,
+        servings: recipe.servings,
+      },
+      recipe_ingredient_lines: computedNutritionToIngredientSnapshots(computed.lines),
+    };
+  } catch (e) {
+    log("ERROR", "Failed to compute nutrition for extracted recipe", {
+      error: e instanceof Error ? e.message : String(e),
+    });
+    return recipe;
   }
 }
 
@@ -787,6 +832,16 @@ async function processJob(job: VideoJob): Promise<void> {
       stage: "reasoning",
       detail: extractedRecipe ? "Recipe structured" : "Using raw text",
     });
+
+    await updateJobProgress(job.id, {
+      progress: P.finalizing,
+      stage: "finalizing",
+      detail: extractedRecipe ? "Computing nutrition" : "Saving results",
+    });
+
+    if (extractedRecipe) {
+      extractedRecipe = await enrichExtractedRecipeWithNutrition(extractedRecipe);
+    }
 
     await updateJobProgress(job.id, {
       progress: P.finalizing,

@@ -6,6 +6,8 @@ export type RecipeNutritionSnapshot = {
   fat_g: number;
   carb_g: number;
   nutrition_source: "fdc" | "estimated" | "mixed" | "incomplete";
+  /** From `recipe_nutrition.servings` when selected; optional on older rows. */
+  servings?: number | null;
 };
 
 /** Per-line nutrition provenance from `recipe_ingredient_lines` (embedded select). */
@@ -92,6 +94,9 @@ export type ExtractedRecipe = {
   cook_time_minutes: number | null;
   ingredients: ExtractedRecipeIngredient[];
   steps: string[];
+  /** Filled by the video worker via the same resolver used after save (FDC + AI). */
+  recipe_nutrition?: RecipeNutritionSnapshot | null;
+  recipe_ingredient_lines?: RecipeIngredientLineSnapshot[] | null;
 };
 
 /** JSON returned by the static URL recipe import service (`/api/recipes/import-url`) */
