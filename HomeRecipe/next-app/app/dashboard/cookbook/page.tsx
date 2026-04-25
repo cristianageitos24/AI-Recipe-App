@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
+import { Playfair_Display } from "next/font/google";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { getCookbookBootstrap } from "@/app/actions/dashboard";
@@ -10,6 +12,13 @@ import { CuratedCookbooks } from "@/components/CuratedCookbooks";
 import { RecipeListCard } from "@/components/RecipeListCard";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/TabCookbook.css";
+
+const playfairDisplay = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "700", "800", "900"],
+  style: ["normal"],
+  display: "swap",
+});
 
 type FoldersData = { folders: string[]; results: Record<string, unknown[]> } | null;
 
@@ -35,6 +44,31 @@ export default function CookbookPage() {
     <div className="main-panel">
       <DndProvider backend={HTML5Backend}>
         <div className="cookbook-canvas">
+          <div className="cookbook-page-header">
+            <div className="cookbook-page-title-row">
+              <span className="cookbook-page-title-icon">
+                <Image
+                  src="/images/dashboard/cookbook-icon.svg"
+                  alt=""
+                  width={21}
+                  height={21}
+                />
+              </span>
+              <div>
+                <h1
+                  style={{
+                    fontFamily: playfairDisplay.style.fontFamily,
+                    fontWeight: 800,
+                    fontSize: "28px",
+                    fontOpticalSizing: "auto",
+                  }}
+                >
+                  Cookbooks
+                </h1>
+                <p>Discover, organize and save your favorite recipes.</p>
+              </div>
+            </div>
+          </div>
         {likedRecipes.length > 0 ? (
           <motion.div
             className="cookbook-content"
@@ -76,11 +110,6 @@ export default function CookbookPage() {
           >
             <CuratedCookbooks />
             <Cookbooks initialFoldersData={foldersData} />
-            <div className="tabcookbook-no-recipes-default">
-              <h2>Looks like you haven&apos;t found any favorite recipes yet!</h2>
-              <img src="/images/tabcookbook-default.png" alt="No recipes" />
-              <h2>Explore our dishes and start liking recipes to build your collection!</h2>
-            </div>
           </motion.div>
         )}
         </div>

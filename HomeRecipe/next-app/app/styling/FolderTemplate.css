@@ -9,37 +9,41 @@
 
 .cookbook-user-folder {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-2);
-
-  min-height: 58px;
-  padding: var(--space-3) var(--space-4);
-
+  flex-direction: column;
+  position: relative;
+  min-height: 270px;
+  overflow: hidden;
   border-radius: 14px;
-  border: 1px solid var(--gray-300);
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 1px 0 var(--shadow-black-03);
-  backdrop-filter: blur(10px);
-
+  border: 1px solid #e8ecf2;
+  background: #ffffff;
+  box-shadow: 0 7px 22px rgba(17, 24, 39, 0.08);
   cursor: pointer;
   transition:
     border-color 0.2s ease,
-    background-color 0.2s ease,
     box-shadow 0.2s ease,
     transform 0.15s ease;
+}
+
+.cookbook-folder-cover {
+  width: 100%;
+  height: 128px;
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
 }
 
 .cookbook-active-content-link {
   flex: 1;
   min-width: 0;
   display: flex;
+  width: 100%;
+  color: inherit;
+  text-decoration: none;
 }
 
 .cookbook-user-folder:hover {
-  background: var(--color-bg);
-  border-color: var(--accent);
-  box-shadow: 0 var(--space-2) var(--space-5) var(--overlay-light);
+  border-color: #ffd0c7;
+  box-shadow: 0 14px 30px rgba(17, 24, 39, 0.13);
   transform: translateY(-2px);
 }
 
@@ -53,39 +57,75 @@
 
 .cookbook-active-content {
   display: flex;
+  flex-direction: column;
   justify-content: flex-start;
-  align-items: center;
-  gap: var(--space-3);
+  align-items: flex-start;
+  gap: 8px;
   width: 100%;
   min-width: 0;
-
+  padding: 34px 18px 16px;
   position: relative;
 }
 
-.cookbook-user-foldername {
-  flex: 1;
-  min-width: 0;
+.cookbook-recipe-count-bubble {
+  position: absolute;
+  left: 18px;
+  top: -34px;
+  width: 68px;
+  height: 68px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(17, 24, 39, 0.08);
+  color: #111827;
+  font-family: var(--font-body);
+}
 
-  color: var(--gray-900);
+.cookbook-recipe-count-bubble strong {
+  font-size: 17px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.cookbook-recipe-count-bubble span {
+  margin-top: 4px;
+  color: #687386;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.cookbook-user-foldername {
+  width: 100%;
+  min-width: 0;
+  color: #111827;
   text-align: left;
   font-family: var(--font-body);
-  font-size: var(--text-sm);
+  font-size: 15px;
   font-style: normal;
-  font-weight: 500;
-  line-height: normal;
-
+  font-weight: 800;
+  line-height: 1.2;
   margin: 0;
-  margin-right: var(--space-2);
-
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.cookbook-folder-description {
+  margin: 0;
+  color: #5f6877;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
 /* .cookbook-user-folder:hover .cookbook-user-complete-foldername { */
 .cookbook-user-complete-foldername {
   position: absolute;
-  left: var(--space-11);
+  left: 18px;
   top: calc(100% + var(--space-1));
   z-index: 2;
 
@@ -127,6 +167,9 @@
 }
 
 .cookbook-favorite-star {
+  position: absolute;
+  left: 18px;
+  bottom: 14px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -176,11 +219,18 @@
 }
 
 .cookbook-user-folder .etc-button {
+  position: absolute;
+  right: 12px;
+  top: 142px;
   width: 30px;
   height: 30px;
   padding: 0;
   border-radius: var(--radius-md);
   color: var(--gray-700);
+}
+
+.cookbook-user-folder .etc-content {
+  position: static;
 }
 
 .cookbook-user-folder .etc-button:hover {
@@ -190,7 +240,7 @@
 
 .cookbook-user-folder .etc-content .etc-options {
   left: auto;
-  right: 0;
+  right: 8px;
   top: calc(100% + var(--space-1));
   min-width: 170px;
   border: 1px solid var(--gray-300);

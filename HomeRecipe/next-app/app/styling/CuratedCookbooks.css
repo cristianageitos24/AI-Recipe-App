@@ -1,23 +1,15 @@
 .curated-cookbooks-section {
-  padding: 0 0 var(--space-6) 0;
-}
-
-.curated-cookbooks-section .cookbook-subtitle {
-  margin: 0;
-  margin-bottom: var(--space-4);
-  color: var(--color-fg);
-  font-family: var(--font-display);
-  font-size: var(--text-base);
-  font-style: normal;
-  font-weight: 500;
-  line-height: normal;
-  text-transform: capitalize;
+  padding: 20px 20px 22px;
+  border: 1px solid #eceff5;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, 0.03);
 }
 
 .curated-cookbooks-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: var(--space-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 18px;
   width: 100%;
 }
 
@@ -25,24 +17,43 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 48px;
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--gray-400);
-  background: var(--color-bg);
-  color: var(--color-fg);
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 1px solid #edf0f5;
+  background: #ffffff;
+  color: #3b2418;
   font-family: var(--font-body);
-  font-size: var(--text-sm);
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
   text-align: center;
   text-decoration: none;
-  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+  box-shadow: 0 2px 8px rgba(31, 41, 55, 0.04);
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
 }
 
-.curated-cookbook-tile:hover {
-  border-color: var(--accent);
-  background: var(--accent-muted-bg);
-  color: var(--accent);
+.curated-cookbook-tile:hover,
+.curated-cookbook-tile.active {
+  border-color: #ec2414;
+  background: #ec2414;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.curated-cookbook-icon {
+  width: 20px;
+  min-width: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff6d43;
+  font-size: 16px;
+}
+
+.curated-cookbook-tile:hover .curated-cookbook-icon,
+.curated-cookbook-tile.active .curated-cookbook-icon {
+  color: #ffffff;
 }
 
 .curated-cookbook-label {
@@ -53,12 +64,12 @@
 
 @media screen and (max-width: 575px) {
   .curated-cookbooks-section {
-    padding-right: 0;
+    padding: 14px;
   }
-}
 
-@media screen and (max-width: 980px) {
-  .curated-cookbooks-section {
-    margin-right: 0;
+  .curated-cookbook-tile {
+    min-height: 40px;
+    padding: 0 14px;
+    font-size: 13px;
   }
 }

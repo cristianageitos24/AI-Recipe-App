@@ -3,37 +3,60 @@
   width: 100%;
 }
 
+.cookbook-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.cookbook-page-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.cookbook-page-title-icon {
+  width: 52px;
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #ffe7dc;
+  flex-shrink: 0;
+}
+
+.cookbook-page-title-icon img {
+  width: 21px;
+  height: 21px;
+  filter: brightness(0) saturate(100%) invert(18%) sepia(97%) saturate(4826%) hue-rotate(357deg) brightness(104%) contrast(102%);
+}
+
+.cookbook-page-header h1 {
+  margin: 0;
+  color: #101114;
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 1.05;
+  font-weight: 800;
+}
+
+.cookbook-page-header p {
+  margin: 8px 0 0;
+  color: #5d6470;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.4;
+}
+
 .cookbook-content {
   display: flex;
   flex-direction: column;
   height: auto;
   width: 100%;
-  gap: var(--space-4);
-}
-
-.tabcookbook-no-recipes-default {
-  margin-bottom: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.tabcookbook-no-recipes-default h2 {
-  color: var(--color-fg);
-  text-align: center;
-  font-family: var(--font-display);
-  font-size: var(--text-base);
-  font-style: normal;
-  font-weight: 500;
-  line-height: normal;
-  margin: 0;
-}
-
-.tabcookbook-no-recipes-default img {
-  max-width: 220px;
-  flex-shrink: 0;
+  gap: 28px;
 }
 
 .tabcookbook-show-liked-recipes {
@@ -41,12 +64,13 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  padding-top: 2px;
 }
 
 .tabcookbook-show-liked-recipes .sub-header-title {
   color: var(--color-fg);
   font-family: var(--font-display);
-  font-size: var(--text-base);
+  font-size: 22px;
   font-style: normal;
   font-weight: 500;
   line-height: normal;
@@ -83,4 +107,11 @@
 .tabcookbook-liked-card-wrap .recipe-list-card.image-bttn-container {
   height: auto;
   aspect-ratio: 250 / 224;
+}
+
+@media screen and (max-width: 700px) {
+  .cookbook-page-title-icon {
+    width: 48px;
+    height: 48px;
+  }
 }

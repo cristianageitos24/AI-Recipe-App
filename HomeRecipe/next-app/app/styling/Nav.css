@@ -109,6 +109,7 @@
   width: 20px;
   height: 20px;
   flex-shrink: 0;
+  justify-self: center;
 }
 
 /* Inactive tab: light gray square, dark icon */
@@ -355,11 +356,11 @@
 .dashboard-header {
   position: fixed;
   inset: 0 auto 0 0;
-  width: 250px;
+  width: 225px;
   z-index: 5000;
   display: flex;
   flex-direction: column;
-  padding: 42px 22px 24px;
+  padding: 42px 0 24px;
   background: #ffffff;
   border-right: 1px solid #e8ecf3;
   box-sizing: border-box;
@@ -367,15 +368,16 @@
 }
 
 .dashboard-brand {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 10px;
-  color: #f1130a;
-  font-family: var(--font-body);
+  justify-content: center;
+  gap: 12px;
+  width: 90%;
+  color: #101114;
   font-size: 19px;
-  font-weight: 800;
+  font-weight: 700;
   text-decoration: none;
-  margin: 0 0 58px;
+  margin: 0 auto 58px;
 }
 
 .dashboard-brand-logo {
@@ -393,8 +395,10 @@
 }
 
 .dock-tabs {
-  display: grid;
-  gap: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
   padding: 0;
   background: transparent;
   border-radius: 0;
@@ -403,58 +407,73 @@
 }
 
 .dock-tabs li {
-  justify-content: stretch;
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
 }
 
 .dock-tabs li a.tab-square {
-  width: 100%;
-  height: 58px;
-  justify-content: flex-start;
-  gap: 16px;
+  position: relative;
+  width: 88%;
+  height: 56px;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 20px;
   padding: 0 18px;
-  border-radius: 14px;
-  color: #48566c;
+  border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+  color: #101114;
   box-sizing: border-box;
+  background: transparent;
 }
 
 .dock-tabs li img,
 .dock-tabs li svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  justify-self: center;
 }
 
 .dock-tabs li img {
-  filter: brightness(0) saturate(100%) invert(28%) sepia(17%) saturate(798%) hue-rotate(181deg) brightness(91%) contrast(84%);
+  filter: brightness(0);
 }
 
 .dock-tabs .tab-tooltip {
   position: static;
   transform: none;
+  justify-self: start;
   padding: 0;
   background: transparent;
   color: inherit;
   opacity: 1;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1;
   border-radius: 0;
 }
 
 .dock-tabs li a.tab-square:hover,
 .dock-tabs .active a.tab-square {
-  background: #fff1f1;
+  background: #2b120f;
   box-shadow: none;
-  color: #f1130a;
+  color: #ffffff;
 }
 
 .dock-tabs .active img,
 .dock-tabs li a.tab-square:hover img {
-  filter: brightness(0) saturate(100%) invert(18%) sepia(97%) saturate(4826%) hue-rotate(357deg) brightness(104%) contrast(102%);
+  filter: brightness(0) invert(1);
 }
 
 .account-nav {
   position: static;
   margin-top: auto;
+  margin-left: auto;
+  margin-right: auto;
   width: 100%;
+  max-width: 90%;
   border: 1px solid #e3e8f0;
   border-radius: 14px;
   padding: 12px;
@@ -472,7 +491,7 @@
 
 .dashboard-main {
   min-height: 100vh;
-  margin-left: 250px;
+  margin-left: 225px;
   background: #fbfbfc;
 }
 
@@ -488,7 +507,7 @@
 @media screen and (max-width: 900px) {
   .dashboard-header {
     width: 82px;
-    padding: 22px 12px;
+    padding: 22px 0;
   }
 
   .dashboard-brand span:last-child,
@@ -498,8 +517,18 @@
   }
 
   .dock-tabs li a.tab-square {
-    justify-content: center;
+    width: 88%;
+    height: 46px;
+    grid-template-columns: 1fr;
+    justify-items: center;
     padding: 0;
+    border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+  }
+
+  .dock-tabs li img,
+  .dock-tabs li svg {
+    width: 18px;
+    height: 18px;
   }
 
   .dashboard-main {

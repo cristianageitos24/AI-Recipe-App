@@ -12,6 +12,28 @@ type FolderTemplateProps = {
   onUpdate?: () => void;
 };
 
+const cookbookCovers = [
+  "/images/food pictures/Recipes by Taylor Kiser.jpg",
+  "/images/food pictures/Delicious Food by Sam Moghadam.jpg",
+  "/images/version1/food pictures/chad-montano--GFCYhoRe48-unsplash.jpg",
+  "/images/version1/food pictures/anna-tukhfatullina-food-photographer-stylist-Mzy-OjtCI70-unsplash.jpg",
+  "/images/food pictures/Delicious Recipes Rirri.jpg",
+];
+
+function getCoverForFolder(folderName: string) {
+  const index = [...folderName].reduce((sum, char) => sum + char.charCodeAt(0), 0) % cookbookCovers.length;
+  return cookbookCovers[index];
+}
+
+function getFolderDescription(folderName: string) {
+  const name = folderName.toLowerCase();
+  if (name.includes("dessert") || name.includes("sweet")) return "Delicious desserts to finish perfectly.";
+  if (name.includes("healthy") || name.includes("salad")) return "Nutritious recipes to fuel your day.";
+  if (name.includes("week") || name.includes("quick")) return "Quick and easy recipes for busy evenings.";
+  if (name.includes("comfort") || name.includes("soup")) return "Warm, comforting meals for any mood.";
+  return "Favorite recipes saved for easy cooking.";
+}
+
 export function FolderTemplate({ folderData: initialFolderData, onUpdate }: FolderTemplateProps) {
   const [folderData, setFolderData] = useState(initialFolderData);
   const [isMouseHoveringTitle, setMouseHoveringTitle] = useState(false);
@@ -89,17 +111,17 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
             : undefined
       }
     >
+      <div
+        className="cookbook-folder-cover"
+        style={{ backgroundImage: `url("${getCoverForFolder(copyFolderName)}")` }}
+        aria-hidden="true"
+      />
       <Link href={`/dashboard/cookbook/${encodeURIComponent(copyFolderName)}`} className="cookbook-active-content-link">
         <div className="cookbook-active-content">
-          <svg className="cookbook-icon" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path
-              d="M3.75 5.25A2.25 2.25 0 0 1 6 3h3.88c.597 0 1.17.237 1.591.659l1.122 1.121c.14.141.331.22.53.22H18A2.25 2.25 0 0 1 20.25 7.25v9.5A2.25 2.25 0 0 1 18 19H6a2.25 2.25 0 0 1-2.25-2.25v-11.5Z"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <div className="cookbook-recipe-count-bubble">
+            <strong>{folderData.folderLength}</strong>
+            <span>Recipes</span>
+          </div>
           <p
             className="cookbook-user-foldername"
             onMouseEnter={handleMouseEnter}
@@ -110,7 +132,7 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
           {isMouseHoveringTitle && (
             <p className="cookbook-user-complete-foldername">{copyFolderName}</p>
           )}
-          <h1 className="cookbook-user-items-count">{folderData.folderLength}</h1>
+          <p className="cookbook-folder-description">{getFolderDescription(copyFolderName)}</p>
         </div>
       </Link>
       <button

@@ -4,7 +4,14 @@ import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+import { Playfair_Display } from "next/font/google";
+
+const playfairDisplay = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "700", "800", "900"],
+  style: ["normal"],
+  display: "swap",
+});
 
 const UserButton = dynamic(
   () => import("@clerk/nextjs").then((mod) => ({ default: mod.UserButton })),
@@ -58,7 +65,7 @@ export function DashboardNav() {
           className="dashboard-brand-logo"
           priority
         />
-        <span>HomeRecipe</span>
+        <span className={playfairDisplay.className}>HomeRecipe</span>
       </Link>
       <nav className="dock-nav">
         <ul className="dock-tabs">
@@ -66,18 +73,12 @@ export function DashboardNav() {
             const isActive =
               pathname === href || pathname.startsWith(href + "/");
             return (
-              <motion.li
-                key={href}
-                className={isActive ? "active" : ""}
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ duration: 0.15 }}
-              >
+              <li key={href} className={isActive ? "active" : ""}>
                 <Link href={href} className="tab-square">
                   <Image src={icon} alt={label} width={15} height={15} />
                   <span className="tab-tooltip">{label}</span>
                 </Link>
-              </motion.li>
+              </li>
             );
           })}
         </ul>
