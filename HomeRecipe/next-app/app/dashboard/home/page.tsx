@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Playfair_Display } from "next/font/google";
 import { useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { RecipeFullView } from "@/components/RecipeFullView";
@@ -16,6 +17,13 @@ import "@/app/styling/TabHome.css";
 import "@/app/styling/VideoUpload.css";
 import "@/app/styling/CookbookFolderPage.css";
 import "@/app/styling/CookbookPageRecipeCard.css";
+
+const playfairDisplay = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "700", "800", "900"],
+  style: ["normal"],
+  display: "swap",
+});
 
 export default function DashboardHomePage() {
   const { user } = useUser();
@@ -48,7 +56,15 @@ export default function DashboardHomePage() {
         {/* Welcome row */}
         <div className="home-welcome-row">
           <div>
-            <h1 className="home-welcome-heading">
+            <h1
+              className="home-welcome-heading"
+              style={{
+                fontFamily: playfairDisplay.style.fontFamily,
+                fontWeight: 800,
+                fontSize: "28px",
+                fontOpticalSizing: "auto",
+              }}
+            >
               Welcome back, {firstName} <span style={{ marginLeft: "4px" }}>👋</span>
             </h1>
             <p className="home-welcome-sub">Let&apos;s make today delicious.</p>
