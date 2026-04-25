@@ -594,7 +594,7 @@ export function VideoUploadForm({
                   <span className="video-extractor-submit-busy-text">Processing…</span>
                 </>
               ) : (
-                "Cook It!"
+                "Cook It! 🔥"
               )}
             </span>
           </button>
