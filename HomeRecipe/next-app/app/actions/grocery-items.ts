@@ -3,8 +3,27 @@
 import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@/utils/supabase/server";
 
+const GROCERY_CATEGORIES = ["produce", "dairy", "pantry", "condiments"] as const;
+type GroceryCategory = (typeof GROCERY_CATEGORIES)[number];
+
 function normalizeItemText(text: string): string {
   return text.trim().toLowerCase();
+}
+
+function normalizeCategory(category?: string | null): GroceryCategory | null {
+  if (!category) return null;
+  return GROCERY_CATEGORIES.includes(category as GroceryCategory)
+    ? (category as GroceryCategory)
+    : null;
+}
+
+function isMissingCategoryColumnError(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return (
+    error.code === "42703" ||
+    error.code === "PGRST204" ||
+    /category.*grocery_items|grocery_items.*category/i.test(error.message ?? "")
+  );
 }
 
 export async function getGroceryItems() {
@@ -14,20 +33,33 @@ export async function getGroceryItems() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("grocery_items")
-    .select("id, item_text, checked, created_at")
+    .select("id, item_text, checked, created_at, category")
     .eq("user_id", userId)
     .order("checked", { ascending: true })
     .order("created_at", { ascending: true });
+
+  if (isMissingCategoryColumnError(error)) {
+    const fallback = await supabase
+      .from("grocery_items")
+      .select("id, item_text, checked, created_at")
+      .eq("user_id", userId)
+      .order("checked", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    if (fallback.error) return { error: fallback.error.message, data: [] };
+    return { error: null, data: fallback.data ?? [] };
+  }
 
   if (error) return { error: error.message, data: [] };
   return { error: null, data: data ?? [] };
 }
 
-export async function addGroceryItem(itemText: string) {
+export async function addGroceryItem(itemText: string, category?: string) {
   const { userId } = await auth();
   if (!userId) return { error: "Unauthorized", added: false };
   const trimmed = itemText.trim();
   if (!trimmed) return { error: "Item cannot be empty", added: false };
+  const normalizedCategory = normalizeCategory(category);
 
   const supabase = await createClient();
   const { data: existing } = await supabase
@@ -45,7 +77,19 @@ export async function addGroceryItem(itemText: string) {
     user_id: userId,
     item_text: trimmed,
     checked: false,
+    category: normalizedCategory,
   });
+
+  if (isMissingCategoryColumnError(error)) {
+    const fallback = await supabase.from("grocery_items").insert({
+      user_id: userId,
+      item_text: trimmed,
+      checked: false,
+    });
+
+    if (fallback.error) return { error: fallback.error.message, added: false };
+    return { error: null, added: true };
+  }
 
   if (error) return { error: error.message, added: false };
   return { error: null, added: true };

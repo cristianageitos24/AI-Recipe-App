@@ -23,13 +23,6 @@ const playfairDisplay = Playfair_Display({
   display: "swap",
 });
 
-type GroceryItem = {
-  id: string;
-  item_text: string;
-  checked: boolean;
-  created_at: string;
-};
-
 function formatDateForInput(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
@@ -92,9 +85,30 @@ const GROCERY_CATEGORIES = [
 ] as const;
 
 type GroceryCategoryKey = (typeof GROCERY_CATEGORIES)[number]["key"];
+type GroceryCategoryOverrides = Record<string, GroceryCategoryKey>;
 
-function getItemCategory(itemText: string): GroceryCategoryKey {
-  const normalized = itemText.toLowerCase();
+const GROCERY_CATEGORY_OVERRIDES_KEY = "grocery-category-overrides";
+
+type GroceryItem = {
+  id: string;
+  item_text: string;
+  category?: GroceryCategoryKey | null;
+  checked: boolean;
+  created_at: string;
+};
+
+function normalizeGroceryText(text: string): string {
+  return text.trim().toLowerCase();
+}
+
+function getItemCategory(
+  item: Pick<GroceryItem, "item_text" | "category">,
+  categoryOverrides: GroceryCategoryOverrides = {}
+): GroceryCategoryKey {
+  if (item.category) return item.category;
+  const override = categoryOverrides[normalizeGroceryText(item.item_text)];
+  if (override) return override;
+  const normalized = item.item_text.toLowerCase();
   return (
     GROCERY_CATEGORIES.find((category) =>
       category.keywords.some((keyword) => normalized.includes(keyword))
@@ -107,6 +121,7 @@ export default function GroceryPage() {
   const [inputText, setInputText] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<GroceryCategoryKey>("produce");
   const [activeCategory, setActiveCategory] = useState<GroceryCategoryKey | "all">("all");
+  const [categoryOverrides, setCategoryOverrides] = useState<GroceryCategoryOverrides>({});
   const [pendingCheckedIds, setPendingCheckedIds] = useState<Set<string>>(() => new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -128,6 +143,25 @@ export default function GroceryPage() {
     if (res.data) setItems(res.data as GroceryItem[]);
     setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(GROCERY_CATEGORY_OVERRIDES_KEY);
+      if (raw) setCategoryOverrides(JSON.parse(raw) as GroceryCategoryOverrides);
+    } catch {
+      setCategoryOverrides({});
+    }
+  }, []);
+
+  function saveCategoryOverride(itemText: string, category: GroceryCategoryKey) {
+    const key = normalizeGroceryText(itemText);
+    if (!key) return;
+    setCategoryOverrides((prev) => {
+      const next = { ...prev, [key]: category };
+      window.localStorage.setItem(GROCERY_CATEGORY_OVERRIDES_KEY, JSON.stringify(next));
+      return next;
+    });
+  }
 
   useEffect(() => {
     let isCurrent = true;
@@ -191,8 +225,10 @@ export default function GroceryPage() {
   async function handleAdd() {
     const trimmed = inputText.trim();
     if (!trimmed) return;
+    const categoryForNewItem = activeCategory === "all" ? selectedCategory : activeCategory;
     setInputText("");
-    const res = await addGroceryItem(trimmed);
+    saveCategoryOverride(trimmed, categoryForNewItem);
+    const res = await addGroceryItem(trimmed, categoryForNewItem);
     if (res.error) {
       setFeedback(res.error);
       setTimeout(() => setFeedback(null), 3000);
@@ -275,7 +311,7 @@ export default function GroceryPage() {
   const hasChecked = checkedItems.length > 0;
   const allChecked = items.length > 0 && uncheckedItems.length === 0;
   const categoryCounts = GROCERY_CATEGORIES.map((category) => {
-    const categoryItems = items.filter((item) => getItemCategory(item.item_text) === category.key);
+    const categoryItems = items.filter((item) => getItemCategory(item, categoryOverrides) === category.key);
     return {
       ...category,
       checked: categoryItems.filter((item) => item.checked).length,
@@ -285,10 +321,10 @@ export default function GroceryPage() {
   const visibleUncheckedItems =
     activeCategory === "all"
       ? uncheckedItems
-      : uncheckedItems.filter((item) => getItemCategory(item.item_text) === activeCategory);
+      : uncheckedItems.filter((item) => getItemCategory(item, categoryOverrides) === activeCategory);
   const groupedUncheckedItems = GROCERY_CATEGORIES.map((category) => ({
     ...category,
-    items: visibleUncheckedItems.filter((item) => getItemCategory(item.item_text) === category.key),
+    items: visibleUncheckedItems.filter((item) => getItemCategory(item, categoryOverrides) === category.key),
   })).filter((category) => category.items.length > 0);
   const progress = items.length === 0 ? 0 : Math.round((checkedItems.length / items.length) * 100);
 
@@ -372,7 +408,10 @@ export default function GroceryPage() {
                   key={category.key}
                   type="button"
                   className={`grocery-filter-chip ${activeCategory === category.key ? "active" : ""}`}
-                  onClick={() => setActiveCategory(category.key)}
+                  onClick={() => {
+                    setActiveCategory(category.key);
+                    setSelectedCategory(category.key);
+                  }}
                 >
                   {category.label} <span>{category.total}</span>
                 </button>
