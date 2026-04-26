@@ -121,18 +121,18 @@
   fill: var(--gray-900);
 }
 
-/* Active tab: black square, white icon, soft shadow */
+/* Active tab: saturated brand-red tint */
 .dock-tabs .active a.tab-square {
-  background-color: var(--gray-950);
-  box-shadow: 0 4px 12px var(--shadow-black-25);
+  background-color: color-mix(in srgb, var(--accent) 9%, var(--color-bg));
+  box-shadow: 0 8px 22px rgba(var(--accent-rgb), 0.12);
 }
 
 .dock-tabs .active img {
-  filter: brightness(0) invert(1);
+  filter: invert(20%) sepia(94%) saturate(3949%) hue-rotate(358deg) brightness(96%) contrast(94%);
 }
 
 .dock-tabs .active svg path {
-  fill: var(--color-bg);
+  fill: var(--accent);
 }
 
 /* Hide dock when recipe card modal is open */
@@ -457,14 +457,14 @@
 
 .dock-tabs li a.tab-square:hover,
 .dock-tabs .active a.tab-square {
-  background: #2b120f;
+  background: color-mix(in srgb, var(--accent) 9%, var(--color-bg));
   box-shadow: none;
-  color: #ffffff;
+  color: var(--accent);
 }
 
 .dock-tabs .active img,
 .dock-tabs li a.tab-square:hover img {
-  filter: brightness(0) invert(1);
+  filter: invert(20%) sepia(94%) saturate(3949%) hue-rotate(358deg) brightness(96%) contrast(94%);
 }
 
 .account-nav {

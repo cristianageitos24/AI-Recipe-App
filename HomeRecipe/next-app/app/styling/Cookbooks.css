@@ -44,7 +44,7 @@
 
 .cookbook-header-add-btn {
   min-height: 42px;
-  border: none;
+  border: 1px solid #ec2414;
   border-radius: 8px;
   padding: 0 18px;
   background: #ec2414;
@@ -54,10 +54,15 @@
   font-weight: 800;
   cursor: pointer;
   box-shadow: 0 8px 18px rgba(236, 36, 20, 0.18);
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
-.cookbook-header-add-btn:hover {
-  background: #d91f12;
+.cookbook-header-add-btn:hover,
+.cookbook-header-add-btn:focus-visible {
+  background: #ffffff;
+  color: #ec2414;
 }
 
 .cookbook-folders {

@@ -119,8 +119,7 @@ export function useHomeData() {
     const today = getLocalDateKey();
     const sorted = [...mealDates].sort((a, b) => a.date.localeCompare(b.date));
     const upcoming = sorted.filter((entry) => entry.date >= today);
-    const base = (upcoming.length > 0 ? upcoming : sorted).slice(0, 2);
-    return base.map((plan) => ({
+    return upcoming.slice(0, 2).map((plan) => ({
       ...plan,
       label: plan.date === today ? "Today" : formatDateKey(plan.date),
       isToday: plan.date === today,

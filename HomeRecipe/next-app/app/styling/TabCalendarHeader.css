@@ -1,11 +1,14 @@
 /*    EMPTY DATES   */
 .emptycalendar {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: minmax(180px, 300px) minmax(0, 1fr);
+  justify-content: start;
   align-items: center;
-  flex-direction: column;
-  gap: 15px;
-  padding: 0px 40px 30px 0px;
+  gap: 34px;
+  max-width: 860px;
+  margin: 0 auto 28px;
+  padding: 18px 56px 28px 36px;
+  border-bottom: 1px solid rgba(236, 36, 20, 0.08);
 }
 
 .isLoading {
@@ -23,31 +26,32 @@
 
 .tabcalendar-start-title {
   color: var(--color-fg);
-  text-align: center;
-  font-family: var(--font-body);
-  font-size: clamp(10px, 8vw, 16px);
+  text-align: left;
+  font-size: clamp(24px, 3vw, 28px);
   font-style: normal;
-  font-weight: 500;
-  line-height: normal;
-
-  margin: 0;
+  font-weight: 700;
+  line-height: 1.16;
+  margin: 0 0 14px;
 }
 
 .tabcalendar-empty-calendar-svg {
-  width: 246.897px;
-  height: 163px;
+  width: min(300px, 100%);
+  height: auto;
   flex-shrink: 0;
 }
 
-.tabcalendar-start-subtitle {
-  color: var(--color-fg);
-  text-align: center;
-  font-family: var(--font-body);
-  font-size: clamp(10px, 8vw, 16px);
-  font-style: normal;
-  font-weight: 500;
-  line-height: normal;
+.tabcalendar-empty-copy {
+  max-width: 470px;
+}
 
+.tabcalendar-start-subtitle {
+  color: var(--gray-700);
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.65;
   margin: 0;
 }
 
@@ -185,7 +189,15 @@
 
 @media screen and (max-width: 575px) {
   .emptycalendar {
-    padding: 0px 0px 20px 0px;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 16px;
+    padding: 20px 18px 30px;
+  }
+
+  .tabcalendar-start-title,
+  .tabcalendar-start-subtitle {
+    text-align: center;
   }
 
   .calendar-upcoming-events-container {

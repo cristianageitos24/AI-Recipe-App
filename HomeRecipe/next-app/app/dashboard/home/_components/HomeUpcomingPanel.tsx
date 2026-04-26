@@ -59,7 +59,18 @@ export function HomeUpcomingPanel({ upcomingMealPlans }: { upcomingMealPlans: Me
           })}
         </div>
       ) : (
-        <p className="home-section-empty">No meals scheduled yet. Add recipes in Calendar.</p>
+        <div className="home-upcoming-empty-card">
+          <div className="home-upcoming-empty-body">
+            <div className="home-upcoming-empty-illustration" aria-hidden="true">
+              <img
+                src="/images/Recipe%20book-pana.png"
+                alt=""
+                className="home-upcoming-empty-image"
+              />
+            </div>
+            <h3>No upcoming recipes</h3>
+          </div>
+        </div>
       )}
     </section>
   );

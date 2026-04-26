@@ -122,7 +122,7 @@
 
 .grocery-add-btn {
   min-height: 50px;
-  border: none;
+  border: 1px solid #ec2414;
   border-radius: 14px;
   background: #ec2414;
   color: #ffffff;
@@ -131,10 +131,15 @@
   font-weight: 800;
   cursor: pointer;
   box-shadow: 0 12px 26px rgba(236, 36, 20, 0.22);
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
-.grocery-add-btn:hover {
-  background: #d91f12;
+.grocery-add-btn:hover,
+.grocery-add-btn:focus-visible {
+  background: #ffffff;
+  color: #ec2414;
 }
 
 .grocery-feedback {

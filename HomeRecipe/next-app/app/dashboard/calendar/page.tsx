@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { Playfair_Display } from "next/font/google";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -18,6 +19,13 @@ import "@/app/styling/TabCalendarHeader.css";
 import "@/app/styling/CalendarRecipeCard.css";
 import "@/app/styling/EventPopup.css";
 import "@/app/styling/EventSearchOptions.css";
+
+const playfairDisplay = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "700", "800", "900"],
+  style: ["normal"],
+  display: "swap",
+});
 
 type CalendarEvent = {
   className: string;
@@ -324,17 +332,27 @@ export default function CalendarPage() {
     <div className="main-panel" style={{ position: "relative" }}>
       {upcomingMeals.length === 0 ? (
         <div className="emptycalendar">
-          <p className="tabcalendar-start-title">
-            Embark on your culinary adventure by clicking on any day on the calendar!
-          </p>
           <img
             className="tabcalendar-empty-calendar-svg"
             src="/images/dashboard/empty-calendar.svg"
             alt="No upcoming meals yet"
           />
-          <p className="tabcalendar-start-subtitle">
-            Effortlessly organize and select recipes, and your upcoming culinary delights will show right here.
-          </p>
+          <div className="tabcalendar-empty-copy">
+            <h2
+              className="tabcalendar-start-title"
+              style={{
+                fontFamily: playfairDisplay.style.fontFamily,
+                fontWeight: 800,
+                fontOpticalSizing: "auto",
+              }}
+            >
+              Your calendar is ready for delicious plans!
+            </h2>
+            <p className="tabcalendar-start-subtitle">
+              You don&apos;t have any upcoming recipes scheduled yet.
+              Add recipes to your calendar and your culinary journey will come to life here.
+            </p>
+          </div>
         </div>
       ) : (
         <>
