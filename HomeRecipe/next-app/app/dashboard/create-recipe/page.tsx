@@ -565,7 +565,7 @@ export default function CreateRecipePage() {
                   {manualImageFile && (
                     <button
                       type="button"
-                      className="manual-recipe-remove-btn"
+                      className="create-recipe-image-remove-btn"
                       onClick={() => {
                         setManualImageFile(null);
                         if (fileInputRef.current) fileInputRef.current.value = "";

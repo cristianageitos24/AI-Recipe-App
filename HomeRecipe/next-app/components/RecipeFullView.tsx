@@ -344,6 +344,7 @@ export function RecipeFullView({
                     e.stopPropagation();
                     handleAddIngredient(item);
                   }}
+                  title={`Add ${item} to grocery list`}
                   aria-label={`Add ${item} to grocery list`}
                 >
                   <AddToGroceryIcon />

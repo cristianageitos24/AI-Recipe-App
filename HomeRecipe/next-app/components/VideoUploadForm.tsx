@@ -819,6 +819,11 @@ export function VideoUploadForm({
                                   if (rawLine) void handleAddIngredient(rawLine);
                                 }}
                                 disabled={!rawLine}
+                                title={
+                                  rawLine
+                                    ? `Add ${rawLine} to grocery list`
+                                    : "Add ingredient to grocery list"
+                                }
                                 aria-label={`Add ${rawLine || "ingredient"} to grocery list`}
                               >
                                 <AddToGroceryIcon />
