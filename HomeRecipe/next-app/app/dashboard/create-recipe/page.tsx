@@ -12,6 +12,30 @@ import "@/app/styling/CookbookPageRecipeCard.css";
 
 const MAX_MANUAL_IMAGE_BYTES = 8 * 1024 * 1024;
 
+const CREATE_RECIPE_DETAILS_FIELD_IDS = [
+  "create-recipe-time",
+  "create-recipe-calories",
+  "create-recipe-cuisine",
+  "create-recipe-meal",
+  "create-recipe-website",
+] as const;
+
+function focusNextCreateRecipeDetailsField(currentId: string) {
+  const idx = CREATE_RECIPE_DETAILS_FIELD_IDS.indexOf(
+    currentId as (typeof CREATE_RECIPE_DETAILS_FIELD_IDS)[number]
+  );
+  if (idx < 0 || idx >= CREATE_RECIPE_DETAILS_FIELD_IDS.length - 1) return;
+  document.getElementById(CREATE_RECIPE_DETAILS_FIELD_IDS[idx + 1])?.focus();
+}
+
+function focusAfterPaint(selector: string) {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      (document.querySelector(selector) as HTMLElement | null)?.focus();
+    });
+  });
+}
+
 export default function CreateRecipePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -87,6 +111,15 @@ export default function CreateRecipePage() {
 
   function triggerManualImagePicker() {
     fileInputRef.current?.click();
+  }
+
+  function handleDetailsFieldEnter(
+    e: React.KeyboardEvent<HTMLInputElement>,
+    fieldId: string
+  ) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    focusNextCreateRecipeDetailsField(fieldId);
   }
 
   function handleManualImageSelection(file?: File) {
@@ -343,12 +376,22 @@ export default function CreateRecipePage() {
                   <input
                     type="text"
                     className="add-recipe-manual-input manual-recipe-line-input"
+                    data-create-recipe-ingredient={i}
                     value={line}
                     onChange={(e) => {
                       const next = [...manualIngredientLines];
                       next[i] = e.target.value;
                       setManualIngredientLines(next);
                       clearError();
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      e.preventDefault();
+                      const newIndex = manualIngredientLines.length;
+                      setManualIngredientLines((lines) => [...lines, ""]);
+                      focusAfterPaint(
+                        `[data-create-recipe-ingredient="${newIndex}"]`
+                      );
                     }}
                     placeholder="Ingredient"
                     aria-label={`Ingredient ${i + 1}`}
@@ -388,11 +431,19 @@ export default function CreateRecipePage() {
                   <span className="manual-recipe-step-num">{i + 1}.</span>
                   <textarea
                     className="add-recipe-manual-input manual-recipe-step-input"
+                    data-create-recipe-step={i}
                     value={step}
                     onChange={(e) => {
                       const next = [...manualStepsLines];
                       next[i] = e.target.value;
                       setManualStepsLines(next);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter" || e.shiftKey) return;
+                      e.preventDefault();
+                      const newIndex = manualStepsLines.length;
+                      setManualStepsLines((lines) => [...lines, ""]);
+                      focusAfterPaint(`[data-create-recipe-step="${newIndex}"]`);
                     }}
                     placeholder="Step"
                     rows={2}
@@ -446,6 +497,7 @@ export default function CreateRecipePage() {
                   setManualTimeInMinutes(e.target.value);
                   clearError();
                 }}
+                onKeyDown={(e) => handleDetailsFieldEnter(e, "create-recipe-time")}
                 aria-required
               />
               <label
@@ -463,6 +515,7 @@ export default function CreateRecipePage() {
                 placeholder="e.g. 250"
                 value={manualCalories}
                 onChange={(e) => setManualCalories(e.target.value)}
+                onKeyDown={(e) => handleDetailsFieldEnter(e, "create-recipe-calories")}
               />
               <label
                 className="add-recipe-manual-label"
@@ -478,6 +531,7 @@ export default function CreateRecipePage() {
                 placeholder="e.g. American"
                 value={manualCuisineType}
                 onChange={(e) => setManualCuisineType(e.target.value)}
+                onKeyDown={(e) => handleDetailsFieldEnter(e, "create-recipe-cuisine")}
               />
               <label
                 className="add-recipe-manual-label"
@@ -493,6 +547,7 @@ export default function CreateRecipePage() {
                 placeholder="e.g. lunch"
                 value={manualMealType}
                 onChange={(e) => setManualMealType(e.target.value)}
+                onKeyDown={(e) => handleDetailsFieldEnter(e, "create-recipe-meal")}
               />
               <div style={{ marginTop: 12 }}>
                 <p className="add-recipe-manual-label" style={{ marginBottom: 8 }}>
@@ -542,6 +597,10 @@ export default function CreateRecipePage() {
                 placeholder="https://..."
                 value={manualWebsiteUrl}
                 onChange={(e) => setManualWebsiteUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") return;
+                  e.preventDefault();
+                }}
               />
             </div>
           )}
