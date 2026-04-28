@@ -27,6 +27,8 @@ export type RecipeTemplateShellProps = {
   };
   /** Optional overlay rendered inside hero image area. */
   heroOverlay?: React.ReactNode;
+  /** Shown under “Nutrition disclaimer” in the ⋯ menu (e.g. draft create-recipe warning). */
+  nutritionDisclaimerMenuSubtext?: string;
 };
 
 function IconFlame() {
@@ -93,6 +95,7 @@ export function RecipeTemplateShell({
   mobileSaveSlot,
   draftTitle,
   heroOverlay,
+  nutritionDisclaimerMenuSubtext,
 }: RecipeTemplateShellProps) {
   const [tab, setTab] = useState<"cook" | "nutrition">("cook");
   const [moreOpen, setMoreOpen] = useState(false);
@@ -275,11 +278,20 @@ export function RecipeTemplateShell({
                   </button>
                   <Link
                     href="/dashboard/about"
-                    className="recipe-template-more-item"
+                    className={
+                      nutritionDisclaimerMenuSubtext
+                        ? "recipe-template-more-item recipe-template-more-item--stacked"
+                        : "recipe-template-more-item"
+                    }
                     role="menuitem"
                     onClick={() => setMoreOpen(false)}
                   >
-                    Nutrition disclaimer
+                    <span className="recipe-template-more-item-title">Nutrition disclaimer</span>
+                    {nutritionDisclaimerMenuSubtext ? (
+                      <span className="recipe-template-more-item-sub">
+                        {nutritionDisclaimerMenuSubtext}
+                      </span>
+                    ) : null}
                   </Link>
                 </div>
               )}

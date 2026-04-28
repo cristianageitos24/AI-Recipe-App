@@ -43,6 +43,8 @@ type RecipeFullViewProps = {
     onChange: (value: string) => void;
     placeholder?: string;
   };
+  /** Subtext under ⋯ → Nutrition disclaimer (e.g. unsaved draft warning). */
+  nutritionDisclaimerMenuSubtext?: string;
 };
 
 function pickNutritionSnapshot(
@@ -135,6 +137,7 @@ export function RecipeFullView({
   hideFavoriteAction = false,
   heroOverlay,
   draftTitle,
+  nutritionDisclaimerMenuSubtext,
 }: RecipeFullViewProps) {
   const router = useRouter();
   const template = useMemo(() => buildRecipeTemplateData(recipeData), [recipeData]);
@@ -609,6 +612,7 @@ export function RecipeFullView({
       nutritionPanel={nutritionPanel}
       heroOverlay={heroOverlay}
       draftTitle={draftTitle}
+      nutritionDisclaimerMenuSubtext={nutritionDisclaimerMenuSubtext}
     />
   );
 }

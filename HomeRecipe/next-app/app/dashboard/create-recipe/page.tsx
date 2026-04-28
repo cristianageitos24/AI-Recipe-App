@@ -279,6 +279,7 @@ export default function CreateRecipePage() {
         <RecipeFullView
           recipeData={previewRecipe}
           hideFavoriteAction
+          nutritionDisclaimerMenuSubtext="Unsaved recipe data will be lost by clicking this link."
           draftTitle={{
             value: manualRecipeLabel,
             onChange: (v) => {
