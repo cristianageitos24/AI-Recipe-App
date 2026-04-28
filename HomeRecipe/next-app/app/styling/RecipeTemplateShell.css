@@ -687,9 +687,8 @@
     position: absolute;
     top: 12px;
     left: 12px;
-    right: 12px;
     z-index: 4;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: flex-start;
     pointer-events: none;
   }
@@ -710,29 +709,6 @@
     justify-content: center;
     cursor: pointer;
     backdrop-filter: blur(8px);
-  }
-
-  .recipe-template-mobile-actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  .recipe-template-mobile-actions .recipe-template-action-btn {
-    background: var(--overlay-strong);
-    color: var(--color-bg);
-    border-color: transparent;
-    backdrop-filter: blur(8px);
-  }
-
-  .recipe-template-mobile-actions .recipe-template-cookbook-action-text {
-    display: none;
-  }
-
-  .recipe-template-mobile-actions .recipe-template-cookbook-action {
-    width: 44px;
-    height: 44px;
-    padding: 0;
-    justify-content: center;
   }
 
   .recipe-template-close {
