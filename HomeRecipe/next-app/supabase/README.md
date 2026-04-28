@@ -14,6 +14,7 @@ From the **`next-app`** directory (with Supabase CLI installed and project linke
 1. **Enable Clerk as third-party auth in Supabase:**
    - In Clerk Dashboard → [Supabase integration](https://dashboard.clerk.com/setup/supabase) → Activate and copy your Clerk domain.
    - In Supabase Dashboard → **Authentication** → **Sign In / Up** → **Add provider** → **Clerk** → Paste the Clerk domain.
+   - Ensure Clerk has a **JWT template** for Supabase (the integration usually creates one named `supabase`). The Next.js server client requests this token so `auth.jwt()->>'sub'` in RLS matches `recipes.user_id`. If manual recipe saves fail with **“new row violates row-level security policy”**, the template is missing, misnamed, or not selected: set `CLERK_SUPABASE_JWT_TEMPLATE` in `.env.local` to your template name (default in code is `supabase`).
 
 2. **Migrations** — numbered files under `supabase/migrations/` are the source of truth, including FDC nutrition (`026+`), grocery (`027`), comments (`028`), `fdc_candidates` (`029`), legacy **`ingredients` removal (`030`)**, archive/alignment (`031`-`033`), and FDC hourly quota (`034`-`035`). Apply via CLI or MCP as above. The SQL Editor is for one-off debugging only.
 

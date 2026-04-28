@@ -111,22 +111,27 @@ export async function getOrCreateRecipe(payload: RecipePayload) {
   const { userId } = await auth();
   if (!userId) return { error: "Unauthorized", data: null };
 
-  const supabase = await createClient();
-
   const isUserOwned =
     payload.recipeID.startsWith("manual-") ||
     payload.recipeID.startsWith("video-recipe-") ||
     payload.recipeID.startsWith("url-import-");
 
-  const { data: existing } = await supabase
+  // Use service role so writes succeed even when Clerk→Supabase JWT / RLS `auth.jwt()->>'sub'`
+  // is not configured; ownership is enforced via Clerk `userId` and `user_id` on rows.
+  const svc = await createServiceRoleClient();
+
+  const { data: existing } = await svc
     .from("recipes")
-    .select("id")
+    .select("id, user_id")
     .eq("recipe_id", payload.recipeID)
-    .single();
+    .maybeSingle();
 
   if (existing) {
     if (isUserOwned) {
-      await supabase
+      if (existing.user_id !== userId) {
+        return { error: "Forbidden", data: null };
+      }
+      const { error: updError } = await svc
         .from("recipes")
         .update({
           recipe_label: payload.recipe_label,
@@ -139,15 +144,17 @@ export async function getOrCreateRecipe(payload: RecipePayload) {
           website_url: payload.website_url,
           image_url: payload.image_url,
         })
-        .eq("id", existing.id);
+        .eq("id", existing.id)
+        .eq("user_id", userId);
+      if (updError) return { error: updError.message, data: null };
       await syncNutritionIfOwner(existing.id, userId);
     }
-    return { error: null, data: existing };
+    return { error: null, data: { id: existing.id } };
   }
 
   const user_id = isUserOwned ? userId : null;
 
-  const { data: inserted, error } = await supabase
+  const { data: inserted, error } = await svc
     .from("recipes")
     .insert({
       recipe_id: payload.recipeID,
@@ -179,17 +186,31 @@ export async function getOrCreateRecipe(payload: RecipePayload) {
 export async function createRecipeAndReturn(
   payload: RecipePayload
 ): Promise<{ error: string | null; data: RecipeRow | null }> {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized", data: null };
+
   const res = await getOrCreateRecipe(payload);
   if (res.error || !res.data) return { error: res.error ?? "Failed to get/create recipe", data: null };
 
-  const supabase = await createClient();
-  const { data: row, error } = await supabase
+  const isUserOwned =
+    payload.recipeID.startsWith("manual-") ||
+    payload.recipeID.startsWith("video-recipe-") ||
+    payload.recipeID.startsWith("url-import-");
+
+  const svc = await createServiceRoleClient();
+  const { data: row, error } = await svc
     .from("recipes")
     .select(RECIPE_WITH_NUTRITION)
     .eq("id", res.data.id)
     .single();
 
   if (error) return { error: error.message, data: null };
+  if (!row) return { error: "Recipe not found", data: null };
+
+  if (isUserOwned && row.user_id !== userId) {
+    return { error: "Forbidden", data: null };
+  }
+
   return { error: null, data: row as RecipeRow };
 }
 
@@ -219,8 +240,8 @@ export async function uploadManualRecipeImage(formData: FormData): Promise<{
   const timestamp = Date.now();
   const storagePath = `users/${userId}/manual/${timestamp}-${labelSlug}.${ext}`;
 
-  const supabase = await createClient();
-  const { error: uploadError } = await supabase.storage
+  const svc = await createServiceRoleClient();
+  const { error: uploadError } = await svc.storage
     .from("recipe-covers")
     .upload(storagePath, file, {
       contentType: file.type || undefined,
@@ -231,7 +252,7 @@ export async function uploadManualRecipeImage(formData: FormData): Promise<{
     return { error: uploadError.message, url: null };
   }
 
-  const { data } = supabase.storage.from("recipe-covers").getPublicUrl(storagePath);
+  const { data } = svc.storage.from("recipe-covers").getPublicUrl(storagePath);
   if (!data.publicUrl) {
     return { error: "Failed to generate image URL.", url: null };
   }

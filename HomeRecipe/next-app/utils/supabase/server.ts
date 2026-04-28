@@ -17,8 +17,20 @@ export async function createClient() {
         const authObj = await auth();
         const getToken = authObj?.getToken;
         if (typeof getToken !== "function") return null;
-        const token = await getToken();
-        return token ?? null;
+
+        // RLS policies use auth.jwt()->>'sub', which must match recipes.user_id (Clerk user id).
+        // That requires Clerk's Supabase JWT template so PostgREST gets a compatible token.
+        // Clerk Dashboard → JWT Templates → "supabase" (see Supabase integration setup).
+        const template =
+          process.env.CLERK_SUPABASE_JWT_TEMPLATE?.trim() || "supabase";
+        try {
+          const supabaseJwt = await getToken({ template });
+          if (supabaseJwt) return supabaseJwt;
+        } catch {
+          /* template name missing or not deployed */
+        }
+
+        return (await getToken()) ?? null;
       } catch {
         return null;
       }
