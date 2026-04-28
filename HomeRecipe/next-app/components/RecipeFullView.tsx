@@ -37,6 +37,12 @@ type RecipeFullViewProps = {
   hideFavoriteAction?: boolean;
   /** Optional overlay rendered inside recipe hero image area. */
   heroOverlay?: React.ReactNode;
+  /** Editable title on the card (e.g. create-recipe draft); sync with form state in parent. */
+  draftTitle?: {
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+  };
 };
 
 function pickNutritionSnapshot(
@@ -128,6 +134,7 @@ export function RecipeFullView({
   primaryActionSlot,
   hideFavoriteAction = false,
   heroOverlay,
+  draftTitle,
 }: RecipeFullViewProps) {
   const router = useRouter();
   const template = useMemo(() => buildRecipeTemplateData(recipeData), [recipeData]);
@@ -600,6 +607,7 @@ export function RecipeFullView({
       cookInstructionsPanel={cookInstructionsPanel}
       nutritionPanel={nutritionPanel}
       heroOverlay={heroOverlay}
+      draftTitle={draftTitle}
     />
   );
 }

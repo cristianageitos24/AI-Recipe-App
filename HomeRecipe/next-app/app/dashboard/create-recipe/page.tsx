@@ -246,6 +246,14 @@ export default function CreateRecipePage() {
         <RecipeFullView
           recipeData={previewRecipe}
           hideFavoriteAction
+          draftTitle={{
+            value: manualRecipeLabel,
+            onChange: (v) => {
+              setManualRecipeLabel(v);
+              clearError();
+            },
+            placeholder: "Recipe Name",
+          }}
           heroOverlay={
             <button
               type="button"
@@ -290,7 +298,7 @@ export default function CreateRecipePage() {
           id="create-recipe-name"
           type="text"
           className="add-recipe-manual-input manual-recipe-title-input"
-          placeholder="e.g. Chocolate Cake"
+          placeholder="Recipe Name"
           value={manualRecipeLabel}
           onChange={(e) => {
             setManualRecipeLabel(e.target.value);

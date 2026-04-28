@@ -137,9 +137,17 @@
 }
 
 .recipe-template-title-input {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 0 4px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
   font-family: var(--font-display);
   letter-spacing: -0.02em;
-  border-bottom: 2px solid transparent;
   transition: border-color 0.15s ease;
 }
 
