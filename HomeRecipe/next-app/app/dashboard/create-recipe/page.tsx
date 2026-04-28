@@ -19,7 +19,7 @@ export default function CreateRecipePage() {
 
   const [manualRecipeLabel, setManualRecipeLabel] = useState("");
   const [manualAddRecipeTab, setManualAddRecipeTab] = useState<
-    "ingredients" | "cooktime" | "steps"
+    "ingredients" | "steps" | "details"
   >("ingredients");
   const [manualIngredientLines, setManualIngredientLines] = useState<string[]>([""]);
   const [manualStepsLines, setManualStepsLines] = useState<string[]>([""]);
@@ -319,20 +319,20 @@ export default function CreateRecipePage() {
           <button
             type="button"
             role="tab"
-            aria-selected={manualAddRecipeTab === "cooktime"}
-            className={`manual-recipe-tab ${manualAddRecipeTab === "cooktime" ? "active" : ""}`}
-            onClick={() => setManualAddRecipeTab("cooktime")}
-          >
-            Cook time
-          </button>
-          <button
-            type="button"
-            role="tab"
             aria-selected={manualAddRecipeTab === "steps"}
             className={`manual-recipe-tab ${manualAddRecipeTab === "steps" ? "active" : ""}`}
             onClick={() => setManualAddRecipeTab("steps")}
           >
             Steps
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={manualAddRecipeTab === "details"}
+            className={`manual-recipe-tab ${manualAddRecipeTab === "details" ? "active" : ""}`}
+            onClick={() => setManualAddRecipeTab("details")}
+          >
+            Details
           </button>
         </div>
         <div className="manual-recipe-tab-panel" role="tabpanel">
@@ -381,7 +381,52 @@ export default function CreateRecipePage() {
               </button>
             </div>
           )}
-          {manualAddRecipeTab === "cooktime" && (
+          {manualAddRecipeTab === "steps" && (
+            <div className="manual-recipe-steps">
+              {manualStepsLines.map((step, i) => (
+                <div key={i} className="manual-recipe-step-row">
+                  <span className="manual-recipe-step-num">{i + 1}.</span>
+                  <textarea
+                    className="add-recipe-manual-input manual-recipe-step-input"
+                    value={step}
+                    onChange={(e) => {
+                      const next = [...manualStepsLines];
+                      next[i] = e.target.value;
+                      setManualStepsLines(next);
+                    }}
+                    placeholder="Step"
+                    rows={2}
+                    aria-label={`Step ${i + 1}`}
+                  />
+                  <button
+                    type="button"
+                    className="manual-recipe-remove-btn"
+                    onClick={() => {
+                      const next = manualStepsLines.filter(
+                        (_, idx) => idx !== i
+                      );
+                      setManualStepsLines(
+                        next.length === 0 ? [""] : next
+                      );
+                    }}
+                    aria-label="Remove step"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                className="manual-recipe-add-btn"
+                onClick={() =>
+                  setManualStepsLines([...manualStepsLines, ""])
+                }
+              >
+                + Add step
+              </button>
+            </div>
+          )}
+          {manualAddRecipeTab === "details" && (
             <div className="manual-recipe-cooktime">
               <label
                 className="add-recipe-manual-label"
@@ -498,51 +543,6 @@ export default function CreateRecipePage() {
                 value={manualWebsiteUrl}
                 onChange={(e) => setManualWebsiteUrl(e.target.value)}
               />
-            </div>
-          )}
-          {manualAddRecipeTab === "steps" && (
-            <div className="manual-recipe-steps">
-              {manualStepsLines.map((step, i) => (
-                <div key={i} className="manual-recipe-step-row">
-                  <span className="manual-recipe-step-num">{i + 1}.</span>
-                  <textarea
-                    className="add-recipe-manual-input manual-recipe-step-input"
-                    value={step}
-                    onChange={(e) => {
-                      const next = [...manualStepsLines];
-                      next[i] = e.target.value;
-                      setManualStepsLines(next);
-                    }}
-                    placeholder="Step"
-                    rows={2}
-                    aria-label={`Step ${i + 1}`}
-                  />
-                  <button
-                    type="button"
-                    className="manual-recipe-remove-btn"
-                    onClick={() => {
-                      const next = manualStepsLines.filter(
-                        (_, idx) => idx !== i
-                      );
-                      setManualStepsLines(
-                        next.length === 0 ? [""] : next
-                      );
-                    }}
-                    aria-label="Remove step"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                className="manual-recipe-add-btn"
-                onClick={() =>
-                  setManualStepsLines([...manualStepsLines, ""])
-                }
-              >
-                + Add step
-              </button>
             </div>
           )}
         </div>
