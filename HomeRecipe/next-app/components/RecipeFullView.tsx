@@ -21,7 +21,12 @@ import { addGroceryItem, addGroceryItems, removeGroceryItems } from "@/app/actio
 import { buildRecipeTemplateData, isRecipeTemplateDraftRow } from "@/lib/recipe-template";
 import { RecipeTemplateShell } from "@/components/RecipeTemplateShell";
 import { HeartButton } from "@/components/HeartButton";
-import { recipeRowToProcessed } from "@/lib/processRecipeData";
+import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
+import {
+  canSaveRecipeToCookbook,
+  recipeRowToProcessed,
+  toRecipePayload,
+} from "@/lib/processRecipeData";
 import "@/app/styling/RecipeFullView.css";
 
 const INGREDIENT_PREVIEW_COUNT = 10;
@@ -150,6 +155,7 @@ export function RecipeFullView({
   const [fdcPickChoice, setFdcPickChoice] = useState<number | null>(null);
   const [fdcPickBusy, setFdcPickBusy] = useState(false);
   const [fdcPickError, setFdcPickError] = useState<string | null>(null);
+  const [saveCookbookOpen, setSaveCookbookOpen] = useState(false);
 
   const ingredientLines = (recipeData.ingredient_lines ?? "").split("***").map((s) => s.trim()).filter(Boolean);
   const stepsLines = (recipeData.steps ?? "").trim()
@@ -172,6 +178,11 @@ export function RecipeFullView({
 
   const draft = isRecipeTemplateDraftRow(recipeData);
   const showFavorite = !draft && !hideFavoriteAction;
+  const cookbookSavePayload = useMemo(() => {
+    if (!canSaveRecipeToCookbook(recipeData)) return null;
+    return toRecipePayload(recipeRowToProcessed(recipeData));
+  }, [recipeData]);
+  const showCookbookSave = cookbookSavePayload != null;
 
   const ingredientRows = template.ingredients;
   const visibleIngredients =
@@ -585,34 +596,63 @@ export function RecipeFullView({
     </>
   );
 
+  const cookbookActionSlot = showCookbookSave ? (
+    <button
+      type="button"
+      className="recipe-template-action-btn recipe-template-cookbook-action"
+      aria-label="Add to cookbook"
+      onClick={(e) => {
+        e.stopPropagation();
+        setSaveCookbookOpen(true);
+      }}
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+        <path d="M8 7h8M8 11h6" />
+      </svg>
+      <span className="recipe-template-cookbook-action-text">Add to cookbook</span>
+    </button>
+  ) : undefined;
+
   return (
-    <RecipeTemplateShell
-      template={template}
-      onClose={onClose}
-      favoriteSlot={favoriteSlot}
-      mobileSaveSlot={
-        mobileFavoriteSlot ? (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              width: "100%",
-              padding: "12px 16px",
-              background: "var(--accent)",
-              borderRadius: 14,
-            }}
-          >
-            {mobileFavoriteSlot}
-          </div>
-        ) : undefined
-      }
-      cookIngredientsPanel={cookIngredientsPanel}
-      cookInstructionsPanel={cookInstructionsPanel}
-      nutritionPanel={nutritionPanel}
-      heroOverlay={heroOverlay}
-      draftTitle={draftTitle}
-      nutritionDisclaimerMenuSubtext={nutritionDisclaimerMenuSubtext}
-    />
+    <>
+      <RecipeTemplateShell
+        template={template}
+        onClose={onClose}
+        favoriteSlot={favoriteSlot}
+        cookbookActionSlot={cookbookActionSlot}
+        mobileSaveSlot={
+          mobileFavoriteSlot ? (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                width: "100%",
+                padding: "12px 16px",
+                background: "var(--accent)",
+                borderRadius: 14,
+              }}
+            >
+              {mobileFavoriteSlot}
+            </div>
+          ) : undefined
+        }
+        cookIngredientsPanel={cookIngredientsPanel}
+        cookInstructionsPanel={cookInstructionsPanel}
+        nutritionPanel={nutritionPanel}
+        heroOverlay={heroOverlay}
+        draftTitle={draftTitle}
+        nutritionDisclaimerMenuSubtext={nutritionDisclaimerMenuSubtext}
+      />
+      {showCookbookSave && cookbookSavePayload && (
+        <SaveRecipeToCookbookModal
+          open={saveCookbookOpen}
+          onClose={() => setSaveCookbookOpen(false)}
+          payload={saveCookbookOpen ? cookbookSavePayload : null}
+        />
+      )}
+    </>
   );
 }

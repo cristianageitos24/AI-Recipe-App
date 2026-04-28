@@ -29,6 +29,8 @@ export type RecipeTemplateShellProps = {
   heroOverlay?: React.ReactNode;
   /** Shown under “Nutrition disclaimer” in the ⋯ menu (e.g. draft create-recipe warning). */
   nutritionDisclaimerMenuSubtext?: string;
+  /** e.g. “Add to cookbook” — same row as favorite, Share, and ⋯ */
+  cookbookActionSlot?: React.ReactNode;
 };
 
 function IconFlame() {
@@ -96,6 +98,7 @@ export function RecipeTemplateShell({
   draftTitle,
   heroOverlay,
   nutritionDisclaimerMenuSubtext,
+  cookbookActionSlot,
 }: RecipeTemplateShellProps) {
   const [tab, setTab] = useState<"cook" | "nutrition">("cook");
   const [moreOpen, setMoreOpen] = useState(false);
@@ -169,6 +172,7 @@ export function RecipeTemplateShell({
         )}
         <div className="recipe-template-mobile-actions">
           {favoriteSlot}
+          {cookbookActionSlot}
           <button type="button" className="recipe-template-action-btn" onClick={() => handleShare()} aria-label="Share">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
               <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" />
@@ -239,6 +243,7 @@ export function RecipeTemplateShell({
             {favoriteSlot && (
               <div className="recipe-template-favorite-wrap">{favoriteSlot}</div>
             )}
+            {cookbookActionSlot}
             <button type="button" className="recipe-template-action-btn" onClick={() => handleShare()}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                 <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" />

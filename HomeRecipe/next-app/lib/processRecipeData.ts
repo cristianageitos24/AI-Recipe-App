@@ -210,6 +210,21 @@ export function buildVideoRecipePayload(
 /** Placeholder UUID for recipe template / full view before a URL import is persisted (never use with `getRecipeFull`). */
 export const URL_IMPORT_DRAFT_ROW_ID = "00000000-0000-4000-8000-000000000001";
 
+/** Client-only row used on the create-recipe form preview (not in the database). */
+export const CREATE_RECIPE_PREVIEW_ROW_ID = "create-recipe-preview";
+
+/** Whether this row can be added to a folder via `SaveRecipeToCookbookModal` / `addRecipeToFolder`. */
+export function canSaveRecipeToCookbook(row: RecipeRow): boolean {
+  if (row.id === URL_IMPORT_DRAFT_ROW_ID) return false;
+  if (
+    row.id === CREATE_RECIPE_PREVIEW_ROW_ID ||
+    row.recipe_id === CREATE_RECIPE_PREVIEW_ROW_ID
+  ) {
+    return false;
+  }
+  return true;
+}
+
 function normalizeSourceUrlForHash(url: string): string {
   try {
     const u = new URL(url.trim());

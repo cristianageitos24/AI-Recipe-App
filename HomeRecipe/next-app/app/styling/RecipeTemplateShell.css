@@ -724,6 +724,17 @@
     backdrop-filter: blur(8px);
   }
 
+  .recipe-template-mobile-actions .recipe-template-cookbook-action-text {
+    display: none;
+  }
+
+  .recipe-template-mobile-actions .recipe-template-cookbook-action {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+
   .recipe-template-close {
     display: none;
   }

@@ -5,7 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createRecipeAndReturn, uploadManualRecipeImage } from "@/app/actions/recipes";
 import { RecipeFullView } from "@/components/RecipeFullView";
-import { buildManualRecipePayload } from "@/lib/processRecipeData";
+import {
+  buildManualRecipePayload,
+  CREATE_RECIPE_PREVIEW_ROW_ID,
+} from "@/lib/processRecipeData";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/CookbookFolderPage.css";
 import "@/app/styling/CookbookPageRecipeCard.css";
@@ -81,8 +84,8 @@ export default function CreateRecipePage() {
     const time = Number(manualTimeInMinutes);
     const calories = Number(manualCalories);
     return {
-      id: "create-recipe-preview",
-      recipe_id: "create-recipe-preview",
+      id: CREATE_RECIPE_PREVIEW_ROW_ID,
+      recipe_id: CREATE_RECIPE_PREVIEW_ROW_ID,
       recipe_label: manualRecipeLabel.trim() || "Untitled Recipe",
       calories: Number.isFinite(calories) && calories >= 0 ? calories : 0,
       cuisine_type: manualCuisineType.trim() || null,
@@ -236,7 +239,10 @@ export default function CreateRecipePage() {
           className="recipe-full-view-scroll-wrapper"
           onClick={(e) => e.stopPropagation()}
         >
-          <RecipeFullView recipeData={createdRecipe} onClose={() => router.push("/dashboard/home")} />
+          <RecipeFullView
+            recipeData={createdRecipe}
+            onClose={() => router.push("/dashboard/home")}
+          />
           <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
             <button
               type="button"
