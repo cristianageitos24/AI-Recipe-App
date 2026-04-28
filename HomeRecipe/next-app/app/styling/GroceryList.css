@@ -4,7 +4,7 @@
 
 .grocery-page {
   min-height: 100%;
-  max-width: 1320px;
+  max-width: 1360px;
   margin: 0 auto;
 }
 
@@ -16,13 +16,13 @@
 }
 
 .grocery-page-title-icon {
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
-  background: #ffe7dc;
+  border-radius: 50%;
+  background: rgba(var(--accent-rgb), 0.1);
   flex-shrink: 0;
 }
 
@@ -50,16 +50,17 @@
 .grocery-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 390px;
-  gap: 32px;
+  gap: 28px;
   align-items: start;
   overflow: visible;
 }
 
 .grocery-list-card,
 .grocery-summary-card {
-  border-radius: 24px;
-  background: #ffffff;
-  box-shadow: 0 20px 50px rgba(17, 24, 39, 0.08);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-xl);
+  background: var(--color-bg);
+  box-shadow: 0 var(--space-1) var(--space-4) var(--overlay-light);
   overflow: hidden;
 }
 
@@ -78,9 +79,9 @@
   gap: 10px;
   min-height: 50px;
   padding: 0 16px;
-  border: 2px solid #dadce0;
-  border-radius: 16px;
-  background: #f5f6f8;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-xl);
+  background: var(--color-bg);
 }
 
 .grocery-add-control:focus-within {
@@ -116,7 +117,7 @@
   color: #6a6d73;
   font-family: var(--font-body);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 500;
   text-align: right;
 }
 
@@ -168,13 +169,13 @@
   gap: 8px;
   min-height: 34px;
   padding: 0 14px;
-  border: 2px solid #e0e0e0;
+  border: 1px solid var(--gray-300);
   border-radius: 999px;
   background: #ffffff;
   color: #70737a;
   font-family: var(--font-body);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
 }
 
@@ -192,9 +193,9 @@
 }
 
 .grocery-filter-chip.active {
-  border-color: #151515;
-  background: #151515;
-  color: #ffffff;
+  border-color: var(--color-fg);
+  background: var(--color-fg);
+  color: var(--color-bg);
 }
 
 .grocery-toolbar {
@@ -213,7 +214,7 @@
   color: #777a80;
   font-family: var(--font-body);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
   cursor: pointer;
@@ -292,7 +293,7 @@
   color: #a5a7ab;
   font-family: var(--font-body);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
 }
@@ -369,7 +370,7 @@
 }
 
 .grocery-summary-card {
-  padding: 32px;
+  padding: 28px 32px;
   max-height: calc(100vh - 40px);
   overflow-y: auto;
   z-index: 2;
@@ -385,7 +386,7 @@
   color: #151619;
   font-family: var(--font-body);
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .grocery-progress-track,
@@ -448,7 +449,7 @@
   color: #a0a2a7;
   font-family: var(--font-body);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
 }
