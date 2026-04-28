@@ -1,17 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createRecipeAndReturn } from "@/app/actions/recipes";
+import { createRecipeAndReturn, uploadManualRecipeImage } from "@/app/actions/recipes";
 import { RecipeFullView } from "@/components/RecipeFullView";
 import { buildManualRecipePayload } from "@/lib/processRecipeData";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/CookbookFolderPage.css";
 import "@/app/styling/CookbookPageRecipeCard.css";
 
+const MAX_MANUAL_IMAGE_BYTES = 8 * 1024 * 1024;
+
 export default function CreateRecipePage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [createdRecipe, setCreatedRecipe] = useState<RecipeRow | null>(null);
 
   const [manualRecipeLabel, setManualRecipeLabel] = useState("");
@@ -24,10 +27,23 @@ export default function CreateRecipePage() {
   const [manualCalories, setManualCalories] = useState("");
   const [manualCuisineType, setManualCuisineType] = useState("");
   const [manualMealType, setManualMealType] = useState("");
-  const [manualImageUrl, setManualImageUrl] = useState("");
+  const [manualImageFile, setManualImageFile] = useState<File | null>(null);
+  const [manualImagePreviewUrl, setManualImagePreviewUrl] = useState("");
   const [manualWebsiteUrl, setManualWebsiteUrl] = useState("");
   const [manualSubmitting, setManualSubmitting] = useState(false);
   const [manualError, setManualError] = useState("");
+
+  useEffect(() => {
+    if (!manualImageFile) {
+      setManualImagePreviewUrl("");
+      return;
+    }
+    const objectUrl = URL.createObjectURL(manualImageFile);
+    setManualImagePreviewUrl(objectUrl);
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [manualImageFile]);
 
   const previewRecipe = useMemo<RecipeRow>(() => {
     const ingredient_lines = manualIngredientLines
@@ -51,12 +67,12 @@ export default function CreateRecipePage() {
       ingredient_lines: ingredient_lines || null,
       steps: steps || null,
       website_url: manualWebsiteUrl.trim() || null,
-      image_url: manualImageUrl.trim() || null,
+      image_url: manualImagePreviewUrl || null,
     };
   }, [
     manualCalories,
     manualCuisineType,
-    manualImageUrl,
+    manualImagePreviewUrl,
     manualIngredientLines,
     manualMealType,
     manualRecipeLabel,
@@ -66,6 +82,27 @@ export default function CreateRecipePage() {
   ]);
 
   function clearError() {
+    setManualError("");
+  }
+
+  function triggerManualImagePicker() {
+    fileInputRef.current?.click();
+  }
+
+  function handleManualImageSelection(file?: File) {
+    if (!file) {
+      setManualImageFile(null);
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setManualError("Please choose an image file.");
+      return;
+    }
+    if (file.size > MAX_MANUAL_IMAGE_BYTES) {
+      setManualError("Image must be 8MB or smaller.");
+      return;
+    }
+    setManualImageFile(file);
     setManualError("");
   }
 
@@ -91,9 +128,11 @@ export default function CreateRecipePage() {
     setManualCalories("");
     setManualCuisineType("");
     setManualMealType("");
-    setManualImageUrl("");
+    setManualImageFile(null);
+    setManualImagePreviewUrl("");
     setManualWebsiteUrl("");
     setManualError("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -107,6 +146,19 @@ export default function CreateRecipePage() {
     }
     setManualSubmitting(true);
     try {
+      let uploadedImageUrl: string | undefined;
+      if (manualImageFile) {
+        const imageFormData = new FormData();
+        imageFormData.append("image", manualImageFile);
+        imageFormData.append("recipeLabel", manualRecipeLabel);
+        const uploadRes = await uploadManualRecipeImage(imageFormData);
+        if (uploadRes.error || !uploadRes.url) {
+          setManualError(uploadRes.error ?? "Failed to upload recipe image.");
+          return;
+        }
+        uploadedImageUrl = uploadRes.url;
+      }
+
       const ingredientsText = manualIngredientLines
         .map((s) => s.trim())
         .filter(Boolean)
@@ -124,7 +176,7 @@ export default function CreateRecipePage() {
         calories: manualCalories ? Number(manualCalories) : undefined,
         cuisineType: manualCuisineType || undefined,
         mealType: manualMealType || undefined,
-        imageUrl: manualImageUrl || undefined,
+        imageUrl: uploadedImageUrl,
         websiteUrl: manualWebsiteUrl || undefined,
       });
       const res = await createRecipeAndReturn(payload);
@@ -184,9 +236,28 @@ export default function CreateRecipePage() {
         cookbook.
       </p>
       <div className="recipe-full-view-scroll-wrapper" style={{ marginBottom: 20 }}>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="create-recipe-image-input"
+          onChange={(e) => handleManualImageSelection(e.target.files?.[0])}
+        />
         <RecipeFullView
           recipeData={previewRecipe}
           hideFavoriteAction
+          heroOverlay={
+            <button
+              type="button"
+              className="create-recipe-image-hitarea"
+              onClick={triggerManualImagePicker}
+              disabled={manualSubmitting}
+            >
+              <span className="create-recipe-image-hitarea-label">
+                {manualImageFile ? "Click to change photo" : "Click anywhere to upload recipe photo"}
+              </span>
+            </button>
+          }
           primaryActionSlot={
             <button
               type="button"
@@ -370,21 +441,40 @@ export default function CreateRecipePage() {
                 value={manualMealType}
                 onChange={(e) => setManualMealType(e.target.value)}
               />
-              <label
-                className="add-recipe-manual-label"
-                htmlFor="create-recipe-image"
-                style={{ marginTop: 12 }}
-              >
-                Image URL (optional)
-              </label>
-              <input
-                id="create-recipe-image"
-                type="url"
-                className="add-recipe-manual-input"
-                placeholder="https://..."
-                value={manualImageUrl}
-                onChange={(e) => setManualImageUrl(e.target.value)}
-              />
+              <div style={{ marginTop: 12 }}>
+                <p className="add-recipe-manual-label" style={{ marginBottom: 8 }}>
+                  Recipe photo (optional)
+                </p>
+                <div className="create-recipe-image-controls">
+                  <button
+                    type="button"
+                    className="manual-recipe-add-btn"
+                    onClick={triggerManualImagePicker}
+                    disabled={manualSubmitting}
+                  >
+                    {manualImageFile ? "Change selected image" : "Choose image"}
+                  </button>
+                  {manualImageFile && (
+                    <button
+                      type="button"
+                      className="manual-recipe-remove-btn"
+                      onClick={() => {
+                        setManualImageFile(null);
+                        if (fileInputRef.current) fileInputRef.current.value = "";
+                      }}
+                      aria-label="Remove selected image"
+                      disabled={manualSubmitting}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <p className="create-recipe-image-hint">
+                  {manualImageFile
+                    ? `${manualImageFile.name} (${Math.max(1, Math.round(manualImageFile.size / 1024))} KB)`
+                    : "No image selected"}
+                </p>
+              </div>
               <label
                 className="add-recipe-manual-label"
                 htmlFor="create-recipe-website"

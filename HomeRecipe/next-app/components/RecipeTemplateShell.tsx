@@ -25,6 +25,8 @@ export type RecipeTemplateShellProps = {
     onChange: (value: string) => void;
     placeholder?: string;
   };
+  /** Optional overlay rendered inside hero image area. */
+  heroOverlay?: React.ReactNode;
 };
 
 function IconFlame() {
@@ -90,6 +92,7 @@ export function RecipeTemplateShell({
   nutritionPanel,
   mobileSaveSlot,
   draftTitle,
+  heroOverlay,
 }: RecipeTemplateShellProps) {
   const [tab, setTab] = useState<"cook" | "nutrition">("cook");
   const [moreOpen, setMoreOpen] = useState(false);
@@ -191,7 +194,8 @@ export function RecipeTemplateShell({
               />
             )}
           </div>
-          {template.imageUrl && (
+          {heroOverlay}
+          {template.imageUrl && !heroOverlay && (
             <button
               type="button"
               className="recipe-template-hero-view-full"

@@ -2,7 +2,8 @@
 
 .recipe-template-shell {
   position: relative;
-  width: min(96vw, 1080px);
+  width: min(100%, 1080px);
+  max-width: 100%;
   margin: 0 auto;
   background: var(--color-bg);
   border-radius: 20px;
@@ -252,11 +253,12 @@
 
 .recipe-template-stats {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
   gap: var(--space-3);
 }
 
 .recipe-template-stat-card {
+  min-width: 0;
   background: var(--gray-100);
   border: 1px solid var(--gray-200);
   border-radius: 14px;
@@ -283,7 +285,8 @@
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
+  line-height: 1.15;
   color: var(--gray-600);
   margin-top: 4px;
 }
@@ -515,6 +518,64 @@
   display: none;
 }
 
+.create-recipe-image-input {
+  display: none;
+}
+
+.create-recipe-image-hitarea {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: none;
+  background: transparent;
+  padding: var(--space-4);
+  cursor: pointer;
+}
+
+.create-recipe-image-hitarea-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: min(92%, 420px);
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 1px dashed var(--gray-300);
+  border-radius: 12px;
+  background: var(--overlay-strong);
+  color: var(--color-bg);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.create-recipe-image-hitarea:hover:not(:disabled) .create-recipe-image-hitarea-label {
+  background: var(--gray-900);
+  border-color: var(--color-bg);
+}
+
+.create-recipe-image-hitarea:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.create-recipe-image-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.create-recipe-image-hint {
+  margin: 8px 0 0;
+  color: var(--gray-600);
+  font-size: var(--text-xs);
+}
+
 @media screen and (max-width: 900px) {
   .recipe-template-shell {
     width: min(100%, 440px);
@@ -623,6 +684,11 @@
     border: none;
     border-radius: 14px;
     cursor: pointer;
+  }
+
+  .create-recipe-image-hitarea-label {
+    width: 100%;
+    min-height: 42px;
   }
 }
 

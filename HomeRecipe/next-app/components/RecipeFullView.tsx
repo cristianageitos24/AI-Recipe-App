@@ -35,6 +35,8 @@ type RecipeFullViewProps = {
   primaryActionSlot?: React.ReactNode;
   /** Hide heart even for persisted rows (used by create-recipe draft preview). */
   hideFavoriteAction?: boolean;
+  /** Optional overlay rendered inside recipe hero image area. */
+  heroOverlay?: React.ReactNode;
 };
 
 function pickNutritionSnapshot(
@@ -125,6 +127,7 @@ export function RecipeFullView({
   onFavoriteChange,
   primaryActionSlot,
   hideFavoriteAction = false,
+  heroOverlay,
 }: RecipeFullViewProps) {
   const router = useRouter();
   const template = useMemo(() => buildRecipeTemplateData(recipeData), [recipeData]);
@@ -596,6 +599,7 @@ export function RecipeFullView({
       cookIngredientsPanel={cookIngredientsPanel}
       cookInstructionsPanel={cookInstructionsPanel}
       nutritionPanel={nutritionPanel}
+      heroOverlay={heroOverlay}
     />
   );
 }

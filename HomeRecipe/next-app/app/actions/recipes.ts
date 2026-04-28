@@ -8,6 +8,31 @@ import {
 import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import type { RecipePayload, RecipeRow } from "@/lib/types";
+
+const MANUAL_RECIPE_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
+
+function slugifyForPath(input: string): string {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
+function normalizeImageExtension(file: File): string {
+  const byType: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif",
+  };
+  const mapped = byType[file.type];
+  if (mapped) return mapped;
+  const fromName = file.name.split(".").pop()?.toLowerCase();
+  if (fromName && /^[a-z0-9]{2,5}$/.test(fromName)) return fromName;
+  return "jpg";
+}
 async function syncNutritionIfOwner(
   recipeUuid: string,
   userId: string,
@@ -166,4 +191,49 @@ export async function createRecipeAndReturn(
 
   if (error) return { error: error.message, data: null };
   return { error: null, data: row as RecipeRow };
+}
+
+export async function uploadManualRecipeImage(formData: FormData): Promise<{
+  error: string | null;
+  url: string | null;
+}> {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized", url: null };
+
+  const file = formData.get("image");
+  const recipeLabelRaw = formData.get("recipeLabel");
+  if (!(file instanceof File)) {
+    return { error: "Please select an image file.", url: null };
+  }
+  if (!file.type.startsWith("image/")) {
+    return { error: "Only image files are supported.", url: null };
+  }
+  if (file.size > MANUAL_RECIPE_IMAGE_MAX_BYTES) {
+    return { error: "Image must be 8MB or smaller.", url: null };
+  }
+
+  const recipeLabel =
+    typeof recipeLabelRaw === "string" ? recipeLabelRaw : "recipe";
+  const labelSlug = slugifyForPath(recipeLabel) || "recipe";
+  const ext = normalizeImageExtension(file);
+  const timestamp = Date.now();
+  const storagePath = `users/${userId}/manual/${timestamp}-${labelSlug}.${ext}`;
+
+  const supabase = await createClient();
+  const { error: uploadError } = await supabase.storage
+    .from("recipe-covers")
+    .upload(storagePath, file, {
+      contentType: file.type || undefined,
+      upsert: false,
+    });
+
+  if (uploadError) {
+    return { error: uploadError.message, url: null };
+  }
+
+  const { data } = supabase.storage.from("recipe-covers").getPublicUrl(storagePath);
+  if (!data.publicUrl) {
+    return { error: "Failed to generate image URL.", url: null };
+  }
+  return { error: null, url: data.publicUrl };
 }
