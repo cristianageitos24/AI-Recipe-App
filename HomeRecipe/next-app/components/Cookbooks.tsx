@@ -6,19 +6,29 @@ import { createFolder, getFolders } from "@/app/actions/folders";
 import { FolderTemplate } from "./FolderTemplate";
 import "@/app/styling/Cookbooks.css";
 
-type FolderWithLength = { folderName: string; folderLength: number };
+type FolderWithLength = { folderName: string; folderLength: number; coverImageUrl: string | null };
 
-function getFolderAndLengths(data: { folders?: string[]; results?: Record<string, unknown[]> }): FolderWithLength[] {
+function getFolderAndLengths(data: {
+  folders?: string[];
+  results?: Record<string, unknown[]>;
+  folderCovers?: Record<string, string | null>;
+}): FolderWithLength[] {
   const folders = data.folders ?? [];
   const results = data.results ?? {};
+  const covers = data.folderCovers ?? {};
   return folders.map((name) => ({
     folderName: name,
     folderLength: (results[name] ?? []).length,
+    coverImageUrl: covers[name] ?? null,
   }));
 }
 
 type CookbooksProps = {
-  initialFoldersData?: { folders: string[]; results: Record<string, unknown[]> } | null;
+  initialFoldersData?: {
+    folders: string[];
+    results: Record<string, unknown[]>;
+    folderCovers?: Record<string, string | null>;
+  } | null;
 };
 
 export function Cookbooks({ initialFoldersData }: CookbooksProps = {}) {

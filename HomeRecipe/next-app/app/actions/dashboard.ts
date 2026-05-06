@@ -51,6 +51,7 @@ export async function getCookbookBootstrap() {
     data: {
       favorites: (favRes.data ?? []) as RecipeRow[],
       folders: folderRes.data?.folders ?? [],
+      folderCovers: folderRes.data?.folderCovers ?? {},
       results: (folderRes.data?.results ?? {}) as Record<string, RecipeRow[]>,
     },
   };

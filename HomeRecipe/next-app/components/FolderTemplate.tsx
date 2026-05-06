@@ -1,14 +1,20 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useDrop } from "react-dnd";
-import { addRecipeToFolder, deleteFolder, renameFolder } from "@/app/actions/folders";
+import {
+  addRecipeToFolder,
+  clearCookbookCoverImage,
+  deleteFolder,
+  renameFolder,
+  uploadCookbookCoverImage,
+} from "@/app/actions/folders";
 import "@/app/styling/FolderTemplate.css";
 import "@/app/styling/EtcButton.css";
 
 type FolderTemplateProps = {
-  folderData: { folderName: string; folderLength: number };
+  folderData: { folderName: string; folderLength: number; coverImageUrl?: string | null };
   onUpdate?: () => void;
 };
 
@@ -34,6 +40,14 @@ function getFolderDescription(folderName: string) {
   return "Favorite recipes saved for easy cooking.";
 }
 
+function coverBackgroundStyle(folderName: string, customUrl: string | null | undefined): { backgroundImage: string } {
+  const trimmed = customUrl?.trim();
+  if (trimmed) {
+    return { backgroundImage: `url(${JSON.stringify(trimmed)})` };
+  }
+  return { backgroundImage: `url("${getCoverForFolder(folderName)}")` };
+}
+
 export function FolderTemplate({ folderData: initialFolderData, onUpdate }: FolderTemplateProps) {
   const [folderData, setFolderData] = useState(initialFolderData);
   const [isMouseHoveringTitle, setMouseHoveringTitle] = useState(false);
@@ -43,7 +57,14 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
   const [isFolderDeleted, setIsFolderDeleted] = useState(false);
   const [isEtcActive, setIsEtcActive] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isCoverUploading, setIsCoverUploading] = useState(false);
+  const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const coverFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    setFolderData(initialFolderData);
+  }, [initialFolderData.folderName, initialFolderData.folderLength, initialFolderData.coverImageUrl]);
 
   const [{ isHovering }, drop] = useDrop({
     accept: "RECIPE CARD",
@@ -70,7 +91,16 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
 
   async function handleFolderOption(option: string) {
     if (option === "Rename") setIsRenameOptionOpen(true);
-    else if (option === "Move to trash") {
+    else if (option === "Change cover") {
+      setCoverUploadError(null);
+      coverFileInputRef.current?.click();
+    } else if (option === "Use default cover") {
+      const res = await clearCookbookCoverImage(copyFolderName);
+      if (!res.error) {
+        setFolderData((prev) => ({ ...prev, coverImageUrl: null }));
+        onUpdate?.();
+      }
+    } else if (option === "Move to trash") {
       const res = await deleteFolder(copyFolderName);
       if (!res.error) {
         setIsFolderDeleted(true);
@@ -78,6 +108,30 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
       }
     }
     setIsEtcActive(false);
+  }
+
+  async function handleCoverFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setCoverUploadError(null);
+    setIsCoverUploading(true);
+    try {
+      const fd = new FormData();
+      fd.set("image", file);
+      fd.set("folderName", copyFolderName);
+      const res = await uploadCookbookCoverImage(fd);
+      if (res.error) {
+        setCoverUploadError(res.error);
+        return;
+      }
+      if (res.url) {
+        setFolderData((prev) => ({ ...prev, coverImageUrl: res.url }));
+        onUpdate?.();
+      }
+    } finally {
+      setIsCoverUploading(false);
+    }
   }
 
   function handleCancel(e: React.MouseEvent) {
@@ -111,12 +165,12 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
             : undefined
       }
     >
-      <div
-        className="cookbook-folder-cover"
-        style={{ backgroundImage: `url("${getCoverForFolder(copyFolderName)}")` }}
-        aria-hidden="true"
-      />
       <Link href={`/dashboard/cookbook/${encodeURIComponent(copyFolderName)}`} className="cookbook-active-content-link">
+        <div
+          className="cookbook-folder-cover"
+          style={coverBackgroundStyle(copyFolderName, folderData.coverImageUrl ?? null)}
+          aria-hidden="true"
+        />
         <div className="cookbook-active-content">
           <div className="cookbook-recipe-count-bubble">
             <strong>{folderData.folderLength}</strong>
@@ -156,6 +210,15 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
           </svg>
         )}
       </button>
+      <input
+        ref={coverFileInputRef}
+        type="file"
+        accept="image/*"
+        className="cookbook-cover-file-input"
+        aria-hidden
+        tabIndex={-1}
+        onChange={handleCoverFileSelected}
+      />
       <div className="etc-content">
         <button
           type="button"
@@ -174,6 +237,12 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
           </svg>
           {isEtcActive && (
             <ul className="etc-options">
+              <li onClick={() => handleFolderOption("Change cover")}>
+                {isCoverUploading ? "Uploading…" : "Change cover photo"}
+              </li>
+              {(folderData.coverImageUrl ?? "").trim() !== "" && (
+                <li onClick={() => handleFolderOption("Use default cover")}>Use default cover</li>
+              )}
               <li onClick={() => handleFolderOption("Rename")}>Rename</li>
               <hr
                 style={{
@@ -188,6 +257,7 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
           )}
         </button>
       </div>
+      {coverUploadError && <p className="cookbook-cover-upload-error">{coverUploadError}</p>}
       {isRenameOptionOpen && (
         <div className="rename-popup-overlay" onClick={handleCancel} onKeyDown={handleKeyPress}>
           <div className="rename-folder-popup" onClick={(e) => e.stopPropagation()}>

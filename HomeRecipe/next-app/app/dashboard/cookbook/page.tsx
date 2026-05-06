@@ -20,7 +20,11 @@ const playfairDisplay = Playfair_Display({
   display: "swap",
 });
 
-type FoldersData = { folders: string[]; results: Record<string, unknown[]> } | null;
+type FoldersData = {
+  folders: string[];
+  results: Record<string, unknown[]>;
+  folderCovers: Record<string, string | null>;
+} | null;
 
 export default function CookbookPage() {
   const [likedRecipes, setLikedRecipes] = useState<RecipeRow[]>([]);
@@ -30,7 +34,11 @@ export default function CookbookPage() {
       .then((res) => {
         if (!res.data) return;
         setLikedRecipes([...res.data.favorites].reverse());
-        setFoldersData({ folders: res.data.folders, results: res.data.results });
+        setFoldersData({
+          folders: res.data.folders,
+          results: res.data.results,
+          folderCovers: res.data.folderCovers ?? {},
+        });
       });
   }, []);
 
