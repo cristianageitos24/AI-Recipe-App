@@ -13,8 +13,8 @@ const playfairDisplay = Playfair_Display({
   display: "swap",
 });
 
-const UserButton = dynamic(
-  () => import("@clerk/nextjs").then((mod) => ({ default: mod.UserButton })),
+const ClerkAccountMenu = dynamic(
+  () => import("./ClerkAccountMenu").then((mod) => ({ default: mod.ClerkAccountMenu })),
   { ssr: false },
 );
 
@@ -85,7 +85,7 @@ export function DashboardNav() {
       </nav>
       <div className="account-nav">
         <div className="loggedin-username-label">
-          <UserButton />
+          <ClerkAccountMenu />
           <span className="signedin-label">Account</span>
         </div>
       </div>

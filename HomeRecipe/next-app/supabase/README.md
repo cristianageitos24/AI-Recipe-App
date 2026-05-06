@@ -6,7 +6,7 @@ This app uses **Clerk** for authentication and **Supabase** for the database. Cl
 
 From the **`next-app`** directory (with Supabase CLI installed and project linked, or using Cursor’s Supabase MCP):
 
-1. **`supabase db push`** — applies every file in `supabase/migrations/` that is not yet recorded on the remote project, or use MCP **`list_migrations`** / **`apply_migration`** to stay aligned with the repo.
+1. **`supabase db push`** (or **`npm run db:push`** from `next-app`) — applies every file in `supabase/migrations/` that is not yet recorded on the remote project, or use MCP **`list_migrations`** / **`apply_migration`** to stay aligned with the repo.
 2. Prefer **not** pasting migration bodies into the Dashboard SQL Editor for routine deploys (ordering and parity are easier to verify from git).
 
 ## Setup
@@ -16,11 +16,21 @@ From the **`next-app`** directory (with Supabase CLI installed and project linke
    - In Supabase Dashboard → **Authentication** → **Sign In / Up** → **Add provider** → **Clerk** → Paste the Clerk domain.
    - Ensure Clerk has a **JWT template** for Supabase (the integration usually creates one named `supabase`). The Next.js server client requests this token so `auth.jwt()->>'sub'` in RLS matches `recipes.user_id`. If manual recipe saves fail with **“new row violates row-level security policy”**, the template is missing, misnamed, or not selected: set `CLERK_SUPABASE_JWT_TEMPLATE` in `.env.local` to your template name (default in code is `supabase`).
 
-2. **Migrations** — numbered files under `supabase/migrations/` are the source of truth, including FDC nutrition (`026+`), grocery (`027`), comments (`028`), `fdc_candidates` (`029`), legacy **`ingredients` removal (`030`)**, archive/alignment (`031`-`033`), and FDC hourly quota (`034`-`035`). Apply via CLI or MCP as above. The SQL Editor is for one-off debugging only.
+2. **Migrations** — **38** numbered files under `supabase/migrations/` (there is **no** `021_*`; the sequence jumps from `020_*` to `022_*`). They are the source of truth: FDC nutrition (`026+`), grocery tables (`027`), comments (`028`), `fdc_candidates` (`029`), legacy **`ingredients` removal (`030`)**, archive/alignment (`031`–`033`), FDC hourly quota (`034`–`035`), grocery item category (`036`), folder cover image URL (`037`), soft delete columns (`038`), and trash purge + cron (`039`). Apply via CLI or MCP as above. The SQL Editor is for one-off debugging only.
 
    Early files include: `001_initial_schema.sql` (base tables), `002_clerk_schema.sql`, `003_add_recipe_steps.sql`, `004_drop_django_legacy_tables.sql`, `005_enable_rls_on_app_tables.sql`, `006_drop_user_recipes.sql`, `007_ingredients_table.sql`, `008_recipes_search_indexes.sql`. Newer migrations extend the schema further; always apply the full chain on a fresh database.
 
-3. **Trash purge (`038` + `039`)** — `038_soft_delete_trash.sql` adds `deleted_at` on `folders` and `recipes`. `039_trash_purge_cron.sql` defines `public.purge_trashed_rows()` and schedules it with **`pg_cron`** (supported on Supabase free tier) daily at **03:15 UTC** as job `purge_trashed_rows_daily`. After applying `039`, confirm in the SQL editor: `SELECT jobid, jobname, schedule, active FROM cron.job WHERE jobname = 'purge_trashed_rows_daily';`
+3. **Verify sync** — With the project linked, run `npm run db:migrations` (or `supabase migration list`) and confirm every local file is marked applied on the remote. Quick schema checks after `038`/`039`:
+
+   ```sql
+   SELECT column_name FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name IN ('folders','recipes') AND column_name = 'deleted_at';
+   SELECT routine_name FROM information_schema.routines
+     WHERE routine_schema = 'public' AND routine_name = 'purge_trashed_rows';
+   SELECT jobid, jobname, schedule, active FROM cron.job WHERE jobname = 'purge_trashed_rows_daily';
+   ```
+
+4. **Trash purge (`038` + `039`)** — `038_soft_delete_trash.sql` adds `deleted_at` on `folders` and `recipes`. `039_trash_purge_cron.sql` defines `public.purge_trashed_rows()` and schedules it with **`pg_cron`** daily at **03:15 UTC** as job `purge_trashed_rows_daily`. Use the queries in §3 to confirm.
 
 ## Archive + wipe notes
 

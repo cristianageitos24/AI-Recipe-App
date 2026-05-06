@@ -2,6 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
+import { trashListCutoffIso } from "@/lib/trash-retention";
 import type { TrashActionResult } from "@/lib/trash-result";
 import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
 import type { RecipePayload } from "@/lib/types";
@@ -286,6 +287,34 @@ export async function restoreFolder(folderId: string): Promise<TrashActionResult
 
   if (error) return { ok: false, reason: "not_restorable" };
   return { ok: true, state: "restored", folderId };
+}
+
+export type TrashedFolderRow = {
+  id: string;
+  folder_name: string;
+  deleted_at: string;
+};
+
+/** Soft-deleted cookbooks still within the retention window (see `purge_trashed_rows`). */
+export async function getTrashedFolders(): Promise<{
+  error: string | null;
+  data: TrashedFolderRow[];
+}> {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized", data: [] };
+
+  const supabase = await createClient();
+  const cutoff = trashListCutoffIso();
+  const { data, error } = await supabase
+    .from("folders")
+    .select("id, folder_name, deleted_at")
+    .eq("user_id", userId)
+    .not("deleted_at", "is", null)
+    .gte("deleted_at", cutoff)
+    .order("deleted_at", { ascending: false });
+
+  if (error) return { error: error.message, data: [] };
+  return { error: null, data: (data ?? []) as TrashedFolderRow[] };
 }
 
 export async function getFolderRecipes(folderName: string) {

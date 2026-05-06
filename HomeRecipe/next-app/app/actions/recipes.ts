@@ -6,6 +6,7 @@ import {
   type SyncRecipeNutritionOptions,
 } from "@/lib/nutrition/sync-recipe-nutrition";
 import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
+import { trashListCutoffIso } from "@/lib/trash-retention";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import type { TrashActionResult } from "@/lib/trash-result";
 import type { RecipePayload, RecipeRow } from "@/lib/types";
@@ -162,6 +163,34 @@ export async function restoreOwnedRecipe(recipeId: string): Promise<TrashActionR
 
   if (error) return { ok: false, reason: "not_restorable" };
   return { ok: true, state: "restored", recipeId };
+}
+
+export type TrashedRecipeRow = {
+  id: string;
+  recipe_label: string;
+  deleted_at: string;
+};
+
+/** User-owned soft-deleted recipes still within the retention window (see `purge_trashed_rows`). */
+export async function getTrashedRecipes(): Promise<{
+  error: string | null;
+  data: TrashedRecipeRow[];
+}> {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized", data: [] };
+
+  const supabase = await createClient();
+  const cutoff = trashListCutoffIso();
+  const { data, error } = await supabase
+    .from("recipes")
+    .select("id, recipe_label, deleted_at")
+    .eq("user_id", userId)
+    .not("deleted_at", "is", null)
+    .gte("deleted_at", cutoff)
+    .order("deleted_at", { ascending: false });
+
+  if (error) return { error: error.message, data: [] };
+  return { error: null, data: (data ?? []) as TrashedRecipeRow[] };
 }
 
 export async function getOrCreateRecipe(payload: RecipePayload) {
