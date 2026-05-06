@@ -20,6 +20,8 @@ From the **`next-app`** directory (with Supabase CLI installed and project linke
 
    Early files include: `001_initial_schema.sql` (base tables), `002_clerk_schema.sql`, `003_add_recipe_steps.sql`, `004_drop_django_legacy_tables.sql`, `005_enable_rls_on_app_tables.sql`, `006_drop_user_recipes.sql`, `007_ingredients_table.sql`, `008_recipes_search_indexes.sql`. Newer migrations extend the schema further; always apply the full chain on a fresh database.
 
+3. **Trash purge (`038` + `039`)** — `038_soft_delete_trash.sql` adds `deleted_at` on `folders` and `recipes`. `039_trash_purge_cron.sql` defines `public.purge_trashed_rows()` and schedules it with **`pg_cron`** (supported on Supabase free tier) daily at **03:15 UTC** as job `purge_trashed_rows_daily`. After applying `039`, confirm in the SQL editor: `SELECT jobid, jobname, schedule, active FROM cron.job WHERE jobname = 'purge_trashed_rows_daily';`
+
 ## Archive + wipe notes
 
 - `031_legacy_recipes_archive.sql` creates `public.legacy_recipes_archive` with RLS enabled and no `authenticated` read/write access.
