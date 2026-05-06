@@ -7,6 +7,7 @@ import {
 } from "@/lib/nutrition/sync-recipe-nutrition";
 import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
+import type { TrashActionResult } from "@/lib/trash-result";
 import type { RecipePayload, RecipeRow } from "@/lib/types";
 
 const MANUAL_RECIPE_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
@@ -101,10 +102,66 @@ export async function getRecipeFull(
     .from("recipes")
     .select(RECIPE_WITH_NUTRITION)
     .eq("id", recipeId)
+    .is("deleted_at", null)
     .single();
 
   if (error) return { error: error.message, data: null };
   return { error: null, data: data as RecipeRow };
+}
+
+export async function softDeleteOwnedRecipe(recipeId: string): Promise<TrashActionResult> {
+  const { userId } = await auth();
+  if (!userId) return { ok: false, reason: "forbidden" };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("recipes")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", recipeId)
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
+
+  if (error) return { ok: false, reason: "forbidden" };
+  if (!data) {
+    const { data: row } = await supabase
+      .from("recipes")
+      .select("id, user_id, deleted_at")
+      .eq("id", recipeId)
+      .maybeSingle();
+    if (!row) return { ok: false, reason: "not_found" };
+    if (row.user_id !== userId) return { ok: false, reason: "forbidden" };
+    if (row.deleted_at) return { ok: false, reason: "already_trashed" };
+    return { ok: false, reason: "forbidden" };
+  }
+  return { ok: true, state: "trashed", recipeId: data.id };
+}
+
+export async function restoreOwnedRecipe(recipeId: string): Promise<TrashActionResult> {
+  const { userId } = await auth();
+  if (!userId) return { ok: false, reason: "forbidden" };
+
+  const supabase = await createClient();
+  const { data: existing, error: fetchErr } = await supabase
+    .from("recipes")
+    .select("id, deleted_at, user_id")
+    .eq("id", recipeId)
+    .maybeSingle();
+
+  if (fetchErr) return { ok: false, reason: "forbidden" };
+  if (!existing) return { ok: false, reason: "not_restorable" };
+  if (existing.user_id !== userId) return { ok: false, reason: "forbidden" };
+  if (existing.deleted_at === null) return { ok: false, reason: "already_active" };
+
+  const { error } = await supabase
+    .from("recipes")
+    .update({ deleted_at: null })
+    .eq("id", recipeId)
+    .eq("user_id", userId);
+
+  if (error) return { ok: false, reason: "not_restorable" };
+  return { ok: true, state: "restored", recipeId };
 }
 
 export async function getOrCreateRecipe(payload: RecipePayload) {

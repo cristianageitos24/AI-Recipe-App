@@ -2,6 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
+import type { TrashActionResult } from "@/lib/trash-result";
 import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
 import type { RecipePayload } from "@/lib/types";
 
@@ -32,12 +33,17 @@ function normalizeImageExtension(file: File): string {
 
 export type GetFoldersData = {
   folders: string[];
+  folderIdsByName: Record<string, string>;
   results: Record<string, unknown[]>;
   folderCovers: Record<string, string | null>;
 };
 
 function emptyFoldersData(): GetFoldersData {
-  return { folders: [], results: {}, folderCovers: {} };
+  return { folders: [], folderIdsByName: {}, results: {}, folderCovers: {} };
+}
+
+function recipeRowNotTrashed(r: Record<string, unknown>): boolean {
+  return r.deleted_at == null || r.deleted_at === undefined;
 }
 
 export async function getFolders() {
@@ -49,6 +55,7 @@ export async function getFolders() {
     .from("folders")
     .select("id, folder_name, cover_image_url")
     .eq("user_id", userId)
+    .is("deleted_at", null)
     .order("folder_name");
 
   if (foldersError) return { error: foldersError.message, data: emptyFoldersData() };
@@ -62,8 +69,10 @@ export async function getFolders() {
   }
 
   const folderCovers: Record<string, string | null> = {};
-  for (const f of folders as { folder_name: string; cover_image_url: string | null }[]) {
+  const folderIdsByName: Record<string, string> = {};
+  for (const f of folders as { id: string; folder_name: string; cover_image_url: string | null }[]) {
     folderCovers[f.folder_name] = f.cover_image_url ?? null;
+    folderIdsByName[f.folder_name] = f.id;
   }
 
   const folderIds = folders.map((f: { id: string }) => f.id);
@@ -72,22 +81,29 @@ export async function getFolders() {
     .select(`folder_id, recipes (${RECIPE_WITH_NUTRITION})`)
     .in("folder_id", folderIds);
 
-  if (frError) return { error: frError.message, data: emptyFoldersData() };
+  if (frError) {
+    console.error("getFolders: folder_recipes/recipes join failed:", frError.message);
+  }
 
   const idToName = new Map(folders.map((f: { id: string; folder_name: string }) => [f.id, f.folder_name]));
   const results: Record<string, unknown[]> = {};
   for (const name of idToName.values()) results[name as string] = [];
 
-  for (const row of folderRecipesRows ?? []) {
-    const r = row as { folder_id: string; recipes: unknown };
-    const name = idToName.get(r.folder_id);
-    if (name != null && r.recipes != null) results[name].push(r.recipes);
+  if (!frError) {
+    for (const row of folderRecipesRows ?? []) {
+      const r = row as unknown as { folder_id: string; recipes: Record<string, unknown> | null };
+      const name = idToName.get(r.folder_id);
+      if (name != null && r.recipes != null && recipeRowNotTrashed(r.recipes)) {
+        results[name].push(r.recipes);
+      }
+    }
   }
 
   return {
     error: null,
     data: {
       folders: folders.map((f: { folder_name: string }) => f.folder_name),
+      folderIdsByName,
       folderCovers,
       results,
     },
@@ -102,6 +118,7 @@ export async function uploadCookbookCoverImage(formData: FormData): Promise<{
   if (!userId) return { error: "Unauthorized", url: null };
 
   const file = formData.get("image");
+  const folderIdRaw = formData.get("folderId");
   const folderNameRaw = formData.get("folderName");
   if (!(file instanceof File)) {
     return { error: "Please select an image file.", url: null };
@@ -112,12 +129,11 @@ export async function uploadCookbookCoverImage(formData: FormData): Promise<{
   if (file.size > COOKBOOK_COVER_IMAGE_MAX_BYTES) {
     return { error: "Image must be 8MB or smaller.", url: null };
   }
-  if (typeof folderNameRaw !== "string" || !folderNameRaw.trim()) {
-    return { error: "Missing cookbook name.", url: null };
-  }
-  const folderName = folderNameRaw.trim();
 
-  const labelSlug = slugifyForPath(folderName) || "cookbook";
+  const labelSlug =
+    typeof folderNameRaw === "string" && folderNameRaw.trim()
+      ? slugifyForPath(folderNameRaw.trim())
+      : "cookbook";
   const ext = normalizeImageExtension(file);
   const storagePath = `users/${userId}/cookbook-covers/${Date.now()}-${labelSlug}.${ext}`;
 
@@ -137,19 +153,35 @@ export async function uploadCookbookCoverImage(formData: FormData): Promise<{
   }
 
   const supabase = await createClient();
-  const { error: updateError } = await supabase
-    .from("folders")
-    .update({ cover_image_url: urlData.publicUrl })
-    .eq("user_id", userId)
-    .eq("folder_name", folderName);
+  let updateError = null as string | null;
+
+  if (typeof folderIdRaw === "string" && folderIdRaw.trim()) {
+    const { error } = await supabase
+      .from("folders")
+      .update({ cover_image_url: urlData.publicUrl })
+      .eq("user_id", userId)
+      .eq("id", folderIdRaw.trim())
+      .is("deleted_at", null);
+    updateError = error?.message ?? null;
+  } else if (typeof folderNameRaw === "string" && folderNameRaw.trim()) {
+    const { error } = await supabase
+      .from("folders")
+      .update({ cover_image_url: urlData.publicUrl })
+      .eq("user_id", userId)
+      .eq("folder_name", folderNameRaw.trim())
+      .is("deleted_at", null);
+    updateError = error?.message ?? null;
+  } else {
+    return { error: "Missing cookbook identifier.", url: null };
+  }
 
   if (updateError) {
-    return { error: updateError.message, url: null };
+    return { error: updateError, url: null };
   }
   return { error: null, url: urlData.publicUrl };
 }
 
-export async function clearCookbookCoverImage(folderName: string) {
+export async function clearCookbookCoverImage(folderId: string) {
   const { userId } = await auth();
   if (!userId) return { error: "Unauthorized" };
 
@@ -158,7 +190,8 @@ export async function clearCookbookCoverImage(folderName: string) {
     .from("folders")
     .update({ cover_image_url: null })
     .eq("user_id", userId)
-    .eq("folder_name", folderName);
+    .eq("id", folderId)
+    .is("deleted_at", null);
 
   if (error) return { error: error.message };
   return { error: null };
@@ -180,37 +213,79 @@ export async function createFolder(folderName: string) {
   return { error: null };
 }
 
-export async function renameFolder(oldName: string, newName: string) {
+/** Rename an active folder by UUID (not by display name). */
+export async function renameFolder(folderId: string, newName: string) {
   const { userId } = await auth();
   if (!userId) return { error: "Unauthorized" };
+
+  const trimmed = newName.trim();
+  if (!trimmed) return { error: "Name required" };
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("folders")
-    .update({ folder_name: newName })
+    .update({ folder_name: trimmed })
     .eq("user_id", userId)
-    .eq("folder_name", oldName);
+    .eq("id", folderId)
+    .is("deleted_at", null);
 
   if (error) return { error: error.message };
   return { error: null };
 }
 
-export async function deleteFolder(folderName: string) {
+export async function softDeleteFolder(folderId: string): Promise<TrashActionResult> {
   const { userId } = await auth();
-  if (!userId) return { error: "Unauthorized" };
+  if (!userId) return { ok: false, reason: "forbidden" };
 
   const supabase = await createClient();
-  const { data: folder } = await supabase
+  const { data, error } = await supabase
     .from("folders")
-    .select("id")
+    .update({ deleted_at: new Date().toISOString() })
     .eq("user_id", userId)
-    .eq("folder_name", folderName)
-    .single();
-  if (!folder) return { error: "Folder not found" };
+    .eq("id", folderId)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
 
-  const { error } = await supabase.from("folders").delete().eq("id", folder.id);
-  if (error) return { error: error.message };
-  return { error: null };
+  if (error) return { ok: false, reason: "forbidden" };
+  if (!data) {
+    const { data: row } = await supabase
+      .from("folders")
+      .select("id, deleted_at")
+      .eq("user_id", userId)
+      .eq("id", folderId)
+      .maybeSingle();
+    if (!row) return { ok: false, reason: "not_found" };
+    if (row.deleted_at) return { ok: false, reason: "already_trashed" };
+    return { ok: false, reason: "forbidden" };
+  }
+  return { ok: true, state: "trashed", folderId: data.id };
+}
+
+export async function restoreFolder(folderId: string): Promise<TrashActionResult> {
+  const { userId } = await auth();
+  if (!userId) return { ok: false, reason: "forbidden" };
+
+  const supabase = await createClient();
+  const { data: existing, error: fetchErr } = await supabase
+    .from("folders")
+    .select("id, deleted_at")
+    .eq("user_id", userId)
+    .eq("id", folderId)
+    .maybeSingle();
+
+  if (fetchErr) return { ok: false, reason: "forbidden" };
+  if (!existing) return { ok: false, reason: "not_restorable" };
+  if (existing.deleted_at === null) return { ok: false, reason: "already_active" };
+
+  const { error } = await supabase
+    .from("folders")
+    .update({ deleted_at: null })
+    .eq("user_id", userId)
+    .eq("id", folderId);
+
+  if (error) return { ok: false, reason: "not_restorable" };
+  return { ok: true, state: "restored", folderId };
 }
 
 export async function getFolderRecipes(folderName: string) {
@@ -223,7 +298,8 @@ export async function getFolderRecipes(folderName: string) {
     .select("id")
     .eq("user_id", userId)
     .eq("folder_name", folderName)
-    .single();
+    .is("deleted_at", null)
+    .maybeSingle();
   if (!folder) return { error: "Folder not found", data: [] };
 
   const { data, error } = await supabase
@@ -234,8 +310,29 @@ export async function getFolderRecipes(folderName: string) {
 
   const list = (data ?? [])
     .map((row: { recipes: unknown }) => row.recipes)
-    .filter((r): r is Record<string, unknown> => r != null);
+    .filter((r): r is Record<string, unknown> => r != null && recipeRowNotTrashed(r as Record<string, unknown>));
   return { error: null, data: list as import("@/lib/types").RecipeRow[] };
+}
+
+/** Resolve whether an active folder exists for deep-link routing (Option A). */
+export async function getActiveFolderMetaByName(folderName: string): Promise<{
+  error: string | null;
+  data: { id: string; folder_name: string } | null;
+}> {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized", data: null };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("folders")
+    .select("id, folder_name")
+    .eq("user_id", userId)
+    .eq("folder_name", folderName)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (error) return { error: error.message, data: null };
+  return { error: null, data };
 }
 
 export async function addRecipeToFolder(
@@ -253,7 +350,8 @@ export async function addRecipeToFolder(
       .from("recipes")
       .select("id")
       .eq("recipe_id", payload)
-      .single();
+      .is("deleted_at", null)
+      .maybeSingle();
     if (!recipe) return { error: "Recipe not found" };
     recipeUuid = recipe.id;
   } else {
@@ -268,7 +366,8 @@ export async function addRecipeToFolder(
     .select("id")
     .eq("user_id", userId)
     .eq("folder_name", folderName)
-    .single();
+    .is("deleted_at", null)
+    .maybeSingle();
   if (!folder) return { error: "Folder not found" };
 
   const { error } = await supabase

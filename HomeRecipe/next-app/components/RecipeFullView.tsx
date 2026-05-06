@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { pickRecipeIngredientFdc } from "@/app/actions/recipes";
+import { pickRecipeIngredientFdc, restoreOwnedRecipe, softDeleteOwnedRecipe } from "@/app/actions/recipes";
 import {
   formatRecipeEnergyKcalDisplay,
   recipeNutritionSourceDetail,
@@ -20,6 +20,7 @@ import {
 import { addGroceryItem, addGroceryItems, removeGroceryItems } from "@/app/actions/grocery-items";
 import { buildRecipeTemplateData, isRecipeTemplateDraftRow } from "@/lib/recipe-template";
 import { RecipeTemplateShell } from "@/components/RecipeTemplateShell";
+import { useTrashUndoOptional } from "@/components/TrashUndoProvider";
 import { HeartButton } from "@/components/HeartButton";
 import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
 import {
@@ -145,6 +146,7 @@ export function RecipeFullView({
   nutritionDisclaimerMenuSubtext,
 }: RecipeFullViewProps) {
   const router = useRouter();
+  const trashUndo = useTrashUndoOptional();
   const template = useMemo(() => buildRecipeTemplateData(recipeData), [recipeData]);
   const [ingredientsExpanded, setIngredientsExpanded] = useState(false);
   const [groceryFeedback, setGroceryFeedback] = useState<string | null>(null);
@@ -156,6 +158,30 @@ export function RecipeFullView({
   const [fdcPickBusy, setFdcPickBusy] = useState(false);
   const [fdcPickError, setFdcPickError] = useState<string | null>(null);
   const [saveCookbookOpen, setSaveCookbookOpen] = useState(false);
+
+  const canMoveOwnedRecipeToTrash = useMemo(() => {
+    const rid = recipeData.recipe_id;
+    return (
+      rid.startsWith("manual-") ||
+      rid.startsWith("video-recipe-") ||
+      rid.startsWith("url-import-")
+    );
+  }, [recipeData.recipe_id]);
+
+  async function handleMoveRecipeToTrash() {
+    const res = await softDeleteOwnedRecipe(recipeData.id);
+    if (!res.ok) return;
+    trashUndo?.showTrashUndo({
+      message: "Recipe moved to trash.",
+      onUndo: async () => {
+        const r = await restoreOwnedRecipe(recipeData.id);
+        if (r.ok) router.refresh();
+        return r;
+      },
+    });
+    onClose?.();
+    router.refresh();
+  }
 
   const ingredientLines = (recipeData.ingredient_lines ?? "").split("***").map((s) => s.trim()).filter(Boolean);
   const stepsLines = (recipeData.steps ?? "").trim()
@@ -645,6 +671,7 @@ export function RecipeFullView({
         heroOverlay={heroOverlay}
         draftTitle={draftTitle}
         nutritionDisclaimerMenuSubtext={nutritionDisclaimerMenuSubtext}
+        onMoveToTrash={canMoveOwnedRecipeToTrash ? handleMoveRecipeToTrash : undefined}
       />
       {showCookbookSave && cookbookSavePayload && (
         <SaveRecipeToCookbookModal

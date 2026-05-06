@@ -56,6 +56,7 @@ export async function getRecipesByCollection(
   let query = supabase
     .from("recipes")
     .select(RECIPE_COLLECTION_COLUMNS)
+    .is("deleted_at", null)
     .or(orFilter)
     .range(offset, offset + limit - 1);
 

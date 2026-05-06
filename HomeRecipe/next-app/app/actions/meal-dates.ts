@@ -34,10 +34,12 @@ export async function getMealDates() {
       }
     ).meal_date_recipes;
     const mdr = Array.isArray(rawMdr) ? rawMdr : rawMdr ? [rawMdr] : [];
-    const recipes = mdr.map((r) => ({
-      ...(r.recipes as object),
-      eventID: row.event_id,
-    }));
+    const recipes = mdr
+      .map((r) => ({
+        ...(r.recipes as object),
+        eventID: row.event_id,
+      }))
+      .filter((item) => (item as { deleted_at?: string | null }).deleted_at == null);
     if (!byDate[date]) byDate[date] = { date, recipes };
     else byDate[date].recipes.push(...recipes);
   }
@@ -59,7 +61,8 @@ export async function createOrUpdateMealDate(params: {
     .from("recipes")
     .select("id")
     .eq("recipe_id", params.recipeID)
-    .single();
+    .is("deleted_at", null)
+    .maybeSingle();
   if (!recipe) return { error: "Recipe not found" };
 
   const { data: existing } = await supabase

@@ -22,6 +22,7 @@ const playfairDisplay = Playfair_Display({
 
 type FoldersData = {
   folders: string[];
+  folderIdsByName: Record<string, string>;
   results: Record<string, unknown[]>;
   folderCovers: Record<string, string | null>;
 } | null;
@@ -36,6 +37,7 @@ export default function CookbookPage() {
         setLikedRecipes([...res.data.favorites].reverse());
         setFoldersData({
           folders: res.data.folders,
+          folderIdsByName: res.data.folderIdsByName ?? {},
           results: res.data.results,
           folderCovers: res.data.folderCovers ?? {},
         });

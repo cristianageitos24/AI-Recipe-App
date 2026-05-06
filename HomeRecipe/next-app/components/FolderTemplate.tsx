@@ -6,15 +6,22 @@ import { useDrop } from "react-dnd";
 import {
   addRecipeToFolder,
   clearCookbookCoverImage,
-  deleteFolder,
   renameFolder,
+  restoreFolder,
+  softDeleteFolder,
   uploadCookbookCoverImage,
 } from "@/app/actions/folders";
+import { useTrashUndoOptional } from "@/components/TrashUndoProvider";
 import "@/app/styling/FolderTemplate.css";
 import "@/app/styling/EtcButton.css";
 
 type FolderTemplateProps = {
-  folderData: { folderName: string; folderLength: number; coverImageUrl?: string | null };
+  folderData: {
+    folderId: string;
+    folderName: string;
+    folderLength: number;
+    coverImageUrl?: string | null;
+  };
   onUpdate?: () => void;
 };
 
@@ -49,10 +56,11 @@ function coverBackgroundStyle(folderName: string, customUrl: string | null | und
 }
 
 export function FolderTemplate({ folderData: initialFolderData, onUpdate }: FolderTemplateProps) {
+  const trashUndo = useTrashUndoOptional();
   const [folderData, setFolderData] = useState(initialFolderData);
   const [isMouseHoveringTitle, setMouseHoveringTitle] = useState(false);
   const [isRenameOptionOpen, setIsRenameOptionOpen] = useState(false);
-  const [copyFolderName, setCopyFolderName] = useState(folderData.folderName);
+  const [copyFolderName, setCopyFolderName] = useState(initialFolderData.folderName);
   const [folderRename, setFolderRename] = useState("");
   const [isFolderDeleted, setIsFolderDeleted] = useState(false);
   const [isEtcActive, setIsEtcActive] = useState(false);
@@ -64,7 +72,16 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
 
   useEffect(() => {
     setFolderData(initialFolderData);
-  }, [initialFolderData.folderName, initialFolderData.folderLength, initialFolderData.coverImageUrl]);
+  }, [
+    initialFolderData.folderId,
+    initialFolderData.folderName,
+    initialFolderData.folderLength,
+    initialFolderData.coverImageUrl,
+  ]);
+
+  useEffect(() => {
+    setCopyFolderName(initialFolderData.folderName);
+  }, [initialFolderData.folderName]);
 
   const [{ isHovering }, drop] = useDrop({
     accept: "RECIPE CARD",
@@ -95,14 +112,23 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
       setCoverUploadError(null);
       coverFileInputRef.current?.click();
     } else if (option === "Use default cover") {
-      const res = await clearCookbookCoverImage(copyFolderName);
+      const res = await clearCookbookCoverImage(folderData.folderId);
       if (!res.error) {
         setFolderData((prev) => ({ ...prev, coverImageUrl: null }));
         onUpdate?.();
       }
     } else if (option === "Move to trash") {
-      const res = await deleteFolder(copyFolderName);
-      if (!res.error) {
+      const id = folderData.folderId;
+      const res = await softDeleteFolder(id);
+      if (res.ok) {
+        trashUndo?.showTrashUndo({
+          message: "Cookbook moved to trash.",
+          onUndo: async () => {
+            const r = await restoreFolder(id);
+            if (r.ok) onUpdate?.();
+            return r;
+          },
+        });
         setIsFolderDeleted(true);
         onUpdate?.();
       }
@@ -119,6 +145,7 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
     try {
       const fd = new FormData();
       fd.set("image", file);
+      fd.set("folderId", folderData.folderId);
       fd.set("folderName", copyFolderName);
       const res = await uploadCookbookCoverImage(fd);
       if (res.error) {
@@ -140,11 +167,13 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
   }
 
   async function handleConfirmFolderRename() {
-    const res = await renameFolder(copyFolderName, folderRename);
+    const trimmed = folderRename.trim();
+    if (!trimmed) return;
+    const res = await renameFolder(folderData.folderId, trimmed);
     if (!res.error) {
       setIsRenameOptionOpen(false);
-      setCopyFolderName(folderRename);
-      setFolderData((prev) => ({ ...prev, folderName: folderRename }));
+      setCopyFolderName(trimmed);
+      setFolderData((prev) => ({ ...prev, folderName: trimmed }));
       onUpdate?.();
     }
   }

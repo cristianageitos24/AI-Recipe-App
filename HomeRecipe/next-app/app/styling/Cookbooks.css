@@ -194,6 +194,12 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-blue) 20%, transparent);
 }
 
+.cookbook-create-error {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-xs);
+  color: var(--color-danger, #b42318);
+}
+
 .modal-folder-action-btns {
   display: flex;
   justify-content: flex-end;

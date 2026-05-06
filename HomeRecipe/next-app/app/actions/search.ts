@@ -92,6 +92,7 @@ export async function getSearchSuggestions(
   const recipesRes = await supabase
     .from("recipes")
     .select("recipe_id, recipe_label")
+    .is("deleted_at", null)
     .ilike("recipe_label", pattern)
     .limit(5);
   const recipes =
@@ -123,6 +124,7 @@ export async function searchRecipes(
   const { data, error } = await supabase
     .from("recipes")
     .select(RECIPE_LIST_COLUMNS)
+    .is("deleted_at", null)
     .ilike("recipe_label", pattern)
     .limit(50);
 
@@ -143,7 +145,7 @@ export async function searchByIngredients(
 
   const supabase = await createClient();
 
-  let query = supabase.from("recipes").select(RECIPE_LIST_COLUMNS);
+  let query = supabase.from("recipes").select(RECIPE_LIST_COLUMNS).is("deleted_at", null);
 
   for (const ing of trimmed) {
     const pattern = `%${ing.replace(/%/g, "\\%")}%`;
@@ -171,7 +173,11 @@ export async function getSuggestedRecipes(
   if (!error) {
     const rows = (data ?? []) as RecipeRow[];
     const excluded = new Set(excludeRecipeIds);
-    const filtered = rows.filter((r) => !excluded.has(r.recipe_id));
+    const filtered = rows.filter(
+      (r) =>
+        !excluded.has(r.recipe_id) &&
+        (r as { deleted_at?: string | null }).deleted_at == null
+    );
     return { error: null, data: filtered.slice(0, 12) };
   }
 
@@ -180,6 +186,7 @@ export async function getSuggestedRecipes(
   const { data: rows, error: tableError } = await supabase
     .from("recipes")
     .select(RECIPE_LIST_COLUMNS)
+    .is("deleted_at", null)
     .limit(fetchLimit);
 
   if (tableError) return { error: tableError.message, data: null };

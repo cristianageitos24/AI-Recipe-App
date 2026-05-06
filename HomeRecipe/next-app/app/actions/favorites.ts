@@ -21,7 +21,11 @@ export async function getFavorites() {
   if (error) return { error: error.message, data: [] };
   const recipes = (data ?? [])
     .map((row: { recipes: unknown }) => row.recipes)
-    .filter((r): r is Record<string, unknown> => r != null);
+    .filter((r): r is Record<string, unknown> => {
+      if (r == null) return false;
+      const row = r as { deleted_at?: string | null };
+      return row.deleted_at == null;
+    });
   return { error: null, data: recipes as import("@/lib/types").RecipeRow[] };
 }
 

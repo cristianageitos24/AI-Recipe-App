@@ -31,6 +31,8 @@ export type RecipeTemplateShellProps = {
   nutritionDisclaimerMenuSubtext?: string;
   /** e.g. “Add to cookbook” — same row as favorite, Share, and ⋯ */
   cookbookActionSlot?: React.ReactNode;
+  /** When provided, shows “Move to trash” in ⋯ (caller decides visibility). */
+  onMoveToTrash?: () => void | Promise<void>;
 };
 
 function IconFlame() {
@@ -99,6 +101,7 @@ export function RecipeTemplateShell({
   heroOverlay,
   nutritionDisclaimerMenuSubtext,
   cookbookActionSlot,
+  onMoveToTrash,
 }: RecipeTemplateShellProps) {
   const [tab, setTab] = useState<"cook" | "nutrition">("cook");
   const [moreOpen, setMoreOpen] = useState(false);
@@ -261,6 +264,19 @@ export function RecipeTemplateShell({
                       Open source link
                     </button>
                   )}
+                  {onMoveToTrash ? (
+                    <button
+                      type="button"
+                      className="recipe-template-more-item"
+                      role="menuitem"
+                      onClick={() => {
+                        setMoreOpen(false);
+                        void onMoveToTrash();
+                      }}
+                    >
+                      Move to trash
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     className="recipe-template-more-item"

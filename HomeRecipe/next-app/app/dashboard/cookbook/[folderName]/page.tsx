@@ -1,11 +1,21 @@
 "use client";
 
+import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
-import { addRecipeToFolder, deleteFolder, getFolderRecipes, getFolders, renameFolder } from "@/app/actions/folders";
+import {
+  addRecipeToFolder,
+  getActiveFolderMetaByName,
+  getFolderRecipes,
+  getFolders,
+  renameFolder,
+  restoreFolder,
+  softDeleteFolder,
+} from "@/app/actions/folders";
 import { getFavorites } from "@/app/actions/favorites";
 import { CookbookPageRecipeCard } from "@/components/CookbookPageRecipeCard";
 import { RecipeFullView } from "@/components/RecipeFullView";
+import { useTrashUndoOptional } from "@/components/TrashUndoProvider";
 import { buildManualRecipePayload } from "@/lib/processRecipeData";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/CookbookFolderPage.css";
@@ -14,8 +24,11 @@ export default function CookbookFolderPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const trashUndo = useTrashUndoOptional();
   const folderName = decodeURIComponent((params.folderName as string) ?? "");
   const [copyFolderName, setCopyFolderName] = useState(folderName);
+  const [folderId, setFolderId] = useState<string | null>(null);
+  const [folderUnavailable, setFolderUnavailable] = useState(false);
   const [folderRecipes, setFolderRecipes] = useState<RecipeRow[]>([]);
   const [favorites, setFavorites] = useState<RecipeRow[]>([]);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
@@ -46,10 +59,29 @@ export default function CookbookFolderPage() {
   }, [folderName]);
 
   useEffect(() => {
-    getFolderRecipes(folderName).then((res) => {
-      if (res.data) setFolderRecipes(res.data);
+    let cancelled = false;
+    setIsLoading(true);
+    setFolderUnavailable(false);
+    setFolderId(null);
+    setFolderRecipes([]);
+    (async () => {
+      const metaRes = await getActiveFolderMetaByName(folderName);
+      if (cancelled) return;
+      if (!metaRes.data) {
+        setFolderUnavailable(true);
+        setIsLoading(false);
+        return;
+      }
+      setFolderId(metaRes.data.id);
+      setCopyFolderName(metaRes.data.folder_name);
+      const recipesRes = await getFolderRecipes(folderName);
+      if (cancelled) return;
+      if (recipesRes.data) setFolderRecipes(recipesRes.data);
       setIsLoading(false);
-    });
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [folderName]);
 
   useEffect(() => {
@@ -107,11 +139,20 @@ export default function CookbookFolderPage() {
   }, [isAddRecipeModalOpen, folderName, folderRecipes]);
 
   function handleFolderOption(option: string) {
-    if (option === "rename") setIsRenameOptionOpen(true);
-    else if (option === "trash") {
-      deleteFolder(copyFolderName).then((res) => {
-        if (!res.error) router.push("/dashboard/cookbook");
-      });
+    if (option === "rename") {
+      setFolderRename(copyFolderName);
+      setIsRenameOptionOpen(true);
+    } else if (option === "trash") {
+      if (!folderId) return;
+      void (async () => {
+        const res = await softDeleteFolder(folderId);
+        if (!res.ok) return;
+        trashUndo?.showTrashUndo({
+          message: "Cookbook moved to trash.",
+          onUndo: async () => restoreFolder(folderId),
+        });
+        router.push("/dashboard/cookbook");
+      })();
     }
     setIsFolderOptionsOpen(false);
   }
@@ -121,11 +162,14 @@ export default function CookbookFolderPage() {
   }
 
   async function handleConfirmFolderRename() {
-    const res = await renameFolder(copyFolderName, folderRename);
+    if (!folderId) return;
+    const trimmed = folderRename.trim();
+    if (!trimmed) return;
+    const res = await renameFolder(folderId, trimmed);
     if (!res.error) {
       setIsRenameOptionOpen(false);
-      setCopyFolderName(folderRename);
-      router.replace(`/dashboard/cookbook/${encodeURIComponent(folderRename)}`);
+      setCopyFolderName(trimmed);
+      router.replace(`/dashboard/cookbook/${encodeURIComponent(trimmed)}`);
     }
   }
 
@@ -197,6 +241,15 @@ export default function CookbookFolderPage() {
     } finally {
       setManualSubmitting(false);
     }
+  }
+
+  if (!isLoading && folderUnavailable) {
+    return (
+      <div className="main-panel">
+        <p>This cookbook isn&apos;t available.</p>
+        <Link href="/dashboard/cookbook">Back to Cookbooks</Link>
+      </div>
+    );
   }
 
   return (

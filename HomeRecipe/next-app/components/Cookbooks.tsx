@@ -6,17 +6,25 @@ import { createFolder, getFolders } from "@/app/actions/folders";
 import { FolderTemplate } from "./FolderTemplate";
 import "@/app/styling/Cookbooks.css";
 
-type FolderWithLength = { folderName: string; folderLength: number; coverImageUrl: string | null };
+type FolderWithLength = {
+  folderId: string;
+  folderName: string;
+  folderLength: number;
+  coverImageUrl: string | null;
+};
 
 function getFolderAndLengths(data: {
   folders?: string[];
+  folderIdsByName?: Record<string, string>;
   results?: Record<string, unknown[]>;
   folderCovers?: Record<string, string | null>;
 }): FolderWithLength[] {
   const folders = data.folders ?? [];
+  const ids = data.folderIdsByName ?? {};
   const results = data.results ?? {};
   const covers = data.folderCovers ?? {};
   return folders.map((name) => ({
+    folderId: ids[name] ?? "",
     folderName: name,
     folderLength: (results[name] ?? []).length,
     coverImageUrl: covers[name] ?? null,
@@ -26,6 +34,7 @@ function getFolderAndLengths(data: {
 type CookbooksProps = {
   initialFoldersData?: {
     folders: string[];
+    folderIdsByName?: Record<string, string>;
     results: Record<string, unknown[]>;
     folderCovers?: Record<string, string | null>;
   } | null;
@@ -34,30 +43,36 @@ type CookbooksProps = {
 export function Cookbooks({ initialFoldersData }: CookbooksProps = {}) {
   const [showModal, setShowModal] = useState(false);
   const [folderName, setFolderName] = useState("");
+  const [createError, setCreateError] = useState<string | null>(null);
+  /** `null` = not loaded from client fetch yet; use bootstrap `initialFoldersData` when present. */
   const [fetchedFolders, setFetchedFolders] = useState<FolderWithLength[] | null>(null);
-  const folders = fetchedFolders ?? (initialFoldersData ? getFolderAndLengths(initialFoldersData) : []);
+  const folders =
+    fetchedFolders !== null
+      ? fetchedFolders
+      : initialFoldersData != null
+        ? getFolderAndLengths(initialFoldersData)
+        : [];
 
   const fetchFolders = useCallback(async () => {
     const res = await getFolders();
     if (res.data) setFetchedFolders(getFolderAndLengths(res.data));
   }, []);
 
+  /** Always refresh from the server on mount so a stale bootstrap (e.g. empty folders[]) never skips loading. */
   useEffect(() => {
-    if (initialFoldersData !== undefined) return;
-
     let isCurrent = true;
     getFolders().then((res) => {
       if (isCurrent && res.data) setFetchedFolders(getFolderAndLengths(res.data));
     });
-
     return () => {
       isCurrent = false;
     };
-  }, [initialFoldersData]);
+  }, []);
 
   function handleCancel() {
     setShowModal(false);
     setFolderName("");
+    setCreateError(null);
   }
 
   function handleKeyPress(e: React.KeyboardEvent) {
@@ -68,7 +83,12 @@ export function Cookbooks({ initialFoldersData }: CookbooksProps = {}) {
   async function handleCreateFolder() {
     const name = folderName.trim();
     if (!name) return;
-    await createFolder(name);
+    setCreateError(null);
+    const res = await createFolder(name);
+    if (res.error) {
+      setCreateError(res.error);
+      return;
+    }
     await fetchFolders();
     handleCancel();
   }
@@ -90,7 +110,11 @@ export function Cookbooks({ initialFoldersData }: CookbooksProps = {}) {
       </div>
       <div className="cookbook-folders-content-container">
         {folders.map((folder) => (
-          <FolderTemplate key={folder.folderName} folderData={folder} onUpdate={fetchFolders} />
+          <FolderTemplate
+            key={folder.folderId || folder.folderName}
+            folderData={folder}
+            onUpdate={fetchFolders}
+          />
         ))}
         <button
           type="button"
@@ -130,6 +154,11 @@ export function Cookbooks({ initialFoldersData }: CookbooksProps = {}) {
                   onChange={(e) => setFolderName(e.target.value)}
                   autoFocus
                 />
+                {createError && (
+                  <p className="cookbook-create-error" role="alert">
+                    {createError}
+                  </p>
+                )}
                 <div className="modal-folder-action-btns">
                   <button type="button" className="new-folder-cancel-btn" onClick={handleCancel}>
                     Cancel
