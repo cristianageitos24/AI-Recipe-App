@@ -17,7 +17,7 @@ export function HomeStatCards({ stats }: { stats: HomeStats }) {
         <div className="home-stat-card-body">
           <p className="home-stat-card-label">Total Recipes</p>
           <p className="home-stat-card-value">{stats.totalRecipesSaved}</p>
-          <Link href="/dashboard/recipes" className="home-stat-card-link home-stat-card-link-blue">
+          <Link href="/dashboard/cookbook" className="home-stat-card-link home-stat-card-link-blue">
             Start building your cookbook
           </Link>
         </div>
@@ -33,9 +33,13 @@ export function HomeStatCards({ stats }: { stats: HomeStats }) {
         <div className="home-stat-card-body">
           <p className="home-stat-card-label">Favorites</p>
           <p className="home-stat-card-value">{stats.favoritesCount}</p>
-          <p className="home-stat-card-link home-stat-card-link-green">
-            {stats.favoritesCount === 0 ? "No favorites yet" : "View your favorites"}
-          </p>
+          {stats.favoritesCount === 0 ? (
+            <p className="home-stat-card-link home-stat-card-link-green">No favorites yet</p>
+          ) : (
+            <Link href="/dashboard/cookbook" className="home-stat-card-link home-stat-card-link-green">
+              View your favorites
+            </Link>
+          )}
         </div>
       </div>
 
@@ -66,7 +70,7 @@ export function HomeStatCards({ stats }: { stats: HomeStats }) {
         <div className="home-stat-card-body">
           <p className="home-stat-card-label">Imported This Month</p>
           <p className="home-stat-card-value">{stats.importedThisMonth}</p>
-          <Link href="/dashboard/recipes" className="home-stat-card-link home-stat-card-link-blue">
+          <Link href="/dashboard/video-upload" className="home-stat-card-link home-stat-card-link-blue">
             Add some new recipes
           </Link>
         </div>
