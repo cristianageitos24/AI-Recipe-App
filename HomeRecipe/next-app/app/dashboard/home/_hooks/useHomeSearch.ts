@@ -12,7 +12,7 @@ import {
   isUrlImportSaveable,
   urlImportToDraftRecipeRow,
 } from "@/lib/processRecipeData";
-import type { RecipeRow, UrlImportedRecipe, WebRecipeSearchResult } from "@/lib/types";
+import type { RecipeRow, UrlImportedRecipe, WebSearchResult } from "@/lib/types";
 
 export type SearchMode = "recipe" | "ingredients" | "web";
 
@@ -25,13 +25,14 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-async function fetchWebRecipes(query: string): Promise<WebRecipeSearchResult[]> {
-  const res = await fetch("/api/recipes/web-search", {
+
+async function fetchWebRecipes(query: string): Promise<WebSearchResult[]> {
+  const res = await fetch("/api/search/web", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query }),
   });
-  const data = (await res.json()) as { results?: WebRecipeSearchResult[]; error?: string };
+  const data = (await res.json()) as { results?: WebSearchResult[]; error?: string };
   if (!res.ok) throw new Error(data.error || "Web recipe search failed.");
   return data.results ?? [];
 }
@@ -42,7 +43,7 @@ export function useHomeSearch() {
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [displayQuery, setDisplayQuery] = useState("");
   const [searchResults, setSearchResults] = useState<RecipeRow[] | null>(null);
-  const [webSearchResults, setWebSearchResults] = useState<WebRecipeSearchResult[] | null>(null);
+  const [webSearchResults, setWebSearchResults] = useState<WebSearchResult[] | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchSlowMessage, setSearchSlowMessage] = useState(false);
@@ -84,11 +85,7 @@ export function useHomeSearch() {
   useEffect(() => {
     if (searchInProgressRef.current) return;
     const trimmed = debouncedTextForSuggestions.trim();
-    if (searchMode === "web") {
-      setSuggestions({ ingredients: [], recipes: [] });
-      setShowSuggestions(false);
-      return;
-    }
+    if (searchMode === "web") { setSuggestions({ ingredients: [], recipes: [] }); return; }
     const minLength = searchMode === "ingredients" ? 1 : 2;
     if (trimmed.length < minLength) {
       setSuggestions({ ingredients: [], recipes: [] });
@@ -113,22 +110,19 @@ export function useHomeSearch() {
   useEffect(() => {
     const trimmed = debouncedTextForSearch.trim();
     const isIngredientMode = searchMode === "ingredients";
-    if (searchMode === "web") {
-      if (trimmed.length < 3) { setWebSearchResults(null); setDisplayQuery(""); }
-      return;
-    }
+    if (searchMode === "web") return;
     const ings =
       selectedIngredients.length > 0
         ? selectedIngredients
         : trimmed.split(",").map((s) => s.trim()).filter(Boolean);
     if (isIngredientMode) {
       if (ings.length === 0) {
-        setSearchResults(null); setWebSearchResults(null);
+        setSearchResults(null);
         setDisplayQuery(""); setSearchError(null);
         return;
       }
     } else if (trimmed.length < 2) {
-      setSearchResults(null); setWebSearchResults(null);
+      setSearchResults(null);
       setDisplayQuery(""); setSearchError(null);
       return;
     }
@@ -144,7 +138,6 @@ export function useHomeSearch() {
     };
     if (isIngredientMode) {
       setDisplayQuery(ings.join(", "));
-      setWebSearchResults(null);
       searchByIngredients(ings)
         .then((res) => {
           if (requestId !== liveSearchRequestIdRef.current) return;
@@ -158,7 +151,6 @@ export function useHomeSearch() {
         .finally(finish);
     } else {
       setDisplayQuery(trimmed);
-      setWebSearchResults(null);
       searchRecipes(trimmed)
         .then((res) => {
           if (requestId !== liveSearchRequestIdRef.current) return;
@@ -266,7 +258,22 @@ export function useHomeSearch() {
     setSearchError(null);
     setSearchSlowMessage(false);
     searchInProgressRef.current = true;
-    if (searchMode === "recipe") {
+    if (searchMode === "web") {
+      const query = text.trim();
+      if (query.length < 3) { searchInProgressRef.current = false; return; }
+      setSearchLoading(true);
+      setDisplayQuery(query);
+      setSearchResults(null);
+      try {
+        setWebSearchResults(await fetchWebRecipes(query));
+      } catch (error) {
+        setWebSearchResults([]);
+        setSearchError(error instanceof Error ? error.message : "Web search failed. Try again.");
+      } finally {
+        setSearchLoading(false); setSearchSlowMessage(false);
+        searchInProgressRef.current = false;
+      }
+    } else if (searchMode === "recipe") {
       const query = text.trim();
       if (!query) { searchInProgressRef.current = false; return; }
       setSearchLoading(true);
@@ -277,22 +284,6 @@ export function useHomeSearch() {
         setSearchResults(res.data ?? []);
       } catch {
         setSearchResults([]); setSearchError("Search failed. Try again.");
-      } finally {
-        setSearchLoading(false); setSearchSlowMessage(false);
-        searchInProgressRef.current = false;
-      }
-    } else if (searchMode === "web") {
-      const query = text.trim();
-      if (query.length < 3) {
-        searchInProgressRef.current = false;
-        setWebSearchResults(null); setDisplayQuery(""); return;
-      }
-      setSearchLoading(true); setDisplayQuery(query); setSearchResults(null);
-      try {
-        setWebSearchResults(await fetchWebRecipes(query));
-      } catch (error) {
-        setWebSearchResults([]);
-        setSearchError(error instanceof Error ? error.message : "Web search failed. Try again.");
       } finally {
         setSearchLoading(false); setSearchSlowMessage(false);
         searchInProgressRef.current = false;

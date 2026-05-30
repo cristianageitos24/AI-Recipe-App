@@ -27,6 +27,7 @@
     "@fullcalendar/interaction": "^6.1.20",
     "@fullcalendar/react": "^6.1.20",
     "@fullcalendar/timegrid": "^6.1.20",
+    "@google/genai": "^2.4.0",
     "@lottiefiles/dotlottie-react": "^0.18.1",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.93.3",

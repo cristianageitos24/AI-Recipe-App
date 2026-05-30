@@ -195,7 +195,7 @@ export function HomeSearchShell({
                 {searchSlowMessage && (
                   <p className="search-loading search-slow-hint" role="status">
                     {searchMode === "web"
-                      ? "Still searching the web. Some recipe sites take a little longer to resolve."
+                      ? "Still searching the web. This can take a few seconds..."
                       : "Taking longer than usual. If this persists, ensure migration 008 (search indexes) is applied."}
                   </p>
                 )}
@@ -213,20 +213,11 @@ export function HomeSearchShell({
                       <div className="web-recipe-results-grid">
                         {webSearchResults.map((result) => (
                           <motion.article
-                            key={result.id}
+                            key={result.url}
                             className="web-recipe-result-card"
                             whileHover={cardHoverMotion}
                             transition={cardHoverTransition}
                           >
-                            <div className="web-recipe-result-image-wrap">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={result.image || "/images/recipe-placeholder.png"}
-                                alt=""
-                                className="web-recipe-result-image"
-                                onError={(e) => { e.currentTarget.src = "/images/recipe-placeholder.png"; }}
-                              />
-                            </div>
                             <div className="web-recipe-result-body">
                               <p className="web-recipe-result-source">{result.source}</p>
                               <h3 className="web-recipe-result-title">{result.title}</h3>

@@ -114,12 +114,9 @@ export type UrlImportedRecipe = {
   yields: string | null;
 };
 
-/** Normalized web result returned by Tavily search. */
-export type WebRecipeSearchResult = {
-  id: string;
+export type WebSearchResult = {
   title: string;
   url: string;
   source: string;
   snippet: string | null;
-  image: string | null;
 };

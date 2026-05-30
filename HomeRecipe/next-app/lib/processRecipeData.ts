@@ -23,7 +23,7 @@ export type ProcessedRecipe = {
   websiteURL: string;
 };
 
-function generateHashKey(inputString: string): string {
+export function generateHashKey(inputString: string): string {
   const index = inputString.indexOf("?X-Amz-Security-Token");
   const cleanedUrl = index !== -1 ? inputString.substring(0, index) : inputString;
   let hash = 0;
@@ -225,7 +225,7 @@ export function canSaveRecipeToCookbook(row: RecipeRow): boolean {
   return true;
 }
 
-function normalizeSourceUrlForHash(url: string): string {
+export function normalizeSourceUrlForHash(url: string): string {
   try {
     const u = new URL(url.trim());
     u.hash = "";
