@@ -3,7 +3,14 @@ import type { useHomeData } from "../_hooks/useHomeData";
 
 type HomeStats = ReturnType<typeof useHomeData>["homeStats"];
 
-export function HomeStatCards({ stats }: { stats: HomeStats }) {
+function StatValue({ value, isLoading }: { value: number; isLoading: boolean }) {
+  if (isLoading) {
+    return <span className="home-stat-card-value home-stat-value-skeleton" aria-hidden="true" />;
+  }
+  return <p className="home-stat-card-value">{value}</p>;
+}
+
+export function HomeStatCards({ stats, isLoading = false }: { stats: HomeStats; isLoading?: boolean }) {
   return (
     <div className="home-stat-cards-row">
       {/* Total Recipes */}
@@ -16,7 +23,7 @@ export function HomeStatCards({ stats }: { stats: HomeStats }) {
         </div>
         <div className="home-stat-card-body">
           <p className="home-stat-card-label">Total Recipes</p>
-          <p className="home-stat-card-value">{stats.totalRecipesSaved}</p>
+          <StatValue value={stats.totalRecipesSaved} isLoading={isLoading} />
           <Link href="/dashboard/recipes" className="home-stat-card-link home-stat-card-link-blue">
             Start building your cookbook
           </Link>
@@ -32,7 +39,7 @@ export function HomeStatCards({ stats }: { stats: HomeStats }) {
         </div>
         <div className="home-stat-card-body">
           <p className="home-stat-card-label">Favorites</p>
-          <p className="home-stat-card-value">{stats.favoritesCount}</p>
+          <StatValue value={stats.favoritesCount} isLoading={isLoading} />
           <p className="home-stat-card-link home-stat-card-link-green">
             {stats.favoritesCount === 0 ? "No favorites yet" : "View your favorites"}
           </p>
@@ -51,7 +58,7 @@ export function HomeStatCards({ stats }: { stats: HomeStats }) {
         </div>
         <div className="home-stat-card-body">
           <p className="home-stat-card-label">Recipes This Week</p>
-          <p className="home-stat-card-value">{stats.recipesThisWeek}</p>
+          <StatValue value={stats.recipesThisWeek} isLoading={isLoading} />
           <p className="home-stat-card-link home-stat-card-link-red">Keep cooking!</p>
         </div>
       </div>
@@ -65,7 +72,7 @@ export function HomeStatCards({ stats }: { stats: HomeStats }) {
         </div>
         <div className="home-stat-card-body">
           <p className="home-stat-card-label">Imported This Month</p>
-          <p className="home-stat-card-value">{stats.importedThisMonth}</p>
+          <StatValue value={stats.importedThisMonth} isLoading={isLoading} />
           <Link href="/dashboard/recipes" className="home-stat-card-link home-stat-card-link-blue">
             Add some new recipes
           </Link>

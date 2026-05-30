@@ -277,3 +277,18 @@
     grid-template-columns: 1fr;
   }
 }
+
+.cookbook-count-badge-skeleton {
+  width: 34px;
+  min-width: 34px;
+  padding: 0;
+  background: linear-gradient(90deg, #ffe2dc 0%, #fff5f2 46%, #ffe2dc 100%);
+  background-size: 220% 100%;
+  animation: cookbook-skeleton-shimmer 1.25s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cookbook-count-badge-skeleton {
+    animation: none;
+  }
+}

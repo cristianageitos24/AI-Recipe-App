@@ -17,7 +17,30 @@ function parseDateKey(dateKey: string): { monthAbbr: string; dayNum: number } {
   };
 }
 
-export function HomeUpcomingPanel({ upcomingMealPlans }: { upcomingMealPlans: MealPlanEntry[] }) {
+function HomeUpcomingSkeleton() {
+  return (
+    <div className="home-upcoming-entries" aria-busy="true">
+      {Array.from({ length: 2 }, (_, index) => (
+        <div key={`home-upcoming-skeleton-${index}`} className="home-upcoming-entry home-upcoming-entry-skeleton" aria-hidden="true">
+          <span className="home-upcoming-date-badge home-upcoming-date-skeleton" />
+          <div className="home-upcoming-entry-text">
+            <span className="home-skeleton-line home-upcoming-skeleton-label" />
+            <span className="home-skeleton-line home-upcoming-skeleton-date" />
+          </div>
+          <span className="home-skeleton-line home-upcoming-skeleton-chevron" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function HomeUpcomingPanel({
+  upcomingMealPlans,
+  isLoading = false,
+}: {
+  upcomingMealPlans: MealPlanEntry[];
+  isLoading?: boolean;
+}) {
   return (
     <section className="home-surface-card home-upcoming-panel">
       <div className="home-upcoming-panel-header">
@@ -39,7 +62,9 @@ export function HomeUpcomingPanel({ upcomingMealPlans }: { upcomingMealPlans: Me
         <h2 className="home-section-title">Upcoming Recipes</h2>
       </div>
       <p className="home-section-caption">See what&apos;s cooking next</p>
-      {upcomingMealPlans.length > 0 ? (
+      {isLoading ? (
+        <HomeUpcomingSkeleton />
+      ) : upcomingMealPlans.length > 0 ? (
         <div className="home-upcoming-entries">
           {upcomingMealPlans.map((day) => {
             const { monthAbbr, dayNum } = parseDateKey(day.date);

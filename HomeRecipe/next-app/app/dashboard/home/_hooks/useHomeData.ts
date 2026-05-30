@@ -29,20 +29,29 @@ export function useHomeData() {
   const [mealDates, setMealDates] = useState<MealDay[]>([]);
   const [foldersWithCounts, setFoldersWithCounts] = useState<FolderWithCount[]>([]);
   const [folderRecipesByName, setFolderRecipesByName] = useState<Record<string, RecipeRow[]>>({});
+  const [isHomeDataLoading, setIsHomeDataLoading] = useState(true);
 
   useEffect(() => {
-    getHomeBootstrap().then((res) => {
-      if (!res.data) return;
-      setFavorites(res.data.favorites);
-      setFoldersWithCounts(
-        res.data.folders.map((name) => ({
-          folderName: name,
-          count: (res.data.results[name] ?? []).length,
-        }))
-      );
-      setFolderRecipesByName((res.data.results ?? {}) as Record<string, RecipeRow[]>);
-      setMealDates((res.data.mealDates ?? []) as MealDay[]);
-    });
+    let isCurrent = true;
+    getHomeBootstrap()
+      .then((res) => {
+        if (!isCurrent || !res.data) return;
+        setFavorites(res.data.favorites);
+        setFoldersWithCounts(
+          res.data.folders.map((name) => ({
+            folderName: name,
+            count: (res.data.results[name] ?? []).length,
+          }))
+        );
+        setFolderRecipesByName((res.data.results ?? {}) as Record<string, RecipeRow[]>);
+        setMealDates((res.data.mealDates ?? []) as MealDay[]);
+      })
+      .finally(() => {
+        if (isCurrent) setIsHomeDataLoading(false);
+      });
+    return () => {
+      isCurrent = false;
+    };
   }, []);
 
   const handleFavoriteChange = useCallback((recipe: RecipeRow, isFavorited: boolean) => {
@@ -129,6 +138,7 @@ export function useHomeData() {
   return {
     favorites,
     foldersWithCounts,
+    isHomeDataLoading,
     homeStats,
     upcomingMealPlans,
     favoriteIds,

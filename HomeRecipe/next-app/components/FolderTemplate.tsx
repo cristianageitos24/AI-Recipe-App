@@ -55,6 +55,25 @@ function coverBackgroundStyle(folderName: string, customUrl: string | null | und
   return { backgroundImage: `url("${getCoverForFolder(folderName)}")` };
 }
 
+export function FolderTemplateSkeleton() {
+  return (
+    <div className="cookbook-user-folder cookbook-user-folder-skeleton" aria-hidden="true">
+      <div className="cookbook-folder-cover cookbook-skeleton-block" />
+      <div className="cookbook-active-content">
+        <div className="cookbook-recipe-count-bubble cookbook-skeleton-bubble">
+          <span className="cookbook-skeleton-line cookbook-skeleton-count" />
+          <span className="cookbook-skeleton-line cookbook-skeleton-label" />
+        </div>
+        <span className="cookbook-skeleton-line cookbook-skeleton-title" />
+        <span className="cookbook-skeleton-line cookbook-skeleton-description" />
+        <span className="cookbook-skeleton-line cookbook-skeleton-description cookbook-skeleton-description-short" />
+      </div>
+      <span className="cookbook-skeleton-star" />
+      <span className="cookbook-skeleton-menu" />
+    </div>
+  );
+}
+
 export function FolderTemplate({ folderData: initialFolderData, onUpdate }: FolderTemplateProps) {
   const trashUndo = useTrashUndoOptional();
   const [folderData, setFolderData] = useState(initialFolderData);
@@ -72,12 +91,7 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
 
   useEffect(() => {
     setFolderData(initialFolderData);
-  }, [
-    initialFolderData.folderId,
-    initialFolderData.folderName,
-    initialFolderData.folderLength,
-    initialFolderData.coverImageUrl,
-  ]);
+  }, [initialFolderData]);
 
   useEffect(() => {
     setCopyFolderName(initialFolderData.folderName);

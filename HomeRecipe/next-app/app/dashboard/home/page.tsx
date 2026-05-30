@@ -31,6 +31,7 @@ export default function DashboardHomePage() {
 
   const {
     foldersWithCounts,
+    isHomeDataLoading,
     homeStats,
     upcomingMealPlans,
     favoriteIds,
@@ -74,13 +75,13 @@ export default function DashboardHomePage() {
           </Link>
         </div>
 
-        <HomeStatCards stats={homeStats} />
+        <HomeStatCards stats={homeStats} isLoading={isHomeDataLoading} />
 
         <HomeImportCard onWebRecipeUrlImport={search.importRecipeFromWebUrl} />
 
         <div className="home-lower-grid">
-          <HomeCollectionsPanel foldersWithCounts={foldersWithCounts} />
-          <HomeUpcomingPanel upcomingMealPlans={upcomingMealPlans} />
+          <HomeCollectionsPanel foldersWithCounts={foldersWithCounts} isLoading={isHomeDataLoading} />
+          <HomeUpcomingPanel upcomingMealPlans={upcomingMealPlans} isLoading={isHomeDataLoading} />
         </div>
       </motion.div>
 
