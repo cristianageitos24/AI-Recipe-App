@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import type { useHomeData } from "../_hooks/useHomeData";
 
@@ -10,7 +12,15 @@ function StatValue({ value, isLoading }: { value: number; isLoading: boolean }) 
   return <p className="home-stat-card-value">{value}</p>;
 }
 
-export function HomeStatCards({ stats, isLoading = false }: { stats: HomeStats; isLoading?: boolean }) {
+export function HomeStatCards({
+  stats,
+  isLoading = false,
+  onOpenSearch,
+}: {
+  stats: HomeStats;
+  isLoading?: boolean;
+  onOpenSearch: () => void;
+}) {
   return (
     <div className="home-stat-cards-row">
       {/* Total Recipes */}
@@ -24,7 +34,7 @@ export function HomeStatCards({ stats, isLoading = false }: { stats: HomeStats; 
         <div className="home-stat-card-body">
           <p className="home-stat-card-label">Total Recipes</p>
           <StatValue value={stats.totalRecipesSaved} isLoading={isLoading} />
-          <Link href="/dashboard/recipes" className="home-stat-card-link home-stat-card-link-blue">
+          <Link href="/dashboard/cookbook" className="home-stat-card-link home-stat-card-link-blue">
             Start building your cookbook
           </Link>
         </div>
@@ -73,9 +83,13 @@ export function HomeStatCards({ stats, isLoading = false }: { stats: HomeStats; 
         <div className="home-stat-card-body">
           <p className="home-stat-card-label">Imported This Month</p>
           <StatValue value={stats.importedThisMonth} isLoading={isLoading} />
-          <Link href="/dashboard/recipes" className="home-stat-card-link home-stat-card-link-blue">
+          <button
+            type="button"
+            className="home-stat-card-link home-stat-card-link-blue home-stat-card-link-button"
+            onClick={onOpenSearch}
+          >
             Add some new recipes
-          </Link>
+          </button>
         </div>
       </div>
     </div>

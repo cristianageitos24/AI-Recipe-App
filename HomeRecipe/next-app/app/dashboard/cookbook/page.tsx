@@ -6,10 +6,10 @@ import Image from "next/image";
 import { Playfair_Display } from "next/font/google";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { getCookbookBootstrap } from "@/app/actions/dashboard";
+import { getFavorites } from "@/app/actions/favorites";
 import { Cookbooks } from "@/components/Cookbooks";
-import { CuratedCookbooks } from "@/components/CuratedCookbooks";
 import { RecipeListCard } from "@/components/RecipeListCard";
+import { fetchCookbookBootstrapData, primeCookbooksData, readCookbooksData } from "@/lib/cookbooks-cache";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/TabCookbook.css";
 
@@ -31,17 +31,39 @@ export default function CookbookPage() {
   const [likedRecipes, setLikedRecipes] = useState<RecipeRow[]>([]);
   const [foldersData, setFoldersData] = useState<FoldersData>(null);
   useEffect(() => {
-    getCookbookBootstrap()
-      .then((res) => {
-        if (!res.data) return;
-        setLikedRecipes([...res.data.favorites].reverse());
-        setFoldersData({
-          folders: res.data.folders,
-          folderIdsByName: res.data.folderIdsByName ?? {},
-          results: res.data.results,
-          folderCovers: res.data.folderCovers ?? {},
-        });
+    let isCurrent = true;
+    const cachedFolders = readCookbooksData();
+
+    if (cachedFolders) {
+      cachedFolders.then((foldersRes) => {
+        if (!isCurrent) return;
+        if (foldersRes.data) setFoldersData(foldersRes.data);
       });
+      getFavorites().then((favoritesRes) => {
+        if (!isCurrent) return;
+        if (favoritesRes.data) setLikedRecipes([...favoritesRes.data].reverse());
+      });
+      return () => {
+        isCurrent = false;
+      };
+    }
+
+    fetchCookbookBootstrapData().then((res) => {
+      if (!isCurrent || !res.data) return;
+      setLikedRecipes([...res.data.favorites].reverse());
+      const nextFoldersData = {
+        folders: res.data.folders,
+        folderIdsByName: res.data.folderIdsByName ?? {},
+        results: res.data.results,
+        folderCovers: res.data.folderCovers ?? {},
+      };
+      setFoldersData(nextFoldersData);
+      primeCookbooksData(nextFoldersData);
+    });
+
+    return () => {
+      isCurrent = false;
+    };
   }, []);
 
   const handleFavoriteChange = useCallback((recipe: RecipeRow, isFavorited: boolean) => {
@@ -86,7 +108,6 @@ export default function CookbookPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
           >
-            <CuratedCookbooks />
             <Cookbooks initialFoldersData={foldersData} />
             <div className="tabcookbook-show-liked-recipes">
               <h1 className="sub-header-title">Liked Recipes</h1>
@@ -118,7 +139,6 @@ export default function CookbookPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
           >
-            <CuratedCookbooks />
             <Cookbooks initialFoldersData={foldersData} />
           </motion.div>
         )}

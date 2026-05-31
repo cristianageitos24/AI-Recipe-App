@@ -666,8 +666,18 @@
 .home-stat-card-link-green { color: var(--brand-lime-fg); }
 .home-stat-card-link-red   { color: var(--accent); }
 
-a.home-stat-card-link:hover {
+a.home-stat-card-link:hover,
+.home-stat-card-link-button:hover {
   text-decoration: underline;
+}
+
+.home-stat-card-link-button {
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
 }
 
 .home-skeleton-line,
@@ -851,14 +861,12 @@ a.home-stat-card-link:hover {
   box-shadow: 0 8px 18px rgba(17, 24, 39, 0.04);
   transition:
     border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.15s ease;
+    box-shadow 0.15s ease;
 }
 
 .home-collection-card:hover {
-  border-color: var(--gray-400);
-  box-shadow: 0 12px 24px rgba(17, 24, 39, 0.08);
-  transform: translateY(-1px);
+  border-color: #f26a5f;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
 }
 
 .home-collection-name {

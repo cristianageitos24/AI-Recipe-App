@@ -32,6 +32,7 @@ export default function DashboardHomePage() {
   const {
     foldersWithCounts,
     isHomeDataLoading,
+    isCollectionsLoading,
     homeStats,
     upcomingMealPlans,
     favoriteIds,
@@ -39,6 +40,10 @@ export default function DashboardHomePage() {
   } = useHomeData();
 
   const search = useHomeSearch();
+  const openSearch = () => {
+    search.setSearchModalOpen(true);
+    window.requestAnimationFrame(() => search.inputRef.current?.focus());
+  };
 
   return (
     <div className="main-panel home-main-panel">
@@ -75,12 +80,16 @@ export default function DashboardHomePage() {
           </Link>
         </div>
 
-        <HomeStatCards stats={homeStats} isLoading={isHomeDataLoading} />
+        <HomeStatCards
+          stats={homeStats}
+          isLoading={isHomeDataLoading}
+          onOpenSearch={openSearch}
+        />
 
         <HomeImportCard onWebRecipeUrlImport={search.importRecipeFromWebUrl} />
 
         <div className="home-lower-grid">
-          <HomeCollectionsPanel foldersWithCounts={foldersWithCounts} isLoading={isHomeDataLoading} />
+          <HomeCollectionsPanel foldersWithCounts={foldersWithCounts} isLoading={isCollectionsLoading} />
           <HomeUpcomingPanel upcomingMealPlans={upcomingMealPlans} isLoading={isHomeDataLoading} />
         </div>
       </motion.div>

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
-import { getFolders } from "@/app/actions/folders";
+import { useCallback, useState } from "react";
 import { CookbookCreateCard } from "./CookbookCreateCard";
 import { CookbookLoadingRow } from "./CookbookLoadingRow";
 import { FolderTemplate } from "./FolderTemplate";
+import { fetchCookbooksData } from "@/lib/cookbooks-cache";
 import "@/app/styling/Cookbooks.css";
 
 type FolderWithLength = {
@@ -53,19 +53,8 @@ export function Cookbooks({ initialFoldersData }: CookbooksProps = {}) {
         : [];
 
   const fetchFolders = useCallback(async () => {
-    const res = await getFolders();
+    const res = await fetchCookbooksData();
     if (res.data) setFetchedFolders(getFolderAndLengths(res.data));
-  }, []);
-
-  /** Always refresh from the server on mount so a stale bootstrap (e.g. empty folders[]) never skips loading. */
-  useEffect(() => {
-    let isCurrent = true;
-    getFolders().then((res) => {
-      if (isCurrent && res.data) setFetchedFolders(getFolderAndLengths(res.data));
-    });
-    return () => {
-      isCurrent = false;
-    };
   }, []);
 
   return (

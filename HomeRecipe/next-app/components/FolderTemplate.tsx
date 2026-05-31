@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useDrop } from "react-dnd";
+import { motion } from "framer-motion";
 import {
   addRecipeToFolder,
   clearCookbookCoverImage,
@@ -12,6 +13,8 @@ import {
   uploadCookbookCoverImage,
 } from "@/app/actions/folders";
 import { useTrashUndoOptional } from "@/components/TrashUndoProvider";
+import { invalidateCookbooksData } from "@/lib/cookbooks-cache";
+import { invalidateFolderPageData, prefetchFolderPageData } from "@/lib/folder-page-prefetch";
 import "@/app/styling/FolderTemplate.css";
 import "@/app/styling/EtcButton.css";
 
@@ -102,6 +105,8 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
     collect: (monitor) => ({ isHovering: monitor.isOver() }),
     drop: async (item: { id: string }) => {
       await addRecipeToFolder(copyFolderName, item.id);
+      invalidateCookbooksData();
+      invalidateFolderPageData(copyFolderName);
       setFolderData((prev) => ({ ...prev, folderLength: prev.folderLength + 1 }));
       onUpdate?.();
     },
@@ -128,6 +133,8 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
     } else if (option === "Use default cover") {
       const res = await clearCookbookCoverImage(folderData.folderId);
       if (!res.error) {
+        invalidateCookbooksData();
+        invalidateFolderPageData(copyFolderName);
         setFolderData((prev) => ({ ...prev, coverImageUrl: null }));
         onUpdate?.();
       }
@@ -139,10 +146,16 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
           message: "Cookbook moved to trash.",
           onUndo: async () => {
             const r = await restoreFolder(id);
-            if (r.ok) onUpdate?.();
+            if (r.ok) {
+              invalidateCookbooksData();
+              invalidateFolderPageData(copyFolderName);
+              onUpdate?.();
+            }
             return r;
           },
         });
+        invalidateCookbooksData();
+        invalidateFolderPageData(copyFolderName);
         setIsFolderDeleted(true);
         onUpdate?.();
       }
@@ -167,6 +180,8 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
         return;
       }
       if (res.url) {
+        invalidateCookbooksData();
+        invalidateFolderPageData(copyFolderName);
         setFolderData((prev) => ({ ...prev, coverImageUrl: res.url }));
         onUpdate?.();
       }
@@ -186,6 +201,9 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
     const res = await renameFolder(folderData.folderId, trimmed);
     if (!res.error) {
       setIsRenameOptionOpen(false);
+      invalidateCookbooksData();
+      invalidateFolderPageData(copyFolderName);
+      invalidateFolderPageData(trimmed);
       setCopyFolderName(trimmed);
       setFolderData((prev) => ({ ...prev, folderName: trimmed }));
       onUpdate?.();
@@ -193,20 +211,30 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
   }
 
   return (
-    <div
+    <motion.div
       className="cookbook-user-folder"
       ref={(el) => { drop(el); }}
+      whileHover={{
+        boxShadow: "0 10px 24px rgba(0, 0, 0, 0.12)",
+      }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
       style={
         isFolderDeleted
           ? { display: "none" }
           : isHovering
             ? {
                 backgroundColor: "var(--accent-muted-bg)",
-                borderColor: "var(--accent-muted)",
-                boxShadow: "0 0 0 3px var(--accent-muted)",
+                borderColor: "#f26a5f",
+                boxShadow: "0 0 0 3px rgba(236, 36, 20, 0.16)",
               }
             : undefined
       }
+      onPointerEnter={() => {
+        void prefetchFolderPageData(copyFolderName);
+      }}
+      onFocus={() => {
+        void prefetchFolderPageData(copyFolderName);
+      }}
     >
       <Link href={`/dashboard/cookbook/${encodeURIComponent(copyFolderName)}`} className="cookbook-active-content-link">
         <div
@@ -324,6 +352,6 @@ export function FolderTemplate({ folderData: initialFolderData, onUpdate }: Fold
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

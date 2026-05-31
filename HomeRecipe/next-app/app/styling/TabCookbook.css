@@ -109,6 +109,40 @@
   aspect-ratio: 250 / 224;
 }
 
+.cookbook-route-skeleton-line {
+  display: block;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f1f3f7 0%, #e6eaf1 42%, #f1f3f7 80%);
+  background-size: 220% 100%;
+  animation: cookbook-route-skeleton-shimmer 1.25s ease-in-out infinite;
+}
+
+.cookbook-route-skeleton-title {
+  width: 156px;
+  height: 30px;
+}
+
+.cookbook-route-skeleton-subtitle {
+  width: min(340px, 58vw);
+  height: 18px;
+  margin-top: 10px;
+}
+
+.cookbook-route-skeleton-section-title {
+  width: 176px;
+  height: 28px;
+}
+
+@keyframes cookbook-route-skeleton-shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+
+  100% {
+    background-position: -120% 0;
+  }
+}
+
 @media screen and (max-width: 700px) {
   .cookbook-page-title-icon {
     width: 48px;

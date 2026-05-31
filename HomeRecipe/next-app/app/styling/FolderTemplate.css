@@ -20,8 +20,7 @@
   cursor: pointer;
   transition:
     border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.15s ease;
+    box-shadow 0.2s ease;
 }
 
 .cookbook-folder-cover {
@@ -46,7 +45,7 @@
 }
 
 .cookbook-user-folder:hover {
-  border-color: #ffd0c7;
+  border-color: #f26a5f;
   box-shadow: 0 14px 30px rgba(17, 24, 39, 0.13);
 }
 

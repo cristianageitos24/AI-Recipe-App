@@ -40,11 +40,6 @@ const navItems = [
     icon: "/images/dashboard/groceryicon.svg",
   },
   {
-    href: "/dashboard/video-upload",
-    label: "Video Upload",
-    icon: "/images/dashboard/videouploadicon.svg",
-  },
-  {
     href: "/dashboard/about",
     label: "About",
     icon: "/images/dashboard/icon.svg",

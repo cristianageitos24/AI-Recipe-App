@@ -3,8 +3,367 @@
   grid-template-rows: auto;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   grid-gap: var(--space-3);
-  padding-right: var(--space-10);
-  margin-top: var(--space-7);
+  margin-top: var(--space-4);
+}
+
+.cookbook-folder-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.cookbook-folder-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #7a8494;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.cookbook-folder-breadcrumb button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cookbook-folder-breadcrumb button:hover {
+  color: #101114;
+}
+
+.cookbook-folder-breadcrumb span {
+  color: #a0a8b5;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.cookbook-folder-breadcrumb strong {
+  color: #101114;
+  font-weight: 800;
+}
+
+.cookbook-folder-hero {
+  position: relative;
+  min-height: 232px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  border-radius: 16px;
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 16px 36px rgba(17, 24, 39, 0.12);
+}
+
+.cookbook-folder-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(13, 14, 13, 0.88) 0%, rgba(13, 14, 13, 0.66) 42%, rgba(13, 14, 13, 0.24) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.22));
+  backdrop-filter: blur(1.5px);
+}
+
+.cookbook-folder-hero-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  width: 100%;
+  padding: 32px;
+}
+
+.cookbook-folder-hero-cover {
+  width: 164px;
+  aspect-ratio: 1;
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.86);
+  border-radius: 12px;
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.32);
+}
+
+.cookbook-folder-hero-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.cookbook-folder-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cookbook-folder-title-row h1 {
+  margin: 0;
+  max-width: min(620px, 64vw);
+  overflow-wrap: anywhere;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.42);
+}
+
+.cookbook-folder-edit-title-btn {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.cookbook-folder-edit-title-btn:hover {
+  border-color: rgba(255, 255, 255, 0.54);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.cookbook-folder-edit-title-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.cookbook-folder-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 22px;
+}
+
+.cookbook-folder-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.94);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.36);
+}
+
+.cookbook-folder-stat-icon {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
+}
+
+.cookbook-folder-stat-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.cookbook-folder-stat-icon-red {
+  background: #ffe7e4;
+  color: #ec2414;
+}
+
+.cookbook-folder-stat-icon-green {
+  background: #dff7df;
+  color: #2f7d48;
+}
+
+.cookbook-folder-stat-icon-yellow {
+  background: #fff1c7;
+  color: #8a6410;
+}
+
+.cookbook-folder-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.cookbook-folder-search {
+  width: min(100%, 520px);
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  border: 1px solid #e5e9f1;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #707a89;
+  box-shadow: 0 6px 18px rgba(17, 24, 39, 0.04);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.cookbook-folder-search:focus-within {
+  border-color: #f26a5f;
+  box-shadow: 0 0 0 3px rgba(236, 36, 20, 0.12);
+}
+
+.cookbook-folder-search svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.cookbook-folder-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #101114;
+  font-family: var(--font-body);
+  font-size: 15px;
+}
+
+.cookbook-folder-search input::placeholder {
+  color: #8a93a3;
+}
+
+.cookbook-folder-recipes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding-top: 4px;
+  border-bottom: 1px solid #edf0f5;
+  padding-bottom: 14px;
+}
+
+.cookbook-folder-recipes-header h2 {
+  margin: 0;
+  color: #101114;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.cookbook-folder-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.cookbook-folder-skeleton-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.cookbook-folder-skeleton-line,
+.cookbook-folder-skeleton-cover,
+.cookbook-folder-skeleton-pill,
+.cookbook-folder-skeleton-search,
+.cookbook-folder-skeleton-add-button,
+.cookbook-folder-skeleton-card {
+  display: block;
+  background: linear-gradient(90deg, #f1f3f7 0%, #e6eaf1 42%, #f1f3f7 80%);
+  background-size: 220% 100%;
+  animation: cookbook-folder-skeleton-shimmer 1.25s ease-in-out infinite;
+}
+
+.cookbook-folder-skeleton-breadcrumb-link {
+  width: 92px;
+  height: 18px;
+  border-radius: 999px;
+}
+
+.cookbook-folder-skeleton-breadcrumb-name {
+  width: 128px;
+  height: 18px;
+  border-radius: 999px;
+}
+
+.cookbook-folder-hero-skeleton {
+  background: #eef2f7;
+  box-shadow: none;
+}
+
+.cookbook-folder-skeleton-cover {
+  width: 164px;
+  aspect-ratio: 1;
+  flex-shrink: 0;
+  border-radius: 12px;
+}
+
+.cookbook-folder-skeleton-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: min(100%, 560px);
+}
+
+.cookbook-folder-skeleton-title {
+  width: min(100%, 260px);
+  height: 30px;
+  border-radius: 999px;
+}
+
+.cookbook-folder-skeleton-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 22px;
+}
+
+.cookbook-folder-skeleton-pill {
+  width: 132px;
+  height: 34px;
+  border-radius: 999px;
+}
+
+.cookbook-folder-skeleton-search {
+  width: min(100%, 520px);
+  height: 48px;
+  border-radius: 12px;
+}
+
+.cookbook-folder-skeleton-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.cookbook-folder-skeleton-section-title {
+  width: 142px;
+  height: 22px;
+  border-radius: 999px;
+}
+
+.cookbook-folder-skeleton-add-button {
+  width: 112px;
+  height: 42px;
+  border-radius: 10px;
+}
+
+.cookbook-folder-skeleton-card {
+  min-height: 260px;
+  border-radius: 14px;
+}
+
+@keyframes cookbook-folder-skeleton-shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
 }
 
 /*       WHEN FOLDER IS EMPTY       */
@@ -49,6 +408,14 @@
 
   margin: 0;
   margin-top: -20px;
+}
+
+.cookbook-folder-no-results {
+  margin: 32px 0 0;
+  color: #697386;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
 }
 
 /* Cookbook */
@@ -341,6 +708,54 @@
     right: 0;
     top: 20%;
     width: 500px;
+  }
+
+  .cookbook-folder-hero {
+    min-height: 0;
+  }
+
+  .cookbook-folder-hero-content {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+    padding: 22px;
+  }
+
+  .cookbook-folder-hero-cover {
+    width: 118px;
+  }
+
+  .cookbook-folder-skeleton-cover {
+    width: 118px;
+  }
+
+  .cookbook-folder-title-row h1 {
+    max-width: 100%;
+  }
+
+  .cookbook-folder-skeleton-section-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cookbook-folder-skeleton-add-button,
+  .cookbook-folder-skeleton-search {
+    width: 100%;
+  }
+
+  .cookbook-folder-toolbar,
+  .cookbook-folder-recipes-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cookbook-folder-search {
+    width: 100%;
+  }
+
+  .add-recipe-to-folder-btn {
+    width: 100%;
+    justify-content: center;
   }
 
   .cookbook-page-recipe-cards-container {

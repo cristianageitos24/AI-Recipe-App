@@ -5,34 +5,105 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
   addRecipeToFolder,
-  getActiveFolderMetaByName,
+  getFolderPageData,
   getFolderRecipes,
-  getFolders,
   renameFolder,
-  restoreFolder,
-  softDeleteFolder,
 } from "@/app/actions/folders";
 import { getFavorites } from "@/app/actions/favorites";
 import { CookbookPageRecipeCard } from "@/components/CookbookPageRecipeCard";
 import { RecipeFullView } from "@/components/RecipeFullView";
-import { useTrashUndoOptional } from "@/components/TrashUndoProvider";
+import { fetchCookbooksData, invalidateCookbooksData } from "@/lib/cookbooks-cache";
+import { invalidateFolderPageData, readFolderPageData } from "@/lib/folder-page-prefetch";
 import { buildManualRecipePayload } from "@/lib/processRecipeData";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/CookbookFolderPage.css";
+
+const cookbookHeroCovers = [
+  "/images/food pictures/Recipes by Taylor Kiser.jpg",
+  "/images/food pictures/Delicious Food by Sam Moghadam.jpg",
+  "/images/version1/food pictures/chad-montano--GFCYhoRe48-unsplash.jpg",
+  "/images/version1/food pictures/anna-tukhfatullina-food-photographer-stylist-Mzy-OjtCI70-unsplash.jpg",
+  "/images/food pictures/Delicious Recipes Rirri.jpg",
+];
+
+function getHeroCoverForFolder(folderName: string, customUrl?: string | null) {
+  const trimmed = customUrl?.trim();
+  if (trimmed) return trimmed;
+  const index = [...folderName].reduce((sum, char) => sum + char.charCodeAt(0), 0) % cookbookHeroCovers.length;
+  return cookbookHeroCovers[index];
+}
+
+function formatRecipeCount(count: number) {
+  return `${count} ${count === 1 ? "Recipe" : "Recipes"}`;
+}
+
+function formatMinutes(totalMinutes: number) {
+  const minutes = Math.max(0, Math.round(totalMinutes));
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return remainingMinutes === 0 ? `${hours} hr` : `${hours} hr ${remainingMinutes} min`;
+}
+
+function formatCreatedDate(createdAt: string | null) {
+  if (!createdAt) return "Created";
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) return "Created";
+  return `Created ${date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })}`;
+}
+
+function CookbookFolderSkeleton() {
+  return (
+    <div className="cookbook-folder-skeleton" aria-hidden="true">
+      <div className="cookbook-folder-skeleton-breadcrumb">
+        <span className="cookbook-folder-skeleton-line cookbook-folder-skeleton-breadcrumb-link" />
+        <span className="cookbook-folder-skeleton-line cookbook-folder-skeleton-breadcrumb-name" />
+      </div>
+      <div className="cookbook-folder-hero cookbook-folder-hero-skeleton">
+        <div className="cookbook-folder-hero-content">
+          <span className="cookbook-folder-skeleton-cover" />
+          <div className="cookbook-folder-skeleton-main">
+            <span className="cookbook-folder-skeleton-line cookbook-folder-skeleton-title" />
+            <div className="cookbook-folder-skeleton-stats">
+              <span className="cookbook-folder-skeleton-pill" />
+              <span className="cookbook-folder-skeleton-pill" />
+              <span className="cookbook-folder-skeleton-pill" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <span className="cookbook-folder-skeleton-search" />
+      <div className="cookbook-folder-skeleton-section-header">
+        <span className="cookbook-folder-skeleton-line cookbook-folder-skeleton-section-title" />
+        <span className="cookbook-folder-skeleton-add-button" />
+      </div>
+      <div className="cookbook-page-recipe-cards-container cookbook-folder-skeleton-cards">
+        {Array.from({ length: 4 }, (_, index) => (
+          <span key={index} className="cookbook-folder-skeleton-card" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function CookbookFolderPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const trashUndo = useTrashUndoOptional();
   const folderName = decodeURIComponent((params.folderName as string) ?? "");
   const [copyFolderName, setCopyFolderName] = useState(folderName);
   const [folderId, setFolderId] = useState<string | null>(null);
+  const [folderCoverImageUrl, setFolderCoverImageUrl] = useState<string | null>(null);
+  const [folderCreatedAt, setFolderCreatedAt] = useState<string | null>(null);
   const [folderUnavailable, setFolderUnavailable] = useState(false);
   const [folderRecipes, setFolderRecipes] = useState<RecipeRow[]>([]);
+  const [recipeSearchQuery, setRecipeSearchQuery] = useState("");
   const [favorites, setFavorites] = useState<RecipeRow[]>([]);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
-  const [isFolderOptionsOpen, setIsFolderOptionsOpen] = useState(false);
   const [isRenameOptionOpen, setIsRenameOptionOpen] = useState(false);
   const [folderRename, setFolderRename] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -65,18 +136,22 @@ export default function CookbookFolderPage() {
     setFolderId(null);
     setFolderRecipes([]);
     (async () => {
-      const metaRes = await getActiveFolderMetaByName(folderName);
+      const [folderRes, favoritesRes] = await Promise.all([
+        readFolderPageData(folderName) ?? getFolderPageData(folderName),
+        getFavorites(),
+      ]);
       if (cancelled) return;
-      if (!metaRes.data) {
+      if (!folderRes.data) {
         setFolderUnavailable(true);
         setIsLoading(false);
         return;
       }
-      setFolderId(metaRes.data.id);
-      setCopyFolderName(metaRes.data.folder_name);
-      const recipesRes = await getFolderRecipes(folderName);
-      if (cancelled) return;
-      if (recipesRes.data) setFolderRecipes(recipesRes.data);
+      setFolderId(folderRes.data.folder.id);
+      setCopyFolderName(folderRes.data.folder.folder_name);
+      setFolderCoverImageUrl(folderRes.data.folder.cover_image_url);
+      setFolderCreatedAt(folderRes.data.folder.created_at);
+      setFolderRecipes(folderRes.data.recipes);
+      if (favoritesRes.data) setFavorites(favoritesRes.data);
       setIsLoading(false);
     })();
     return () => {
@@ -84,13 +159,21 @@ export default function CookbookFolderPage() {
     };
   }, [folderName]);
 
-  useEffect(() => {
-    getFavorites().then((res) => {
-      if (res.data) setFavorites(res.data);
-    });
-  }, []);
-
   const favoriteIds = new Set(favorites.map((r) => r.recipe_id));
+  const heroCoverUrl = getHeroCoverForFolder(copyFolderName, folderCoverImageUrl);
+  const createdDateLabel = formatCreatedDate(folderCreatedAt);
+  const totalCookTime = folderRecipes.reduce((sum, recipe) => sum + Math.max(0, recipe.time_in_minutes || 0), 0);
+  const normalizedRecipeSearchQuery = recipeSearchQuery.trim().toLowerCase();
+  const visibleFolderRecipes = normalizedRecipeSearchQuery
+    ? folderRecipes.filter((recipe) =>
+        [
+          recipe.recipe_label,
+          recipe.cuisine_type,
+          recipe.meal_type,
+          recipe.ingredient_lines,
+        ].some((value) => (value ?? "").toLowerCase().includes(normalizedRecipeSearchQuery))
+      )
+    : folderRecipes;
 
   const handleFavoriteChange = useCallback((recipe: RecipeRow, isFavorited: boolean) => {
     if (isFavorited) {
@@ -113,7 +196,7 @@ export default function CookbookFolderPage() {
   useEffect(() => {
     if (!isAddRecipeModalOpen) return;
     const run = async () => {
-      const [foldersRes, favoritesRes] = await Promise.all([getFolders(), getFavorites()]);
+      const [foldersRes, favoritesRes] = await Promise.all([fetchCookbooksData(), getFavorites()]);
       const folderList = foldersRes.data?.folders ?? [];
       const results = (foldersRes.data?.results ?? {}) as Record<string, RecipeRow[]>;
       const inFolder = new Set(folderRecipes.map((r) => r.recipe_id));
@@ -138,23 +221,9 @@ export default function CookbookFolderPage() {
     run();
   }, [isAddRecipeModalOpen, folderName, folderRecipes]);
 
-  function handleFolderOption(option: string) {
-    if (option === "rename") {
-      setFolderRename(copyFolderName);
-      setIsRenameOptionOpen(true);
-    } else if (option === "trash") {
-      if (!folderId) return;
-      void (async () => {
-        const res = await softDeleteFolder(folderId);
-        if (!res.ok) return;
-        trashUndo?.showTrashUndo({
-          message: "Cookbook moved to trash.",
-          onUndo: async () => restoreFolder(folderId),
-        });
-        router.push("/dashboard/cookbook");
-      })();
-    }
-    setIsFolderOptionsOpen(false);
+  function openRenameDialog() {
+    setFolderRename(copyFolderName);
+    setIsRenameOptionOpen(true);
   }
 
   function handleCancel() {
@@ -168,6 +237,9 @@ export default function CookbookFolderPage() {
     const res = await renameFolder(folderId, trimmed);
     if (!res.error) {
       setIsRenameOptionOpen(false);
+      invalidateCookbooksData();
+      invalidateFolderPageData(copyFolderName);
+      invalidateFolderPageData(trimmed);
       setCopyFolderName(trimmed);
       router.replace(`/dashboard/cookbook/${encodeURIComponent(trimmed)}`);
     }
@@ -197,6 +269,8 @@ export default function CookbookFolderPage() {
   async function handleAddRecipeFromList(recipe: RecipeRow) {
     const res = await addRecipeToFolder(copyFolderName, recipe.recipe_id);
     if (!res.error) {
+      invalidateCookbooksData();
+      invalidateFolderPageData(copyFolderName);
       refreshFolderRecipes();
       setAddableRecipes((prev) => prev.filter((r) => r.recipe_id !== recipe.recipe_id));
     }
@@ -236,6 +310,8 @@ export default function CookbookFolderPage() {
         setManualError(res.error);
         return;
       }
+      invalidateCookbooksData();
+      invalidateFolderPageData(copyFolderName);
       refreshFolderRecipes();
       closeAddRecipeModal();
     } finally {
@@ -252,63 +328,119 @@ export default function CookbookFolderPage() {
     );
   }
 
+  if (isLoading) {
+    return (
+      <div className="main-panel">
+        <CookbookFolderSkeleton />
+      </div>
+    );
+  }
+
   return (
     <div className="main-panel">
-      <div className="bttn-titles">
-        <button type="button" className="back-bttn" onClick={() => router.push("/dashboard/cookbook")}>
-          Cookbooks
-        </button>
-        <svg className="arrow-icon" width="8" height="14" viewBox="0 0 8 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M1 1L7 7L1 13" stroke="black" strokeWidth="2" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        <button
-          type="button"
-          className="folder-bttn"
-          onClick={() => setIsFolderOptionsOpen(!isFolderOptionsOpen)}
-          onBlur={() => setIsFolderOptionsOpen(false)}
-          style={
-            isFolderOptionsOpen
-              ? {
-                  backgroundColor: "var(--gray-400)",
-                  borderRadius: "10px 10px 0px 0px",
-                }
-              : {}
-          }
+      <div className="cookbook-folder-shell">
+        <nav className="cookbook-folder-breadcrumb" aria-label="Cookbook breadcrumb">
+          <button type="button" onClick={() => router.push("/dashboard/cookbook")}>
+            Cookbooks
+          </button>
+          <span aria-hidden>›</span>
+          <strong>{copyFolderName}</strong>
+        </nav>
+        <section
+          className="cookbook-folder-hero"
+          style={{ backgroundImage: `url(${JSON.stringify(heroCoverUrl)})` }}
         >
-          {copyFolderName}
-          {isFolderOptionsOpen && (
-            <ul className="folder-options">
-              <li onClick={() => handleFolderOption("rename")}>Rename</li>
-              <hr
-                style={{
-                  height: "1px",
-                  background: "var(--gray-400)",
-                  width: "100%",
-                  border: "none",
-                }}
-              />
-              <li onClick={() => handleFolderOption("trash")}>Move to trash</li>
-            </ul>
-          )}
-        </button>
-        <button
-          type="button"
-          className="add-recipe-to-folder-btn"
-          onClick={() => setIsAddRecipeModalOpen(true)}
-        >
-          + Add recipe
-        </button>
+          <div className="cookbook-folder-hero-overlay" />
+          <div className="cookbook-folder-hero-content">
+            <div
+              className="cookbook-folder-hero-cover"
+              style={{ backgroundImage: `url(${JSON.stringify(heroCoverUrl)})` }}
+              aria-hidden="true"
+            />
+            <div className="cookbook-folder-hero-main">
+              <div className="cookbook-folder-title-row">
+                <h1>{copyFolderName}</h1>
+                <button
+                  type="button"
+                  className="cookbook-folder-edit-title-btn"
+                  onClick={openRenameDialog}
+                  aria-label="Rename cookbook"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                  </svg>
+                </button>
+              </div>
+              <div className="cookbook-folder-stats" aria-label="Cookbook summary">
+                <div className="cookbook-folder-stat">
+                  <span className="cookbook-folder-stat-icon cookbook-folder-stat-icon-red" aria-hidden>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                    </svg>
+                  </span>
+                  <span>{formatRecipeCount(folderRecipes.length)}</span>
+                </div>
+                <div className="cookbook-folder-stat">
+                  <span className="cookbook-folder-stat-icon cookbook-folder-stat-icon-green" aria-hidden>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 7v5l3 2" />
+                    </svg>
+                  </span>
+                  <span>{formatMinutes(totalCookTime)} total</span>
+                </div>
+                <div className="cookbook-folder-stat">
+                  <span className="cookbook-folder-stat-icon cookbook-folder-stat-icon-yellow" aria-hidden>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                  </span>
+                  <span>{createdDateLabel}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <div className="cookbook-folder-toolbar">
+          <label className="cookbook-folder-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+            <input
+              type="search"
+              placeholder="Search recipes in this cookbook..."
+              value={recipeSearchQuery}
+              onChange={(e) => setRecipeSearchQuery(e.target.value)}
+            />
+          </label>
+        </div>
+        <div className="cookbook-folder-recipes-header">
+          <h2>All Recipes ({visibleFolderRecipes.length})</h2>
+          <button
+            type="button"
+            className="add-recipe-to-folder-btn"
+            onClick={() => setIsAddRecipeModalOpen(true)}
+          >
+            + Add recipe
+          </button>
+        </div>
       </div>
-      {isLoading ? (
-        <p className="isLoading">Loading...</p>
-      ) : folderRecipes.length === 0 ? (
+      {folderRecipes.length === 0 ? (
         <div className="empty-folder-container">
           <img className="empty-folder-pic" src="/images/emptycookbook.svg" alt="Empty folder" />
           <p className="empty-folder-subtxt">It looks like you haven&apos;t saved a recipe to your folder yet</p>
         </div>
+      ) : visibleFolderRecipes.length === 0 ? (
+        <p className="cookbook-folder-no-results">No recipes match your search.</p>
       ) : (
         <div className="cookbook-page-recipe-cards-container">
-          {folderRecipes.map((recipe) => (
+          {visibleFolderRecipes.map((recipe) => (
             <CookbookPageRecipeCard
               key={recipe.id}
               recipeData={recipe}

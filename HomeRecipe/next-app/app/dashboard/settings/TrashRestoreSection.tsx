@@ -6,6 +6,7 @@ import { restoreFolder } from "@/app/actions/folders";
 import { restoreOwnedRecipe } from "@/app/actions/recipes";
 import type { TrashedFolderRow } from "@/app/actions/folders";
 import type { TrashedRecipeRow } from "@/app/actions/recipes";
+import { invalidateCookbooksData } from "@/lib/cookbooks-cache";
 import { formatTimeRemainingUntilDeletion, TRASH_RETENTION_DAYS } from "@/lib/trash-retention";
 
 type Props = {
@@ -49,6 +50,7 @@ export function TrashRestoreSection({
       const res = await restoreFolder(id);
       setBusyId(null);
       if (res.ok) {
+        invalidateCookbooksData();
         setFeedback({ kind: "success", text: "Restored." });
         clearFeedbackSoon();
         startTransition(() => router.refresh());

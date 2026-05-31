@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { createFolder } from "@/app/actions/folders";
+import { invalidateCookbooksData } from "@/lib/cookbooks-cache";
 
 type CookbookCreateCardProps = {
   onCreated?: () => void | Promise<void>;
@@ -33,6 +34,7 @@ export function CookbookCreateCard({ onCreated }: CookbookCreateCardProps) {
       setCreateError(res.error);
       return;
     }
+    invalidateCookbooksData();
     await onCreated?.();
     handleCancel();
   }

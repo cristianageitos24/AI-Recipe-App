@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   createFolder,
-  getFolders,
   addRecipeToFolder,
 } from "@/app/actions/folders";
+import { fetchCookbooksData, invalidateCookbooksData } from "@/lib/cookbooks-cache";
+import { invalidateFolderPageData } from "@/lib/folder-page-prefetch";
 import type { RecipePayload } from "@/lib/types";
 
 type SaveRecipeToCookbookModalProps = {
@@ -31,7 +32,7 @@ export function SaveRecipeToCookbookModal({
     if (!open) return;
     setSaveError(null);
     setSaveSuccess(null);
-    getFolders().then((res) => {
+    fetchCookbooksData().then((res) => {
       if (res.data?.folders) setSaveFolders(res.data.folders as string[]);
     });
   }, [open]);
@@ -48,6 +49,8 @@ export function SaveRecipeToCookbookModal({
       setSaveError(res.error);
       return;
     }
+    invalidateCookbooksData();
+    invalidateFolderPageData(folderName);
     setSaveSuccess(`Saved to "${folderName}"`);
     const data = "data" in res ? res.data : undefined;
     setTimeout(() => {
@@ -82,6 +85,8 @@ export function SaveRecipeToCookbookModal({
       setSaveError(addRes.error);
       return;
     }
+    invalidateCookbooksData();
+    invalidateFolderPageData(name);
     setSaveSuccess(`Created "${name}" and saved recipe`);
     const data = "data" in addRes ? addRes.data : undefined;
     setTimeout(() => {

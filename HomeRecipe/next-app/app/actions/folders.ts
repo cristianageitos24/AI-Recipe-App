@@ -343,10 +343,56 @@ export async function getFolderRecipes(folderName: string) {
   return { error: null, data: list as import("@/lib/types").RecipeRow[] };
 }
 
+export async function getFolderPageData(folderName: string): Promise<{
+  error: string | null;
+  data: {
+    folder: {
+      id: string;
+      folder_name: string;
+      cover_image_url: string | null;
+      created_at: string;
+    };
+    recipes: import("@/lib/types").RecipeRow[];
+  } | null;
+}> {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized", data: null };
+
+  const supabase = await createClient();
+  const { data: folder, error: folderError } = await supabase
+    .from("folders")
+    .select("id, folder_name, cover_image_url, created_at")
+    .eq("user_id", userId)
+    .eq("folder_name", folderName)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (folderError) return { error: folderError.message, data: null };
+  if (!folder) return { error: "Folder not found", data: null };
+
+  const { data, error } = await supabase
+    .from("folder_recipes")
+    .select(`recipes (${RECIPE_WITH_NUTRITION})`)
+    .eq("folder_id", folder.id);
+  if (error) return { error: error.message, data: null };
+
+  const recipes = (data ?? [])
+    .map((row: { recipes: unknown }) => row.recipes)
+    .filter((r): r is Record<string, unknown> => r != null && recipeRowNotTrashed(r as Record<string, unknown>));
+
+  return {
+    error: null,
+    data: {
+      folder,
+      recipes: recipes as import("@/lib/types").RecipeRow[],
+    },
+  };
+}
+
 /** Resolve whether an active folder exists for deep-link routing (Option A). */
 export async function getActiveFolderMetaByName(folderName: string): Promise<{
   error: string | null;
-  data: { id: string; folder_name: string } | null;
+  data: { id: string; folder_name: string; cover_image_url: string | null; created_at: string } | null;
 }> {
   const { userId } = await auth();
   if (!userId) return { error: "Unauthorized", data: null };
@@ -354,7 +400,7 @@ export async function getActiveFolderMetaByName(folderName: string): Promise<{
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("folders")
-    .select("id, folder_name")
+    .select("id, folder_name, cover_image_url, created_at")
     .eq("user_id", userId)
     .eq("folder_name", folderName)
     .is("deleted_at", null)
