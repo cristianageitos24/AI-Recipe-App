@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { RecipeListCard } from "@/components/RecipeListCard";
 import type { RecipeRow } from "@/lib/types";
-import type { useHomeSearch } from "../_hooks/useHomeSearch";
+import type { SearchMode, useHomeSearch } from "../_hooks/useHomeSearch";
 
 type SearchState = ReturnType<typeof useHomeSearch>;
 
@@ -15,6 +16,13 @@ interface HomeSearchShellProps extends SearchState {
 
 const cardHoverMotion = { y: -4 };
 const cardHoverTransition = { duration: 0.18, ease: "easeOut" as const };
+const webSearchExamples = [
+  "easy chicken pasta",
+  "high protein breakfast with eggs and avocado",
+  "weeknight salmon dinner for two under 30 minutes",
+  "cozy vegetarian soup with pantry ingredients",
+  "christmas steak dinner with a little halloween flair",
+];
 
 export function HomeSearchShell({
   text, setText, searchMode, selectedIngredients,
@@ -29,6 +37,47 @@ export function HomeSearchShell({
   closeSearchModalAndReset, handleImportWebResult,
   favoriteIds, onFavoriteChange,
 }: HomeSearchShellProps) {
+  const [webExampleIndex, setWebExampleIndex] = useState(0);
+  const [animateSearchIcon, setAnimateSearchIcon] = useState(false);
+  const searchIconAnimationTimerRef = useRef<number | null>(null);
+  const webExample = webSearchExamples[webExampleIndex];
+  const searchPlaceholder =
+    searchMode === "recipe"
+      ? "Search recipes, ingredients, cuisines..."
+      : searchMode === "web"
+        ? `Try "${webExample}"`
+        : "Search by ingredient to find recipes";
+
+  useEffect(() => {
+    if (searchMode !== "web") return;
+    const timer = window.setInterval(() => {
+      setWebExampleIndex((index) => (index + 1) % webSearchExamples.length);
+    }, 6200);
+    return () => window.clearInterval(timer);
+  }, [searchMode]);
+
+  useEffect(() => {
+    return () => {
+      if (searchIconAnimationTimerRef.current !== null) {
+        window.clearTimeout(searchIconAnimationTimerRef.current);
+      }
+    };
+  }, []);
+
+  function handleSearchModeChange(mode: SearchMode) {
+    if (searchMode === "web" && mode !== "web") {
+      if (searchIconAnimationTimerRef.current !== null) {
+        window.clearTimeout(searchIconAnimationTimerRef.current);
+      }
+      setAnimateSearchIcon(true);
+      searchIconAnimationTimerRef.current = window.setTimeout(() => {
+        setAnimateSearchIcon(false);
+        searchIconAnimationTimerRef.current = null;
+      }, 320);
+    }
+    changeSearchMode(mode);
+  }
+
   return (
     <section className="home-dashboard-header">
       <div className="home-search-shell">
@@ -39,7 +88,7 @@ export function HomeSearchShell({
               key={mode}
               type="button"
               className={`search-mode-tab ${searchMode === mode ? "active" : ""}`}
-              onClick={() => changeSearchMode(mode)}
+              onClick={() => handleSearchModeChange(mode)}
             >
               {mode === "recipe" ? "Recipe name" : mode === "ingredients" ? "Ingredients" : "Web"}
             </button>
@@ -67,17 +116,20 @@ export function HomeSearchShell({
 
         {/* Search input */}
         <div className="search-input-dropdown-wrapper">
-          <div className="search-input-row">
+          <div
+            className={`search-input-row ${
+              searchMode === "web"
+                ? "search-input-row-ai"
+                : animateSearchIcon
+                  ? "search-input-row-icon-turnover"
+                  : ""
+            }`}
+          >
             <input
               ref={inputRef}
               type="text"
-              placeholder={
-                searchMode === "recipe"
-                  ? "Search recipes, ingredients, cuisines..."
-                  : searchMode === "web"
-                    ? "Search the web for recipes..."
-                    : "Search by ingredient to find recipes"
-              }
+              placeholder=""
+              aria-label={searchPlaceholder}
               value={text}
               onChange={(e) => { setText(e.target.value); setShowSuggestions(true); }}
               onFocus={() => {
@@ -87,10 +139,30 @@ export function HomeSearchShell({
               className="search-txt"
               onKeyDown={handleKeyDown}
             />
+            <AnimatePresence mode="wait">
+              {!text.trim() && (
+                <motion.span
+                  key={searchPlaceholder}
+                  className="search-placeholder-text"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                >
+                  {searchPlaceholder}
+                </motion.span>
+              )}
+            </AnimatePresence>
             <button
               type="button"
               className={`search-btn ${searchModalOpen ? "search-btn-close" : ""}`}
-              onClick={() => { searchModalOpen ? closeSearchModalAndReset() : handleSearch(); }}
+              onClick={() => {
+                if (searchModalOpen) {
+                  closeSearchModalAndReset();
+                } else {
+                  handleSearch();
+                }
+              }}
               disabled={searchLoading}
               aria-busy={searchLoading}
               title={searchModalOpen ? "Close search" : "Search"}

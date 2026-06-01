@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { generateHashKey, normalizeSourceUrlForHash } from "@/lib/processRecipeData";
+import { createServiceRoleClient } from "@/utils/supabase/server";
 
 const IMPORT_API_BASE =
   process.env.RECIPE_URL_IMPORT_API_URL || "http://localhost:8000";
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!,
-  );
-}
+const URL_IMPORT_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,14 +16,16 @@ export async function POST(request: NextRequest) {
     }
 
     const urlHash = generateHashKey(normalizeSourceUrlForHash(url));
-    const supabase = getSupabase();
+    const supabase = await createServiceRoleClient();
+    const cacheFreshAfter = new Date(Date.now() - URL_IMPORT_CACHE_TTL_MS).toISOString();
 
-    // Cache hit — return without calling FastAPI
+    // Fresh cache hit — return without calling FastAPI
     const { data: cached } = await supabase
       .from("url_import_cache")
       .select("scraped")
       .eq("url_hash", urlHash)
-      .single();
+      .gte("cached_at", cacheFreshAfter)
+      .maybeSingle();
 
     if (cached?.scraped) {
       return NextResponse.json(cached.scraped, { status: 200 });
@@ -57,7 +53,12 @@ export async function POST(request: NextRequest) {
 
     // Store in cache (fire and forget — don't block the response)
     void Promise.resolve(
-      supabase.from("url_import_cache").upsert({ url_hash: urlHash, url, scraped: payload })
+      supabase.from("url_import_cache").upsert({
+        url_hash: urlHash,
+        url,
+        scraped: payload,
+        cached_at: new Date().toISOString(),
+      })
     ).catch(() => {});
 
     return NextResponse.json(payload, { status: 200 });

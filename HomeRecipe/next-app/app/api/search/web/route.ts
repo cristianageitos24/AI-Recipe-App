@@ -59,36 +59,37 @@ export async function POST(request: NextRequest) {
     const ai = new GoogleGenAI({ apiKey });
 
     const systemInstruction = `
-    You are an elite culinary search planner and data-structuring agent for HomeRecipe. Your task is to interpret natural language requests, execute precise searches using the Google Search grounding tool, and serialize the results into a strict JSON schema.
+    You are an elite culinary search planner and data-structuring agent for HomeRecipe. Interpret natural-language recipe requests, use Google Search grounding to find relevant written recipe pages, and return only valid JSON.
 
-    Step 1 — Interpret the user's query:
+    [EXECUTION PIPELINE]
+
+    Step 1 — Analyze intent:
     Deconstruct conversational, creative, or metaphorical queries (e.g., "christmas steak with a hint of halloween meant for two") into:
+    - Core subject: main protein, dish type, or beverage.
+    - Themes: cuisine, occasion, flavor direction, mood, season, or visual style.
+    - Constraints: serving size, prep time, dietary limits, ingredients to include or avoid.
 
-    Core Subject: Main protein or dish type (e.g., Steak)
+    If the query is completely unrelated to food, cooking, recipes, or beverages, return an empty JSON array.
 
-    Primary Theme: Dominant style or occasion (e.g., Christmas)
+    Step 2 — Evaluate and filter grounded results:
+    Extract up to 8 high-quality recipes that link directly to individual pages containing written ingredients and step-by-step instructions.
 
-    Secondary Theme: Flavor accent or visual contrast (e.g., Halloween)
+    Strictly exclude:
+    - Video content or video-first pages, including YouTube, TikTok, Instagram, Reels, Shorts, Vimeo, Facebook videos, and similar platforms.
+    - Listicles, blog roundups, recipe directories, search pages, category pages, or homepages.
+    - Pages requiring payment, subscription, or registration.
 
-    Constraints: Serving size (e.g., Meant for two / 2 servings) or dietary limits.
+    Step 3 — Format output:
+    Return exactly and exclusively a valid JSON array. Do not include markdown fences, prose, commentary, or wrapper objects.
 
-    Translate this intent into broad search concepts to maximize the quality of the results fetched by the grounding engine.
-
-    Step 2 — Evaluate and select:
-    Review the real-time search results. Extract up to 8 recipes that point directly to individual pages with ingredients and step-by-step instructions.
-
-    Strictly exclude listicles, blog roundups, site directories, homepages, or blogs requiring paid subscriptions/logins.
-    Strictly exclude any video content — no YouTube, TikTok, Instagram Reels, Facebook videos, Vimeo, or any other video platform. Only accept text-based recipe pages with written ingredients and instructions.
-
-    Step 3 — Format the output:
-    Output a JSON array of objects matching this exact structure:
+    The array must match this exact structure:
     [{ "title": string, "url": string, "source": string, "snippet": string }]
 
-    Rules:
-
-    source: Domain name only (e.g., "allrecipes.com").
-
-    snippet: One concise sentence explaining exactly how this recipe satisfies the user's specific query themes.
+    Field rules:
+    - title: Recipe title only.
+    - url: Direct URL to the individual written recipe page.
+    - source: Domain name only (e.g., "allrecipes.com").
+    - snippet: One concise sentence explaining how this recipe satisfies the user's query themes and constraints.
     `;
 
     const response = await ai.models.generateContent({
@@ -102,6 +103,7 @@ export async function POST(request: NextRequest) {
     });
 
     const text = response.text ?? "";
+    console.log(text);
     const results = parseResults(text);
 
     queryCache.set(cacheKey, { results, expiresAt: Date.now() + CACHE_TTL_MS });
