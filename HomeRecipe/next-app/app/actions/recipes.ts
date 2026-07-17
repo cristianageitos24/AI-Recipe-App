@@ -10,6 +10,7 @@ import { trashListCutoffIso } from "@/lib/trash-retention";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import type { TrashActionResult } from "@/lib/trash-result";
 import type { RecipePayload, RecipeRow } from "@/lib/types";
+import { compressImageLossless } from "@/lib/compress-image";
 
 const MANUAL_RECIPE_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 
@@ -327,10 +328,14 @@ export async function uploadManualRecipeImage(formData: FormData): Promise<{
   const storagePath = `users/${userId}/manual/${timestamp}-${labelSlug}.${ext}`;
 
   const svc = await createServiceRoleClient();
+  const compressed = await compressImageLossless(
+    Buffer.from(await file.arrayBuffer()),
+    file.type || "image/png"
+  );
   const { error: uploadError } = await svc.storage
     .from("recipe-covers")
-    .upload(storagePath, file, {
-      contentType: file.type || undefined,
+    .upload(storagePath, compressed.buffer, {
+      contentType: compressed.contentType,
       upsert: false,
     });
 

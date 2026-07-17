@@ -28,6 +28,7 @@ import {
   computedNutritionToIngredientSnapshots,
 } from "../lib/nutrition/sync-recipe-nutrition";
 import { formatExtractedIngredientLine } from "../lib/processRecipeData";
+import { compressImageLossless } from "../lib/compress-image";
 import type { ExtractedRecipe } from "../lib/types";
 import {
   readVisionConfig,
@@ -470,10 +471,12 @@ async function extractAndUploadThumbnail(
   try {
     await extractThumbnailFrame(videoPath, thumbPath, timeSec);
     const storagePath = `${userId}/${jobId}/cover.png`;
+    const rawThumb = await readFile(thumbPath);
+    const compressed = await compressImageLossless(rawThumb, "image/png");
     const { error: uploadError } = await supabase.storage
       .from("recipe-covers")
-      .upload(storagePath, await readFile(thumbPath), {
-        contentType: "image/png",
+      .upload(storagePath, compressed.buffer, {
+        contentType: compressed.contentType,
         upsert: true,
       });
     await unlink(thumbPath);

@@ -6,6 +6,7 @@ import { trashListCutoffIso } from "@/lib/trash-retention";
 import type { TrashActionResult } from "@/lib/trash-result";
 import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
 import type { RecipePayload } from "@/lib/types";
+import { compressImageLossless } from "@/lib/compress-image";
 
 const COOKBOOK_COVER_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 
@@ -139,8 +140,12 @@ export async function uploadCookbookCoverImage(formData: FormData): Promise<{
   const storagePath = `users/${userId}/cookbook-covers/${Date.now()}-${labelSlug}.${ext}`;
 
   const svc = await createServiceRoleClient();
-  const { error: uploadError } = await svc.storage.from("recipe-covers").upload(storagePath, file, {
-    contentType: file.type || undefined,
+  const compressed = await compressImageLossless(
+    Buffer.from(await file.arrayBuffer()),
+    file.type || "image/png"
+  );
+  const { error: uploadError } = await svc.storage.from("recipe-covers").upload(storagePath, compressed.buffer, {
+    contentType: compressed.contentType,
     upsert: false,
   });
 
