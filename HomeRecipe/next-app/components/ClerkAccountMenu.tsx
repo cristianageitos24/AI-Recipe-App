@@ -1,6 +1,8 @@
 "use client";
 
 import { UserButton } from "@clerk/nextjs";
+import { useEntitlements } from "@/components/EntitlementsProvider";
+import "@/app/styling/UpgradePrompt.css";
 
 function GearIcon() {
   return (
@@ -67,13 +69,27 @@ function BillingIcon() {
 }
 
 export function ClerkAccountMenu() {
+  const { entitlements } = useEntitlements();
+
   return (
-    <UserButton>
-      <UserButton.MenuItems>
-        <UserButton.Link label="Settings" labelIcon={<GearIcon />} href="/dashboard/settings" />
-        <UserButton.Link label="Billing" labelIcon={<BillingIcon />} href="/dashboard/billing" />
-        <UserButton.Link label="Trash" labelIcon={<TrashIcon />} href="/dashboard/settings#trash" />
-      </UserButton.MenuItems>
-    </UserButton>
+    <span className="clerk-account-menu-wrap">
+      <span
+        className={`plan-badge-pill${entitlements.isPro ? " plan-badge-pill--pro" : ""}`}
+        title={entitlements.isPro ? "Pro plan" : "Free plan"}
+      >
+        {entitlements.isPro ? "Pro" : "Free"}
+      </span>
+      <UserButton>
+        <UserButton.MenuItems>
+          <UserButton.Link label="Settings" labelIcon={<GearIcon />} href="/dashboard/settings" />
+          <UserButton.Link
+            label={entitlements.isPro ? "Billing" : "Upgrade / Billing"}
+            labelIcon={<BillingIcon />}
+            href="/dashboard/billing"
+          />
+          <UserButton.Link label="Trash" labelIcon={<TrashIcon />} href="/dashboard/settings#trash" />
+        </UserButton.MenuItems>
+      </UserButton>
+    </span>
   );
 }

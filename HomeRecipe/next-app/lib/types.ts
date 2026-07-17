@@ -41,6 +41,12 @@ export type RecipeRow = {
   website_url: string | null;
   image_url: string | null;
   created_at?: string;
+  /** Soft-delete timestamp when in trash. */
+  deleted_at?: string | null;
+  /** Owner Clerk user id; null = shared catalog. */
+  user_id?: string | null;
+  /** Free-tier expiry; null = permanent (Pro or shared). */
+  expires_at?: string | null;
   /** Embedded from `recipe_nutrition` when selected (1:1). */
   recipe_nutrition?: RecipeNutritionSnapshot | RecipeNutritionSnapshot[] | null;
   /** Populated when the query embeds `recipe_ingredient_lines` (nutrition sync). */

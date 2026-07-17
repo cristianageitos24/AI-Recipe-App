@@ -13,8 +13,14 @@ import {
   urlImportToDraftRecipeRow,
 } from "@/lib/processRecipeData";
 import type { RecipeRow, UrlImportedRecipe, WebRecipeSearchResult } from "@/lib/types";
+import type { PlanLimitReason } from "@/lib/entitlements-constants";
 
 export type SearchMode = "recipe" | "ingredients" | "web";
+
+type UseHomeSearchOptions = {
+  onPlanLimit?: (reason: PlanLimitReason) => void;
+  onExtractSuccess?: () => void;
+};
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -31,12 +37,25 @@ async function fetchWebRecipes(query: string): Promise<WebRecipeSearchResult[]> 
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query }),
   });
-  const data = (await res.json()) as { results?: WebRecipeSearchResult[]; error?: string };
+  const data = (await res.json()) as {
+    results?: WebRecipeSearchResult[];
+    error?: string;
+    code?: string;
+    reason?: PlanLimitReason;
+  };
+  if (res.status === 403 && data.code === "PLAN_LIMIT") {
+    const err = new Error(data.error || "Plan limit") as Error & {
+      planLimitReason?: PlanLimitReason;
+    };
+    err.planLimitReason = data.reason ?? "catalog";
+    throw err;
+  }
   if (!res.ok) throw new Error(data.error || "Web recipe search failed.");
   return data.results ?? [];
 }
 
-export function useHomeSearch() {
+export function useHomeSearch(options: UseHomeSearchOptions = {}) {
+  const { onPlanLimit, onExtractSuccess } = options;
   const [searchMode, setSearchMode] = useState<SearchMode>("recipe");
   const [text, setText] = useState("");
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
@@ -234,14 +253,23 @@ export function useHomeSearch() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url }),
     });
-    const data = (await res.json()) as UrlImportedRecipe | { error?: string };
+    const data = (await res.json()) as UrlImportedRecipe & {
+      error?: string;
+      code?: string;
+      reason?: PlanLimitReason;
+    };
     if (!res.ok) {
-      throw new Error("error" in data && data.error ? data.error : "Failed to import recipe URL");
+      if (res.status === 403 && data.code === "PLAN_LIMIT") {
+        onPlanLimit?.(data.reason ?? "extractions");
+        throw new Error(data.error || "Extraction limit reached");
+      }
+      throw new Error(data.error || "Failed to import recipe URL");
     }
     setUrlPreview(data as UrlImportedRecipe);
     setUrlSaveModalOpen(false);
     setShowUrlPreviewModal(true);
-  }, []);
+    onExtractSuccess?.();
+  }, [onExtractSuccess, onPlanLimit]);
 
   const handleImportWebResult = useCallback(
     async (url: string) => {
@@ -291,6 +319,9 @@ export function useHomeSearch() {
       try {
         setWebSearchResults(await fetchWebRecipes(query));
       } catch (error) {
+        const planReason = (error as Error & { planLimitReason?: PlanLimitReason })
+          .planLimitReason;
+        if (planReason) onPlanLimit?.(planReason);
         setWebSearchResults([]);
         setSearchError(error instanceof Error ? error.message : "Web search failed. Try again.");
       } finally {

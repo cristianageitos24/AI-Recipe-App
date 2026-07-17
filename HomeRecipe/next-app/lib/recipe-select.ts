@@ -5,7 +5,7 @@ import type { RecipeNutritionSnapshot, RecipeRow } from "@/lib/types";
  * Detail (ingredients, steps, FDC line provenance) loads via `getRecipeFull`.
  */
 export const RECIPE_LIST_COLUMNS =
-  "id, recipe_id, recipe_label, calories, cuisine_type, meal_type, time_in_minutes, image_url, website_url, deleted_at, recipe_nutrition(energy_kcal, nutrition_source)" as const;
+  "id, recipe_id, recipe_label, calories, cuisine_type, meal_type, time_in_minutes, image_url, website_url, deleted_at, user_id, expires_at, recipe_nutrition(energy_kcal, nutrition_source)" as const;
 
 /**
  * Folder / curated collection grids that open `RecipeFullView` from list data
@@ -13,7 +13,11 @@ export const RECIPE_LIST_COLUMNS =
  * `recipe_ingredient_lines` / `fdc_candidates`.
  */
 export const RECIPE_FOLDER_COLUMNS =
-  "id, recipe_id, recipe_label, calories, cuisine_type, meal_type, time_in_minutes, image_url, website_url, ingredient_lines, steps, deleted_at, recipe_nutrition(energy_kcal, nutrition_source)" as const;
+  "id, recipe_id, recipe_label, calories, cuisine_type, meal_type, time_in_minutes, image_url, website_url, ingredient_lines, steps, deleted_at, user_id, expires_at, recipe_nutrition(energy_kcal, nutrition_source)" as const;
+
+/** Blur-wall teasers for Free users (no ingredients/steps/nutrition). */
+export const RECIPE_TEASER_COLUMNS =
+  "id, recipe_id, recipe_label, image_url, cuisine_type, meal_type, user_id" as const;
 
 /** Full recipe graph for open/detail views only. */
 export const RECIPE_WITH_NUTRITION =

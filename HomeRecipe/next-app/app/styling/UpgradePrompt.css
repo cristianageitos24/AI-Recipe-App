@@ -1,0 +1,242 @@
+.upgrade-prompt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: color-mix(in srgb, #000 45%, transparent);
+}
+
+.upgrade-prompt-dialog {
+  width: min(100%, 26rem);
+  background: Canvas;
+  color: CanvasText;
+  border-radius: 1rem;
+  padding: 1.5rem 1.35rem 1.25rem;
+  box-shadow: 0 16px 48px color-mix(in srgb, #000 28%, transparent);
+}
+
+.upgrade-prompt-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.upgrade-prompt-body {
+  margin: 0 0 1.1rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, CanvasText 72%, transparent);
+  font-size: 0.95rem;
+}
+
+.upgrade-prompt-error {
+  margin: 0 0 0.75rem;
+  color: #ba3523;
+  font-size: 0.9rem;
+}
+
+.upgrade-prompt-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.upgrade-prompt-btn {
+  appearance: none;
+  border-radius: 0.55rem;
+  padding: 0.7rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.upgrade-prompt-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.upgrade-prompt-btn-primary {
+  border: none;
+  background: #dc2100;
+  color: #fff;
+}
+
+.upgrade-prompt-btn-secondary {
+  border: 1px solid color-mix(in srgb, CanvasText 18%, transparent);
+  background: Canvas;
+  color: CanvasText;
+}
+
+.upgrade-prompt-btn-ghost {
+  border: none;
+  background: transparent;
+  color: color-mix(in srgb, CanvasText 70%, transparent);
+}
+
+.upgrade-prompt-footer {
+  margin: 0.85rem 0 0;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.upgrade-prompt-footer a {
+  color: #dc2100;
+  text-decoration: underline;
+}
+
+.pro-locked-card {
+  position: relative;
+  border-radius: 0.85rem;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid color-mix(in srgb, CanvasText 10%, transparent);
+  background: color-mix(in srgb, CanvasText 4%, Canvas);
+  text-align: left;
+  width: 100%;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+}
+
+.pro-locked-card-media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: color-mix(in srgb, CanvasText 8%, Canvas);
+}
+
+.pro-locked-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(6px) saturate(0.7);
+  transform: scale(1.08);
+}
+
+.pro-locked-card-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  background: color-mix(in srgb, #000 35%, transparent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.pro-locked-card-label {
+  padding: 0.65rem 0.75rem 0.85rem;
+}
+
+.pro-locked-card-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  filter: blur(2px);
+  opacity: 0.85;
+}
+
+.pro-locked-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.free-plan-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  margin: 0 0 1rem;
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, #dc2100 8%, Canvas);
+  border: 1px solid color-mix(in srgb, #dc2100 22%, transparent);
+}
+
+.free-plan-banner p {
+  margin: 0;
+  flex: 1;
+  min-width: 12rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.free-plan-banner button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: color-mix(in srgb, CanvasText 65%, transparent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0.4rem;
+}
+
+.recipe-expiry-badge {
+  display: inline-block;
+  margin-top: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: color-mix(in srgb, #dc2100 12%, Canvas);
+  color: #dc2100;
+}
+
+.nutrition-locked-wrap {
+  position: relative;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.nutrition-locked-blur {
+  filter: blur(5px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.nutrition-locked-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, Canvas 55%, transparent);
+}
+
+.nutrition-locked-overlay button {
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  padding: 0.55rem 1rem;
+  font: inherit;
+  font-weight: 700;
+  background: #dc2100;
+  color: #fff;
+  cursor: pointer;
+}
+
+.plan-badge-pill {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+  background: color-mix(in srgb, CanvasText 8%, Canvas);
+}
+
+.plan-badge-pill--pro {
+  background: color-mix(in srgb, #dc2100 14%, Canvas);
+  color: #dc2100;
+}

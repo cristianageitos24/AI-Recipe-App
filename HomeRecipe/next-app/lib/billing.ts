@@ -3,6 +3,11 @@ import type Stripe from "stripe";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import { ensureProfile } from "@/app/actions/profiles";
 import {
+  clearRecipeExpiry,
+  resolveClerkUserIdFromStripeCustomer,
+  stampFreeRecipeExpiry,
+} from "@/lib/entitlements";
+import {
   getStripe,
   isProSubscriptionStatus,
 } from "@/lib/stripe";
@@ -126,6 +131,10 @@ export async function syncProfileFromSubscription(
     ...fields,
   };
 
+  const resolvedUserId =
+    clerkUserId ||
+    (await resolveClerkUserIdFromStripeCustomer(customerId));
+
   if (clerkUserId) {
     const { error } = await supabase
       .from("profiles")
@@ -135,16 +144,23 @@ export async function syncProfileFromSubscription(
       console.error("syncProfileFromSubscription (clerk):", error.message);
       throw error;
     }
-    return;
+  } else {
+    const { error } = await supabase
+      .from("profiles")
+      .update(patch)
+      .eq("stripe_customer_id", customerId);
+    if (error) {
+      console.error("syncProfileFromSubscription (customer):", error.message);
+      throw error;
+    }
   }
 
-  const { error } = await supabase
-    .from("profiles")
-    .update(patch)
-    .eq("stripe_customer_id", customerId);
-  if (error) {
-    console.error("syncProfileFromSubscription (customer):", error.message);
-    throw error;
+  if (!resolvedUserId) return;
+
+  if (fields.plan_tier === "pro") {
+    await clearRecipeExpiry(resolvedUserId);
+  } else {
+    await stampFreeRecipeExpiry(resolvedUserId);
   }
 }
 
@@ -153,6 +169,8 @@ export async function clearProEntitlement(
   subscriptionId?: string
 ): Promise<void> {
   const supabase = await createServiceRoleClient();
+  const userId = await resolveClerkUserIdFromStripeCustomer(customerId);
+
   const { error } = await supabase
     .from("profiles")
     .update({
@@ -165,5 +183,9 @@ export async function clearProEntitlement(
   if (error) {
     console.error("clearProEntitlement:", error.message);
     throw error;
+  }
+
+  if (userId) {
+    await stampFreeRecipeExpiry(userId);
   }
 }

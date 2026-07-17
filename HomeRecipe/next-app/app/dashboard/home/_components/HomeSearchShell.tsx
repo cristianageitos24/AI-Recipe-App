@@ -11,6 +11,8 @@ type SearchState = ReturnType<typeof useHomeSearch>;
 interface HomeSearchShellProps extends SearchState {
   favoriteIds: Set<string>;
   onFavoriteChange: (recipe: RecipeRow, isFavorited: boolean) => void;
+  webSearchLocked?: boolean;
+  onWebSearchLocked?: () => void;
 }
 
 const cardHoverMotion = { y: -4 };
@@ -28,6 +30,8 @@ export function HomeSearchShell({
   addIngredient, removeIngredient, changeSearchMode,
   closeSearchModalAndReset, handleImportWebResult,
   favoriteIds, onFavoriteChange,
+  webSearchLocked = false,
+  onWebSearchLocked,
 }: HomeSearchShellProps) {
   return (
     <section className="home-dashboard-header">
@@ -39,9 +43,21 @@ export function HomeSearchShell({
               key={mode}
               type="button"
               className={`search-mode-tab ${searchMode === mode ? "active" : ""}`}
-              onClick={() => changeSearchMode(mode)}
+              onClick={() => {
+                if (mode === "web" && webSearchLocked) {
+                  onWebSearchLocked?.();
+                  return;
+                }
+                changeSearchMode(mode);
+              }}
             >
-              {mode === "recipe" ? "Recipe name" : mode === "ingredients" ? "Ingredients" : "Web"}
+              {mode === "recipe"
+                ? "Recipe name"
+                : mode === "ingredients"
+                  ? "Ingredients"
+                  : webSearchLocked
+                    ? "Web (Pro)"
+                    : "Web"}
             </button>
           ))}
         </div>

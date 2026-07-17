@@ -1,18 +1,27 @@
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 import { getTrashedFolders } from "@/app/actions/folders";
 import { getTrashedRecipes } from "@/app/actions/recipes";
+import { getMyEntitlements } from "@/app/actions/entitlements";
+import { FREE_RECIPE_TTL_DAYS } from "@/lib/entitlements";
 import { TRASH_RETENTION_DAYS } from "@/lib/trash-retention";
 import { TrashRestoreSection } from "./TrashRestoreSection";
 import "@/app/styling/SettingsPage.css";
 
 export default async function SettingsPage() {
-  const [foldersRes, recipesRes] = await Promise.all([
+  const { userId } = await auth();
+  if (!userId) redirect("/signin");
+
+  const [foldersRes, recipesRes, entitlementsRes] = await Promise.all([
     getTrashedFolders(),
     getTrashedRecipes(),
+    getMyEntitlements(),
   ]);
 
   const listError =
     [foldersRes.error, recipesRes.error].filter(Boolean).join(" · ") || null;
+  const entitlements = entitlementsRes.data;
 
   return (
     <div className="dashboard-settings">
@@ -28,10 +37,24 @@ export default async function SettingsPage() {
         </p>
       </section>
 
-      <section aria-labelledby="settings-billing-heading">
-        <h2 id="settings-billing-heading" className="dashboard-settings-h2">
-          Billing
+      <section aria-labelledby="settings-plan-heading">
+        <h2 id="settings-plan-heading" className="dashboard-settings-h2">
+          Your plan
         </h2>
+        <p className="dashboard-settings-p">
+          Current plan:{" "}
+          <strong>{entitlements?.isPro ? "Pro" : "Free"}</strong>
+          {!entitlements?.isPro ? (
+            <>
+              {" "}
+              · Extractions this month: {entitlements?.extractionsUsed ?? 0} /{" "}
+              {entitlements?.extractionsLimit ?? 3}. Free recipes expire after{" "}
+              {FREE_RECIPE_TTL_DAYS} days.
+            </>
+          ) : (
+            <> · Unlimited extractions and permanent recipes.</>
+          )}
+        </p>
         <p className="dashboard-settings-p">
           <Link href="/dashboard/billing" className="dashboard-settings-link">
             Manage Free vs Pro
@@ -57,8 +80,10 @@ export default async function SettingsPage() {
           Data &amp; privacy
         </h2>
         <p className="dashboard-settings-p">
-          Items in Trash are permanently deleted after {TRASH_RETENTION_DAYS} days (automatic
-          server job). This page does not delete your Clerk account.
+          Items in Trash (including expired Free recipes) are permanently deleted after{" "}
+          {TRASH_RETENTION_DAYS} days. Free owned recipes also expire after{" "}
+          {FREE_RECIPE_TTL_DAYS} days and move to Trash automatically. This page does not
+          delete your Clerk account.
         </p>
       </section>
 

@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { RecipeFullView } from "@/components/RecipeFullView";
 import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { useEntitlements } from "@/components/EntitlementsProvider";
 import {
   buildUrlImportRecipePayload,
   isUrlImportSaveable,
@@ -13,6 +15,7 @@ import type { UrlImportedRecipe } from "@/lib/types";
 import "@/app/styling/CookbookFolderPage.css";
 import "@/app/styling/CookbookPageRecipeCard.css";
 import "@/app/styling/VideoUpload.css";
+import "@/app/styling/UpgradePrompt.css";
 
 const URL_IMPORT_STATUS_LINES = [
   "Fetching the page…",
@@ -23,12 +26,14 @@ const URL_IMPORT_STATUS_LINES = [
 
 export default function ImportRecipeUrlPage() {
   const router = useRouter();
+  const { entitlements, refreshEntitlements } = useEntitlements();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<UrlImportedRecipe | null>(null);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [statusLineIndex, setStatusLineIndex] = useState(0);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -53,6 +58,10 @@ export default function ImportRecipeUrlPage() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!entitlements.isPro && entitlements.extractionsRemaining <= 0) {
+      setUpgradeOpen(true);
+      return;
+    }
     setLoading(true);
     setError(null);
 
@@ -65,10 +74,14 @@ export default function ImportRecipeUrlPage() {
 
       const data = await res.json();
       if (!res.ok) {
+        if (res.status === 403 && data.code === "PLAN_LIMIT") {
+          setUpgradeOpen(true);
+        }
         throw new Error(data?.error || "Failed to import recipe URL");
       }
 
       setResult(data as UrlImportedRecipe);
+      void refreshEntitlements();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unexpected error";
       setError(msg);
@@ -193,6 +206,11 @@ export default function ImportRecipeUrlPage() {
       {error ? (
         <p style={{ color: "var(--error-fg)", marginTop: 14 }}>{error}</p>
       ) : null}
+      <UpgradePrompt
+        open={upgradeOpen}
+        reason="extractions"
+        onClose={() => setUpgradeOpen(false)}
+      />
     </section>
   );
 }

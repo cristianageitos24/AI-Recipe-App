@@ -3,9 +3,16 @@ import { VideoUploadForm } from "@/components/VideoUploadForm";
 
 interface HomeImportCardProps {
   onWebRecipeUrlImport: (url: string) => Promise<void>;
+  /** null = Pro (unlimited). 0 = show block before submit. */
+  extractionsRemaining?: number | null;
+  onExtractionBlocked?: () => void;
 }
 
-export function HomeImportCard({ onWebRecipeUrlImport }: HomeImportCardProps) {
+export function HomeImportCard({
+  onWebRecipeUrlImport,
+  extractionsRemaining = null,
+  onExtractionBlocked,
+}: HomeImportCardProps) {
   return (
     <section className="home-surface-card home-import-card">
       <div className="home-import-main">
@@ -19,12 +26,21 @@ export function HomeImportCard({ onWebRecipeUrlImport }: HomeImportCardProps) {
           <h2 className="home-section-title">Import a Recipe</h2>
           <p className="home-section-caption">
             Paste a TikTok link or any recipe webpage URL and we&apos;ll do the rest.
+            {extractionsRemaining != null ? (
+              <>
+                {" "}
+                Free: {extractionsRemaining} extraction
+                {extractionsRemaining === 1 ? "" : "s"} left this month.
+              </>
+            ) : null}
           </p>
         </div>
         <div className="home-import-form">
           <VideoUploadForm
             variant="embedded-unified"
             onWebRecipeUrlImport={onWebRecipeUrlImport}
+            extractionsRemaining={extractionsRemaining}
+            onExtractionBlocked={onExtractionBlocked}
           />
         </div>
       </div>

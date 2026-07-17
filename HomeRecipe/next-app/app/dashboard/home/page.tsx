@@ -3,9 +3,15 @@
 import Link from "next/link";
 import { Playfair_Display } from "next/font/google";
 import { useUser } from "@clerk/nextjs";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { RecipeFullView } from "@/components/RecipeFullView";
 import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
+import { FreePlanBanner } from "@/components/FreePlanBanner";
+import { ProLockedRecipeCard } from "@/components/ProLockedRecipeCard";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { useEntitlements } from "@/components/EntitlementsProvider";
+import type { PlanLimitReason } from "@/lib/entitlements-constants";
 import { useHomeData } from "./_hooks/useHomeData";
 import { useHomeSearch } from "./_hooks/useHomeSearch";
 import { HomeSearchShell } from "./_components/HomeSearchShell";
@@ -17,6 +23,7 @@ import "@/app/styling/TabHome.css";
 import "@/app/styling/VideoUpload.css";
 import "@/app/styling/CookbookFolderPage.css";
 import "@/app/styling/CookbookPageRecipeCard.css";
+import "@/app/styling/UpgradePrompt.css";
 
 const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
@@ -28,6 +35,8 @@ const playfairDisplay = Playfair_Display({
 export default function DashboardHomePage() {
   const { user } = useUser();
   const firstName = user?.firstName ?? "there";
+  const { entitlements, refreshEntitlements } = useEntitlements();
+  const [upgradeReason, setUpgradeReason] = useState<PlanLimitReason | null>(null);
 
   const {
     foldersWithCounts,
@@ -35,9 +44,13 @@ export default function DashboardHomePage() {
     upcomingMealPlans,
     favoriteIds,
     handleFavoriteChange,
+    suggestedRecipes,
   } = useHomeData();
 
-  const search = useHomeSearch();
+  const search = useHomeSearch({
+    onPlanLimit: (reason) => setUpgradeReason(reason),
+    onExtractSuccess: () => void refreshEntitlements(),
+  });
 
   return (
     <div className="main-panel home-main-panel">
@@ -47,10 +60,13 @@ export default function DashboardHomePage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
       >
+        <FreePlanBanner />
         <HomeSearchShell
           {...search}
           favoriteIds={favoriteIds}
           onFavoriteChange={handleFavoriteChange}
+          webSearchLocked={!entitlements.isPro}
+          onWebSearchLocked={() => setUpgradeReason("catalog")}
         />
 
         {/* Welcome row */}
@@ -67,7 +83,11 @@ export default function DashboardHomePage() {
             >
               Welcome back, {firstName} <span style={{ marginLeft: "4px" }}>👋</span>
             </h1>
-            <p className="home-welcome-sub">Let&apos;s make today delicious.</p>
+            <p className="home-welcome-sub">
+              {entitlements.isPro
+                ? "Let's make today delicious."
+                : `Free plan · ${entitlements.extractionsRemaining} of ${entitlements.extractionsLimit} extractions left this month.`}
+            </p>
           </div>
           <Link href="/dashboard/create-recipe" className="home-create-recipe-btn">
             <span aria-hidden>+</span> Create Recipe
@@ -76,13 +96,41 @@ export default function DashboardHomePage() {
 
         <HomeStatCards stats={homeStats} />
 
-        <HomeImportCard onWebRecipeUrlImport={search.importRecipeFromWebUrl} />
+        <HomeImportCard
+          onWebRecipeUrlImport={search.importRecipeFromWebUrl}
+          extractionsRemaining={entitlements.isPro ? null : entitlements.extractionsRemaining}
+          onExtractionBlocked={() => setUpgradeReason("extractions")}
+        />
+
+        {!entitlements.isPro && suggestedRecipes.length > 0 ? (
+          <section className="home-surface-card" style={{ marginBottom: "1rem", padding: "1rem" }}>
+            <h2 className="home-section-title">Pro library</h2>
+            <p className="home-section-caption">
+              Upgrade to open the full catalog. Tap a card to unlock.
+            </p>
+            <div className="pro-locked-strip">
+              {suggestedRecipes.slice(0, 8).map((recipe) => (
+                <ProLockedRecipeCard
+                  key={recipe.recipe_id}
+                  recipe={recipe}
+                  onUnlock={() => setUpgradeReason("catalog")}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <div className="home-lower-grid">
           <HomeCollectionsPanel foldersWithCounts={foldersWithCounts} />
           <HomeUpcomingPanel upcomingMealPlans={upcomingMealPlans} />
         </div>
       </motion.div>
+
+      <UpgradePrompt
+        open={upgradeReason !== null}
+        reason={upgradeReason ?? "catalog"}
+        onClose={() => setUpgradeReason(null)}
+      />
 
       {/* URL import preview overlay */}
       {search.showUrlPreviewModal && search.urlPreview && search.urlDraftRecipeRow && (

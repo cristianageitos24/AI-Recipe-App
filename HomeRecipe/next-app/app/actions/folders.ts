@@ -7,6 +7,7 @@ import type { TrashActionResult } from "@/lib/trash-result";
 import { RECIPE_FOLDER_COLUMNS, RECIPE_LIST_COLUMNS } from "@/lib/recipe-select";
 import type { RecipePayload } from "@/lib/types";
 import { compressImageLossless } from "@/lib/compress-image";
+import { isUserPro, planLimitError } from "@/lib/entitlements";
 
 const COOKBOOK_COVER_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 
@@ -400,18 +401,31 @@ export async function addRecipeToFolder(
   if (!userId) return { error: "Unauthorized" };
 
   const supabase = await createClient();
+  const pro = await isUserPro(userId);
 
   let recipeUuid: string;
   if (typeof payload === "string") {
     const { data: recipe } = await supabase
       .from("recipes")
-      .select("id")
+      .select("id, user_id, expires_at")
       .eq("recipe_id", payload)
       .is("deleted_at", null)
       .maybeSingle();
     if (!recipe) return { error: "Recipe not found" };
+    if (!pro && recipe.user_id !== userId) {
+      const limit = planLimitError("catalog");
+      return { error: limit.error, code: limit.code, reason: limit.reason };
+    }
     recipeUuid = recipe.id;
   } else {
+    const isUserOwned =
+      payload.recipeID.startsWith("manual-") ||
+      payload.recipeID.startsWith("video-recipe-") ||
+      payload.recipeID.startsWith("url-import-");
+    if (!isUserOwned && !pro) {
+      const limit = planLimitError("catalog");
+      return { error: limit.error, code: limit.code, reason: limit.reason };
+    }
     const { getOrCreateRecipe } = await import("@/app/actions/recipes");
     const res = await getOrCreateRecipe(payload);
     if (res.error || !res.data) return { error: res.error ?? "Failed to get/create recipe" };

@@ -29,6 +29,7 @@ export function useHomeData() {
   const [mealDates, setMealDates] = useState<MealDay[]>([]);
   const [foldersWithCounts, setFoldersWithCounts] = useState<FolderWithCount[]>([]);
   const [folderRecipesByName, setFolderRecipesByName] = useState<Record<string, RecipeRow[]>>({});
+  const [suggestedRecipes, setSuggestedRecipes] = useState<RecipeRow[]>([]);
 
   useEffect(() => {
     getHomeBootstrap().then((res) => {
@@ -42,6 +43,7 @@ export function useHomeData() {
       );
       setFolderRecipesByName((res.data.results ?? {}) as Record<string, RecipeRow[]>);
       setMealDates((res.data.mealDates ?? []) as MealDay[]);
+      setSuggestedRecipes((res.data.suggestedRecipes ?? []) as RecipeRow[]);
     });
   }, []);
 
@@ -133,5 +135,6 @@ export function useHomeData() {
     upcomingMealPlans,
     favoriteIds,
     handleFavoriteChange,
+    suggestedRecipes,
   };
 }

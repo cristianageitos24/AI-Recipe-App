@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { ensureProfile } from "@/app/actions/profiles";
 import { getProfileBilling } from "@/lib/billing";
 import { isProSubscriptionStatus } from "@/lib/stripe";
+import { FREE_EXTRACTION_LIMIT, FREE_RECIPE_TTL_DAYS } from "@/lib/entitlements";
 import { BillingActions } from "@/components/BillingActions";
+import { CheckoutSuccessPoller } from "@/components/CheckoutSuccessPoller";
 import "@/app/styling/BillingPage.css";
 
 type SearchParams = Promise<{ checkout?: string }>;
@@ -29,10 +31,12 @@ export default async function BillingPage({
       <h1 className="billing-title">Billing</h1>
 
       {params.checkout === "success" ? (
-        <p className="billing-banner billing-banner-success" role="status">
-          Payment received. Pro access updates when Stripe confirms the
-          subscription (usually a few seconds). Refresh if status is still Free.
-        </p>
+        <>
+          <p className="billing-banner billing-banner-success" role="status">
+            Payment received. Confirming Pro access…
+          </p>
+          <CheckoutSuccessPoller />
+        </>
       ) : null}
       {params.checkout === "canceled" ? (
         <p className="billing-banner" role="status">
@@ -58,12 +62,14 @@ export default async function BillingPage({
         </h2>
         <ul className="billing-list">
           <li>
-            <strong>Free:</strong> a small recipe set and a few recipe
-            extractions per month
+            <strong>Free:</strong> your own manual and extracted recipes only (
+            {FREE_EXTRACTION_LIMIT} extractions/month). Recipes expire after{" "}
+            {FREE_RECIPE_TTL_DAYS} days. Catalog and macros stay locked.
           </li>
           <li>
-            <strong>Pro:</strong> all recipes, full nutrients &amp; macros, and
-            unlimited extractions
+            <strong>Pro ($1.99/mo or $20/yr):</strong> full recipe library, web
+            search, full nutrients &amp; macros, unlimited extractions, recipes
+            never expire.
           </li>
         </ul>
         <p className="billing-muted">

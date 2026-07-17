@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { createClient } from "@/utils/supabase/server";
 import { ensureProfile } from "@/app/actions/profiles";
+import { assertCanExtract } from "@/lib/entitlements";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const MAX_DURATION_SECONDS = parseInt(
@@ -23,6 +24,11 @@ export async function POST(request: NextRequest) {
     }
 
     await ensureProfile();
+
+    const extractGate = await assertCanExtract(userId);
+    if (!extractGate.ok) {
+      return NextResponse.json(extractGate.limit, { status: 403 });
+    }
 
     // Parse form data
     const formData = await request.formData();

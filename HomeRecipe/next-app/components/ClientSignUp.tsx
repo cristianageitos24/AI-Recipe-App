@@ -28,7 +28,7 @@ export function ClientSignUp() {
   return (
     <SignUp
       routing="hash"
-      forceRedirectUrl="/dashboard"
+      forceRedirectUrl="/dashboard/home"
       signInUrl="/signin"
       appearance={clerkAppearance}
     />

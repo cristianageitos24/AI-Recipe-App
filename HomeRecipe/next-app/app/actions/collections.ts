@@ -2,9 +2,13 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@/utils/supabase/server";
-import { RECIPE_FOLDER_COLUMNS } from "@/lib/recipe-select";
+import {
+  RECIPE_FOLDER_COLUMNS,
+  RECIPE_TEASER_COLUMNS,
+} from "@/lib/recipe-select";
 import type { RecipeRow } from "@/lib/types";
 import { getCollectionBySlug } from "@/lib/collections";
+import { isUserPro } from "@/lib/entitlements";
 
 /**
  * Escape a keyword for use in Supabase ilike pattern.
@@ -31,7 +35,7 @@ function buildOrFilter(keywords: string[]): string {
 
 /**
  * Fetch recipes for a curated cookbook collection.
- * Filters by keyword matches on ingredient_lines and recipe_label.
+ * Free users get teaser columns only (blur wall).
  */
 export async function getRecipesByCollection(
   slug: string,
@@ -45,19 +49,23 @@ export async function getRecipesByCollection(
 
   const limit = Math.min(options?.limit ?? 24, 100);
   const offset = options?.offset ?? 0;
+  const pro = await isUserPro(userId);
 
   const supabase = await createClient();
 
-  // Build query: match any include keyword in ingredient_lines or recipe_label
   const orFilter = buildOrFilter(config.includeKeywords);
+  const columns = pro ? RECIPE_FOLDER_COLUMNS : RECIPE_TEASER_COLUMNS;
   let query = supabase
     .from("recipes")
-    .select(RECIPE_FOLDER_COLUMNS)
+    .select(columns)
     .is("deleted_at", null)
     .or(orFilter)
     .range(offset, offset + limit - 1);
 
-  // For low-carb: exclude recipes matching exclude keywords
+  if (!pro) {
+    query = query.is("user_id", null);
+  }
+
   if (config.excludeKeywords && config.excludeKeywords.length > 0) {
     for (const ex of config.excludeKeywords) {
       const pattern = `%${ex.replace(/%/g, "\\%")}%`;

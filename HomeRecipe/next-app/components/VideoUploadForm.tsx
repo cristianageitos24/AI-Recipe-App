@@ -208,6 +208,10 @@ interface VideoUploadFormProps {
    * When `variant` is `embedded-unified`, non-video URLs trigger this handler (recipe webpage import).
    */
   onWebRecipeUrlImport?: (url: string) => Promise<void>;
+  /** Free remaining extractions; null = Pro/unlimited. */
+  extractionsRemaining?: number | null;
+  onExtractionBlocked?: () => void;
+  onExtractSuccess?: () => void;
 }
 
 type EditedRecipeState = {
@@ -240,6 +244,9 @@ export function VideoUploadForm({
   onJobCreated,
   variant = "default",
   onWebRecipeUrlImport,
+  extractionsRemaining = null,
+  onExtractionBlocked,
+  onExtractSuccess,
 }: VideoUploadFormProps) {
   const [tiktokUrl, setTiktokUrl] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -376,6 +383,12 @@ export function VideoUploadForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (extractionsRemaining === 0) {
+      onExtractionBlocked?.();
+      setError("You've used your free extractions this month.");
+      return;
+    }
+
     const trimmedUrl = tiktokUrl.trim();
     if (!trimmedUrl) {
       setError(
@@ -437,6 +450,9 @@ export function VideoUploadForm({
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 403 && data.code === "PLAN_LIMIT") {
+          onExtractionBlocked?.();
+        }
         const message = data.detail
           ? `${data.error}: ${data.detail}`
           : data.error || "Upload failed";
@@ -445,6 +461,7 @@ export function VideoUploadForm({
 
       setJobId(data.jobId);
       setEditedRecipe(null);
+      onExtractSuccess?.();
       setJobStatus({
         id: data.jobId,
         status: data.status,

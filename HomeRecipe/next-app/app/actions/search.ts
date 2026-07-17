@@ -2,13 +2,21 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
-import { RECIPE_LIST_COLUMNS } from "@/lib/recipe-select";
+import {
+  RECIPE_LIST_COLUMNS,
+  RECIPE_TEASER_COLUMNS,
+} from "@/lib/recipe-select";
+import { isUserPro } from "@/lib/entitlements";
 import type { RecipeRow } from "@/lib/types";
 
 export type SearchSuggestions = {
   ingredients: string[];
   recipes: { recipe_id: string; recipe_label: string }[];
 };
+
+function notExpiredFilter() {
+  return `expires_at.is.null,expires_at.gt.${new Date().toISOString()}`;
+}
 
 /** Ingredients-only suggestions: `fdc_foods.description` via service role (no client reads on bulk FDC). */
 export async function getIngredientSuggestions(
@@ -62,6 +70,7 @@ export async function getSearchSuggestions(
 
   const supabase = await createClient();
   const pattern = `%${trimmed.replace(/%/g, "\\%").replace(/_/g, "\\_")}%`;
+  const pro = await isUserPro(userId);
 
   let ingredients: string[] = [];
   try {
@@ -86,12 +95,20 @@ export async function getSearchSuggestions(
     ingredients = [];
   }
 
-  const recipesRes = await supabase
+  let recipesQuery = supabase
     .from("recipes")
     .select("recipe_id, recipe_label")
     .is("deleted_at", null)
     .ilike("recipe_label", pattern)
     .limit(5);
+
+  if (!pro) {
+    recipesQuery = recipesQuery
+      .eq("user_id", userId)
+      .or(notExpiredFilter());
+  }
+
+  const recipesRes = await recipesQuery;
   const recipes =
     recipesRes.data?.map((r) => ({
       recipe_id: r.recipe_id as string,
@@ -117,11 +134,27 @@ export async function searchRecipes(
 
   const supabase = await createClient();
   const pattern = `%${trimmed.replace(/%/g, "\\%")}%`;
+  const pro = await isUserPro(userId);
 
+  if (pro) {
+    const { data, error } = await supabase
+      .from("recipes")
+      .select(RECIPE_LIST_COLUMNS)
+      .is("deleted_at", null)
+      .ilike("recipe_label", pattern)
+      .limit(50);
+
+    if (error) return { error: error.message, data: null };
+    return { error: null, data: (data ?? []) as unknown as RecipeRow[] };
+  }
+
+  // Free: own non-expired recipes (full list columns)
   const { data, error } = await supabase
     .from("recipes")
     .select(RECIPE_LIST_COLUMNS)
     .is("deleted_at", null)
+    .eq("user_id", userId)
+    .or(notExpiredFilter())
     .ilike("recipe_label", pattern)
     .limit(50);
 
@@ -141,8 +174,16 @@ export async function searchByIngredients(
   }
 
   const supabase = await createClient();
+  const pro = await isUserPro(userId);
 
-  let query = supabase.from("recipes").select(RECIPE_LIST_COLUMNS).is("deleted_at", null);
+  let query = supabase
+    .from("recipes")
+    .select(RECIPE_LIST_COLUMNS)
+    .is("deleted_at", null);
+
+  if (!pro) {
+    query = query.eq("user_id", userId).or(notExpiredFilter());
+  }
 
   for (const ing of trimmed) {
     const pattern = `%${ing.replace(/%/g, "\\%")}%`;
@@ -155,6 +196,10 @@ export async function searchByIngredients(
   return { error: null, data: (data ?? []) as unknown as RecipeRow[] };
 }
 
+/**
+ * Home suggestions. Pro: full list columns. Free: shared catalog teasers only
+ * (blur wall — no ingredients/steps/nutrition).
+ */
 export async function getSuggestedRecipes(
   excludeRecipeIds: string[] = []
 ): Promise<{ error: string | null; data: RecipeRow[] | null }> {
@@ -162,13 +207,30 @@ export async function getSuggestedRecipes(
   if (!userId) return { error: "Unauthorized", data: null };
 
   const supabase = await createClient();
-  // Prefer a bounded list-column read over `get_random_recipes` (full-row ORDER BY random()).
+  const pro = await isUserPro(userId);
   const excluded = new Set(excludeRecipeIds);
   const fetchLimit = Math.min(100, 12 + excluded.size * 2);
+
+  if (pro) {
+    const { data: rows, error: tableError } = await supabase
+      .from("recipes")
+      .select(RECIPE_LIST_COLUMNS)
+      .is("deleted_at", null)
+      .limit(fetchLimit);
+
+    if (tableError) return { error: tableError.message, data: null };
+
+    const list = (rows ?? []) as unknown as RecipeRow[];
+    const filtered = list.filter((r) => !excluded.has(r.recipe_id));
+    const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, 12);
+    return { error: null, data: shuffled };
+  }
+
   const { data: rows, error: tableError } = await supabase
     .from("recipes")
-    .select(RECIPE_LIST_COLUMNS)
+    .select(RECIPE_TEASER_COLUMNS)
     .is("deleted_at", null)
+    .is("user_id", null)
     .limit(fetchLimit);
 
   if (tableError) return { error: tableError.message, data: null };
@@ -176,6 +238,5 @@ export async function getSuggestedRecipes(
   const list = (rows ?? []) as unknown as RecipeRow[];
   const filtered = list.filter((r) => !excluded.has(r.recipe_id));
   const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, 12);
-
   return { error: null, data: shuffled };
 }

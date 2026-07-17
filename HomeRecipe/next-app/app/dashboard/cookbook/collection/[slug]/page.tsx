@@ -7,8 +7,12 @@ import { getFavorites } from "@/app/actions/favorites";
 import { getCollectionBySlug } from "@/lib/collections";
 import { CookbookPageRecipeCard } from "@/components/CookbookPageRecipeCard";
 import { RecipeFullView } from "@/components/RecipeFullView";
+import { ProLockedRecipeCard } from "@/components/ProLockedRecipeCard";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { useEntitlements } from "@/components/EntitlementsProvider";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/CookbookFolderPage.css";
+import "@/app/styling/UpgradePrompt.css";
 
 const PAGE_SIZE = 24;
 
@@ -16,15 +20,18 @@ export default function CollectionPage() {
   const params = useParams();
   const router = useRouter();
   const slug = (params.slug as string) ?? "";
+  const { entitlements } = useEntitlements();
   const [recipes, setRecipes] = useState<RecipeRow[]>([]);
   const [favorites, setFavorites] = useState<RecipeRow[]>([]);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   const collection = getCollectionBySlug(slug);
   const favoriteIds = new Set(favorites.map((r) => r.recipe_id));
+  const locked = !entitlements.isPro;
 
   useEffect(() => {
     if (!slug) {
@@ -113,6 +120,7 @@ export default function CollectionPage() {
         </svg>
         <span className="folder-bttn" style={{ cursor: "default" }}>
           {collection.displayName}
+          {locked ? " (Pro)" : ""}
         </span>
       </div>
       {isLoading ? (
@@ -128,6 +136,33 @@ export default function CollectionPage() {
             No recipes match this collection yet.
           </p>
         </div>
+      ) : locked ? (
+        <>
+          <p className="home-section-caption" style={{ marginBottom: "0.75rem" }}>
+            This collection is part of the Pro library. Tap a card to upgrade.
+          </p>
+          <div className="pro-locked-strip">
+            {recipes.map((recipe) => (
+              <ProLockedRecipeCard
+                key={recipe.id}
+                recipe={recipe}
+                onUnlock={() => setUpgradeOpen(true)}
+              />
+            ))}
+          </div>
+          {hasMore ? (
+            <div style={{ display: "flex", justifyContent: "center", margin: "1.5rem 0" }}>
+              <button
+                type="button"
+                className="back-bttn"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+              >
+                {loadingMore ? "Loading…" : "Load more"}
+              </button>
+            </div>
+          ) : null}
+        </>
       ) : (
         <>
           <div className="cookbook-page-recipe-cards-container">
@@ -179,6 +214,11 @@ export default function CollectionPage() {
           </div>
         ) : null;
       })()}
+      <UpgradePrompt
+        open={upgradeOpen}
+        reason="catalog"
+        onClose={() => setUpgradeOpen(false)}
+      />
     </div>
   );
 }
