@@ -28,6 +28,18 @@ export default async function SettingsPage() {
         </p>
       </section>
 
+      <section aria-labelledby="settings-billing-heading">
+        <h2 id="settings-billing-heading" className="dashboard-settings-h2">
+          Billing
+        </h2>
+        <p className="dashboard-settings-p">
+          <Link href="/dashboard/billing" className="dashboard-settings-link">
+            Manage Free vs Pro
+          </Link>{" "}
+          — upgrade, invoices, and payment methods (Stripe Checkout + Customer Portal).
+        </p>
+      </section>
+
       <section aria-labelledby="settings-about-heading">
         <h2 id="settings-about-heading" className="dashboard-settings-h2">
           About / help
