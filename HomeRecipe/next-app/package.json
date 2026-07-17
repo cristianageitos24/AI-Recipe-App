@@ -16,6 +16,8 @@
     "recipe-import-api": "cd ../services/recipe-url-import && python -m uvicorn app.main:app --host 127.0.0.1 --port 8000",
     "setup:storage": "tsx scripts/setup-storage.ts",
     "compress:covers": "tsx scripts/compress-recipe-covers.ts",
+    "export:legacy-archive": "tsx scripts/export-legacy-recipes-archive.ts",
+    "restore:legacy-archive": "tsx scripts/restore-legacy-recipes-archive.ts",
     "db:push": "supabase db push",
     "db:migrations": "supabase migration list"
   },
