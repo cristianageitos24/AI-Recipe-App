@@ -34,6 +34,13 @@ export interface VideoJob {
   updated_at: string;
 }
 
+/** Single-job poll: includes OCR/transcript for the upload debug panels. */
+const VIDEO_JOB_POLL_COLUMNS =
+  "id, user_id, status, video_url, source_type, source_url, source_platform, video_deleted_at, tiktok_url, ocr_text, transcript_text, extracted_recipe, thumbnail_url, processing_progress, processing_stage, processing_detail, error_message, attempts, started_at, finished_at, processing_ms, created_at, updated_at" as const;
+
+const VIDEO_JOB_LIST_COLUMNS =
+  "id, status, thumbnail_url, source_type, source_url, source_platform, processing_progress, processing_stage, error_message, created_at, updated_at, finished_at" as const;
+
 /**
  * Get a single video job by ID
  * @param _refreshNonce Pass changing value (e.g. Date.now()) from the client poller so Next never dedupes stale reads.
@@ -50,7 +57,7 @@ export async function getVideoJob(jobId: string, _refreshNonce?: number) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("video_processing_jobs")
-    .select("*")
+    .select(VIDEO_JOB_POLL_COLUMNS)
     .eq("id", jobId)
     .eq("user_id", userId)
     .single();
@@ -66,7 +73,7 @@ export async function getVideoJob(jobId: string, _refreshNonce?: number) {
 }
 
 /**
- * Get all video jobs for the current user
+ * Get recent video jobs for the current user (bounded; omits OCR/transcript blobs).
  */
 export async function getVideoJobs() {
   noStore();
@@ -78,9 +85,10 @@ export async function getVideoJobs() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("video_processing_jobs")
-    .select("*")
+    .select(VIDEO_JOB_LIST_COLUMNS)
     .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(50);
 
   if (error) {
     return { error: error.message, data: [] };
@@ -102,7 +110,7 @@ export async function getLatestVideoJob() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("video_processing_jobs")
-    .select("*")
+    .select(VIDEO_JOB_POLL_COLUMNS)
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(1)

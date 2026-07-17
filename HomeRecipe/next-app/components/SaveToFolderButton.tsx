@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getFolders, addRecipeToFolder } from "@/app/actions/folders";
+import { listFolderNames, addRecipeToFolder } from "@/app/actions/folders";
 import { toRecipePayload } from "@/lib/processRecipeData";
 import type { ProcessedRecipe } from "@/lib/processRecipeData";
 import "@/app/styling/SaveToFolderButton.css";
@@ -37,8 +37,8 @@ export function SaveToFolderButton({ folders: initialFolders, recipeData }: Save
     if (initialFolders.length > 0) {
       setFolders(initialFolders);
     } else {
-      getFolders().then((res) => {
-        if (res.data?.folders) setFolders(res.data.folders);
+      listFolderNames().then((res) => {
+        if (res.data) setFolders(res.data);
       });
     }
   }, [initialFolders.length, initialFolders]);

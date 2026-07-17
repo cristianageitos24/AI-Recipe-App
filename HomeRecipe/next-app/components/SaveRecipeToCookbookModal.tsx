@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   createFolder,
-  getFolders,
+  listFolderNames,
   addRecipeToFolder,
 } from "@/app/actions/folders";
 import type { RecipePayload } from "@/lib/types";
@@ -31,8 +31,8 @@ export function SaveRecipeToCookbookModal({
     if (!open) return;
     setSaveError(null);
     setSaveSuccess(null);
-    getFolders().then((res) => {
-      if (res.data?.folders) setSaveFolders(res.data.folders as string[]);
+    listFolderNames().then((res) => {
+      if (res.data) setSaveFolders(res.data);
     });
   }, [open]);
 

@@ -62,16 +62,17 @@ export async function addGroceryItem(itemText: string, category?: string) {
   const normalizedCategory = normalizeCategory(category);
 
   const supabase = await createClient();
+  const escapeIlike = trimmed.replace(/[%_\\]/g, "\\$&");
   const { data: existing } = await supabase
     .from("grocery_items")
-    .select("item_text")
-    .eq("user_id", userId);
+    .select("id")
+    .eq("user_id", userId)
+    .ilike("item_text", escapeIlike)
+    .limit(1);
 
-  const normalized = normalizeItemText(trimmed);
-  const isDuplicate = (existing ?? []).some(
-    (row) => normalizeItemText((row as { item_text: string }).item_text ?? "") === normalized
-  );
-  if (isDuplicate) return { error: null, added: false, duplicate: true };
+  if ((existing ?? []).length > 0) {
+    return { error: null, added: false, duplicate: true };
+  }
 
   const { error } = await supabase.from("grocery_items").insert({
     user_id: userId,
