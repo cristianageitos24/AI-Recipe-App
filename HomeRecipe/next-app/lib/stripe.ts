@@ -30,19 +30,21 @@ export function getAppBaseUrl(): string {
   return fromEnv || "http://localhost:3000";
 }
 
-export function getProPriceId(interval: "month" | "year" = "month"): string {
+/** Stripe Price IDs for HomeRecipe paid plan (monthly vs yearly billing). */
+export function getSubscriptionPriceId(
+  interval: "month" | "year" = "month"
+): string {
   if (interval === "year") {
-    const yearly = process.env.STRIPE_PRICE_ID_PRO_YEARLY;
+    const yearly = process.env.STRIPE_PRICE_ID_HOMERECIPE_YEARLY;
     if (!yearly) {
-      throw new Error("STRIPE_PRICE_ID_PRO_YEARLY is not set");
+      throw new Error("STRIPE_PRICE_ID_HOMERECIPE_YEARLY is not set");
     }
     return yearly;
   }
 
-  const monthly =
-    process.env.STRIPE_PRICE_ID_PRO_MONTHLY || process.env.STRIPE_PRICE_ID_PRO;
+  const monthly = process.env.STRIPE_PRICE_ID_HOMERECIPE_MONTHLY;
   if (!monthly) {
-    throw new Error("STRIPE_PRICE_ID_PRO_MONTHLY (or STRIPE_PRICE_ID_PRO) is not set");
+    throw new Error("STRIPE_PRICE_ID_HOMERECIPE_MONTHLY is not set");
   }
   return monthly;
 }

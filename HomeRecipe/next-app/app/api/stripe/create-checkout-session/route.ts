@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import {
   getAppBaseUrl,
-  getProPriceId,
+  getSubscriptionPriceId,
   getStripe,
   STRIPE_MANAGED_PAYMENTS_API_VERSION,
 } from "@/lib/stripe";
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       interval?: "month" | "year";
     };
     const interval = body.interval === "year" ? "year" : "month";
-    const priceId = getProPriceId(interval);
+    const priceId = getSubscriptionPriceId(interval);
 
     const { customerId } = await ensureStripeCustomer();
     const stripe = getStripe();
