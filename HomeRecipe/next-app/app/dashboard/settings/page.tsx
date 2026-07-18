@@ -52,7 +52,11 @@ export default async function SettingsPage() {
               {FREE_RECIPE_TTL_DAYS} days.
             </>
           ) : (
-            <> · Unlimited extractions and permanent recipes.</>
+            <>
+              {" "}
+              · Unlimited extractions, permanent recipes, meal planning, and
+              grocery lists.
+            </>
           )}
         </p>
         <p className="dashboard-settings-p">

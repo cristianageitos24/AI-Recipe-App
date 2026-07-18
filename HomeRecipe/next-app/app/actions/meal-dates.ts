@@ -1,9 +1,9 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
 import { RECIPE_LIST_COLUMNS } from "@/lib/recipe-select";
 import { createClient } from "@/utils/supabase/server";
 import { isUserPro, planLimitError } from "@/lib/entitlements";
+import { requirePremiumPlanningAccess } from "@/lib/premium-access";
 
 /** Bound calendar payload: past 2 months through next 4 months. */
 function mealDateWindowIso(): { from: string; to: string } {
@@ -37,8 +37,9 @@ function mealRecipeAllowed(
 }
 
 export async function getMealDates() {
-  const { userId } = await auth();
-  if (!userId) return { error: "Unauthorized", data: [] };
+  const access = await requirePremiumPlanningAccess();
+  if (!access.ok) return { ...access, data: [] };
+  const { userId } = access;
 
   const supabase = await createClient();
   const pro = await isUserPro(userId);
@@ -104,8 +105,9 @@ export async function createOrUpdateMealDate(params: {
   recipeID: string;
   eventID: string;
 }) {
-  const { userId } = await auth();
-  if (!userId) return { error: "Unauthorized" };
+  const access = await requirePremiumPlanningAccess();
+  if (!access.ok) return access;
+  const { userId } = access;
 
   const supabase = await createClient();
   const pro = await isUserPro(userId);
@@ -161,8 +163,9 @@ export async function createOrUpdateMealDate(params: {
 }
 
 export async function deleteMealDate(eventID: string) {
-  const { userId } = await auth();
-  if (!userId) return { error: "Unauthorized" };
+  const access = await requirePremiumPlanningAccess();
+  if (!access.ok) return access;
+  const { userId } = access;
 
   const supabase = await createClient();
   const { data: row } = await supabase

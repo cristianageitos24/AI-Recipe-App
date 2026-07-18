@@ -38,6 +38,7 @@ const PLAN_LIMIT_MESSAGES: Record<PlanLimitReason, string> = {
   nutrition: "Upgrade to Pro to unlock full nutrients and macros",
   extractions: "You've used your free extractions this month",
   expiry: "This recipe expired — upgrade to keep recipes forever",
+  planning: "Upgrade to Pro to unlock meal planning and grocery lists",
 };
 
 export function planLimitError(reason: PlanLimitReason): PlanLimitError {

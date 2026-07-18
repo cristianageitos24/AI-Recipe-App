@@ -25,6 +25,7 @@ import { HeartButton } from "@/components/HeartButton";
 import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useEntitlements } from "@/components/EntitlementsProvider";
+import type { PlanLimitReason } from "@/lib/entitlements-constants";
 import {
   canSaveRecipeToCookbook,
   recipeRowToProcessed,
@@ -152,7 +153,7 @@ export function RecipeFullView({
   const trashUndo = useTrashUndoOptional();
   const { entitlements } = useEntitlements();
   const nutritionLocked = !entitlements.isPro;
-  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<PlanLimitReason | null>(null);
   const template = useMemo(() => buildRecipeTemplateData(recipeData), [recipeData]);
   const [ingredientsExpanded, setIngredientsExpanded] = useState(false);
   const [groceryFeedback, setGroceryFeedback] = useState<string | null>(null);
@@ -231,6 +232,10 @@ export function RecipeFullView({
       : ingredientRows.slice(0, INGREDIENT_PREVIEW_COUNT);
 
   async function handleAddIngredient(item: string) {
+    if (!entitlements.isPro) {
+      setUpgradeReason("planning");
+      return;
+    }
     const res = await addGroceryItem(item);
     if (res.error) {
       setGroceryFeedback(res.error);
@@ -243,6 +248,10 @@ export function RecipeFullView({
   }
 
   async function handleAddAllIngredients() {
+    if (!entitlements.isPro) {
+      setUpgradeReason("planning");
+      return;
+    }
     if (addAllDone || addAllBusy) return;
     setAddAllBusy(true);
     const res = await addGroceryItems(ingredientLines);
@@ -691,7 +700,7 @@ export function RecipeFullView({
               ) : null}
               <div className="nutrition-locked-blur">{nutritionPanel}</div>
               <div className="nutrition-locked-overlay">
-                <button type="button" onClick={() => setUpgradeOpen(true)}>
+                <button type="button" onClick={() => setUpgradeReason("nutrition")}>
                   Unlock macros on Pro
                 </button>
               </div>
@@ -713,9 +722,9 @@ export function RecipeFullView({
         onMoveToTrash={canMoveOwnedRecipeToTrash ? handleMoveRecipeToTrash : undefined}
       />
       <UpgradePrompt
-        open={upgradeOpen}
-        reason="nutrition"
-        onClose={() => setUpgradeOpen(false)}
+        open={upgradeReason !== null}
+        reason={upgradeReason ?? "nutrition"}
+        onClose={() => setUpgradeReason(null)}
       />
       {showCookbookSave && cookbookSavePayload && (
         <SaveRecipeToCookbookModal

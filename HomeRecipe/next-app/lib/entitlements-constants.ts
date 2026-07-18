@@ -7,4 +7,5 @@ export type PlanLimitReason =
   | "catalog"
   | "nutrition"
   | "extractions"
-  | "expiry";
+  | "expiry"
+  | "planning";

@@ -25,6 +25,10 @@ const COPY: Record<
     title: "This recipe expired",
     body: "Free recipes last 30 days. Upgrade to Pro to keep your recipes forever.",
   },
+  planning: {
+    title: "Unlock meal planning",
+    body: "Upgrade to Pro to schedule meals, build grocery lists, and plan grocery trips.",
+  },
 };
 
 type Props = {

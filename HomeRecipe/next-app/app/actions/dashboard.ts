@@ -1,11 +1,14 @@
 "use server";
 
+import { auth } from "@clerk/nextjs/server";
 import type { RecipeRow } from "@/lib/types";
 import { getFavorites } from "@/app/actions/favorites";
 import { getFolders } from "@/app/actions/folders";
 import { getMealDates } from "@/app/actions/meal-dates";
 import { getGroceryTrips } from "@/app/actions/grocery-trips";
 import { getSuggestedRecipes } from "@/app/actions/search";
+import { isUserPro } from "@/lib/entitlements";
+import { requirePremiumPlanningAccess } from "@/lib/premium-access";
 
 type FolderResults = {
   folders: string[];
@@ -13,10 +16,14 @@ type FolderResults = {
 };
 
 export async function getHomeBootstrap() {
+  const { userId } = await auth();
+  const pro = userId ? await isUserPro(userId) : false;
   const [favRes, folderRes, mealRes] = await Promise.all([
     getFavorites(),
     getFolders(),
-    getMealDates(),
+    pro
+      ? getMealDates()
+      : Promise.resolve({ error: null, data: [] }),
   ]);
 
   const favorites = (favRes.data ?? []) as RecipeRow[];
@@ -59,6 +66,20 @@ export async function getCookbookBootstrap() {
 }
 
 export async function getCalendarBootstrap() {
+  const access = await requirePremiumPlanningAccess();
+  if (!access.ok) {
+    return {
+      ...access,
+      data: {
+        mealDates: [],
+        groceryTrips: [],
+        folders: [],
+        results: {},
+        favorites: [],
+      },
+    };
+  }
+
   const [mealRes, tripsRes, folderRes, favRes] = await Promise.all([
     getMealDates(),
     getGroceryTrips(),

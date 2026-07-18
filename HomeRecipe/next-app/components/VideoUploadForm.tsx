@@ -14,6 +14,8 @@ import { buildRecipeTemplateData, splitIngredientLineForTemplate } from "@/lib/r
 import type { ExtractedRecipe } from "@/lib/types";
 import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
 import { RecipeTemplateShell } from "@/components/RecipeTemplateShell";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { useEntitlements } from "@/components/EntitlementsProvider";
 import { formatInstantLocal } from "@/lib/formatTimestamps";
 import { classifyUrlForIngest } from "@/lib/url-ingest-classification";
 import "@/app/styling/VideoUpload.css";
@@ -248,6 +250,7 @@ export function VideoUploadForm({
   onExtractionBlocked,
   onExtractSuccess,
 }: VideoUploadFormProps) {
+  const { entitlements } = useEntitlements();
   const [tiktokUrl, setTiktokUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [webImportInFlight, setWebImportInFlight] = useState(false);
@@ -258,6 +261,7 @@ export function VideoUploadForm({
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [copyHint, setCopyHint] = useState<string | null>(null);
   const [groceryFeedback, setGroceryFeedback] = useState<string | null>(null);
+  const [planningUpgradeOpen, setPlanningUpgradeOpen] = useState(false);
   const [addAllBusy, setAddAllBusy] = useState(false);
   const copyHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -352,6 +356,10 @@ export function VideoUploadForm({
   }, [editedRecipe, jobStatus?.tiktok_url]);
 
   const handleAddIngredient = useCallback(async (item: string) => {
+    if (!entitlements.isPro) {
+      setPlanningUpgradeOpen(true);
+      return;
+    }
     const res = await addGroceryItem(item);
     if (res.error) {
       setGroceryFeedback(res.error);
@@ -361,9 +369,13 @@ export function VideoUploadForm({
       setGroceryFeedback("Added");
     }
     setTimeout(() => setGroceryFeedback(null), 2000);
-  }, []);
+  }, [entitlements.isPro]);
 
   const handleAddAllIngredients = useCallback(async () => {
+    if (!entitlements.isPro) {
+      setPlanningUpgradeOpen(true);
+      return;
+    }
     if (!editedRecipe || addAllBusy) return;
     const lines = editedRecipe.ingredientLines.map((s) => s.trim()).filter(Boolean);
     if (lines.length === 0) return;
@@ -378,7 +390,7 @@ export function VideoUploadForm({
     }
     setAddAllBusy(false);
     setTimeout(() => setGroceryFeedback(null), 2000);
-  }, [editedRecipe, addAllBusy]);
+  }, [editedRecipe, addAllBusy, entitlements.isPro]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1147,6 +1159,11 @@ export function VideoUploadForm({
         open={saveModalOpen}
         onClose={() => setSaveModalOpen(false)}
         payload={saveModalOpen ? getPayloadFromEdited() : null}
+      />
+      <UpgradePrompt
+        open={planningUpgradeOpen}
+        reason="planning"
+        onClose={() => setPlanningUpgradeOpen(false)}
       />
     </motion.div>
   );

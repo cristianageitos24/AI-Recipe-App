@@ -1,11 +1,12 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@/utils/supabase/server";
+import { requirePremiumPlanningAccess } from "@/lib/premium-access";
 
 export async function getGroceryTrips() {
-  const { userId } = await auth();
-  if (!userId) return { error: "Unauthorized", data: [] };
+  const access = await requirePremiumPlanningAccess();
+  if (!access.ok) return { ...access, data: [] };
+  const { userId } = access;
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -19,8 +20,9 @@ export async function getGroceryTrips() {
 }
 
 export async function createGroceryTrip(plannedDate: string) {
-  const { userId } = await auth();
-  if (!userId) return { error: "Unauthorized" };
+  const access = await requirePremiumPlanningAccess();
+  if (!access.ok) return access;
+  const { userId } = access;
 
   const supabase = await createClient();
   const { error } = await supabase.from("grocery_trips").insert({
@@ -38,8 +40,9 @@ export async function createGroceryTrip(plannedDate: string) {
 }
 
 export async function deleteGroceryTrip(id: string) {
-  const { userId } = await auth();
-  if (!userId) return { error: "Unauthorized" };
+  const access = await requirePremiumPlanningAccess();
+  if (!access.ok) return access;
+  const { userId } = access;
 
   const supabase = await createClient();
   const { error } = await supabase

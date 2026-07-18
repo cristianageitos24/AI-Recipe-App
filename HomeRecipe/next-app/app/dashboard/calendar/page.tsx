@@ -14,6 +14,7 @@ import { getGroceryTrips, deleteGroceryTrip } from "@/app/actions/grocery-trips"
 import { getCalendarBootstrap } from "@/app/actions/dashboard";
 import { formatRecipeEnergyKcalDisplay } from "@/lib/nutrition/nutrition-display";
 import type { RecipeRow } from "@/lib/types";
+import { PremiumFeatureGate } from "@/components/PremiumFeatureGate";
 import "@/app/styling/TabCalendar.css";
 import "@/app/styling/TabCalendarHeader.css";
 import "@/app/styling/CalendarRecipeCard.css";
@@ -131,7 +132,7 @@ function getOptionsForFolder(
   return options;
 }
 
-export default function CalendarPage() {
+function CalendarPageContent() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [clickedEvent, setClickedEvent] = useState<CalendarEvent | null>(null);
   const [isEventClicked, setIsEventClicked] = useState(false);
@@ -599,5 +600,16 @@ export default function CalendarPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CalendarPage() {
+  return (
+    <PremiumFeatureGate
+      featureName="Meal Calendar"
+      description="Schedule recipes, organize upcoming meals, and coordinate grocery trips with Pro."
+    >
+      <CalendarPageContent />
+    </PremiumFeatureGate>
   );
 }

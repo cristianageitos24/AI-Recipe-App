@@ -5,6 +5,9 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { Playfair_Display } from "next/font/google";
+import { useState } from "react";
+import { useEntitlements } from "@/components/EntitlementsProvider";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 
 const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
@@ -33,11 +36,13 @@ const navItems = [
     href: "/dashboard/calendar",
     label: "Meal Calendar",
     icon: "/images/dashboard/calendaricon.svg",
+    premium: true,
   },
   {
     href: "/dashboard/grocery",
     label: "Grocery List",
     icon: "/images/dashboard/groceryicon.svg",
+    premium: true,
   },
   {
     href: "/dashboard/video-upload",
@@ -53,10 +58,13 @@ const navItems = [
 
 export function DashboardNav() {
   const pathname = usePathname();
+  const { entitlements } = useEntitlements();
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   return (
-    <header className="dashboard-header">
-      <Link href="/dashboard/home" className="dashboard-brand">
+    <>
+      <header className="dashboard-header">
+        <Link href="/dashboard/home" className="dashboard-brand">
         <Image
           src="/images/homerecipelogo1-removebg.png"
           alt=""
@@ -67,28 +75,50 @@ export function DashboardNav() {
         />
         <span className={playfairDisplay.className}>HomeRecipe</span>
       </Link>
-      <nav className="dock-nav">
-        <ul className="dock-tabs">
-          {navItems.map(({ href, label, icon }) => {
-            const isActive =
-              pathname === href || pathname.startsWith(href + "/");
-            return (
-              <li key={href} className={isActive ? "active" : ""}>
-                <Link href={href} className="tab-square">
-                  <Image src={icon} alt={label} width={15} height={15} />
-                  <span className="tab-tooltip">{label}</span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-      <div className="account-nav">
-        <div className="loggedin-username-label">
-          <ClerkAccountMenu />
-          <span className="signedin-label">Account</span>
+        <nav className="dock-nav">
+          <ul className="dock-tabs">
+            {navItems.map(({ href, label, icon, premium }) => {
+              const isActive =
+                pathname === href || pathname.startsWith(href + "/");
+              const locked = Boolean(premium && !entitlements.isPro);
+              return (
+                <li key={href} className={isActive ? "active" : ""}>
+                  {locked ? (
+                    <button
+                      type="button"
+                      className="nav-premium-button"
+                      aria-label={`${label} — Pro feature`}
+                      onClick={() => setUpgradeOpen(true)}
+                    >
+                      <Image src={icon} alt="" width={15} height={15} />
+                      <span className="nav-premium-lock" aria-hidden>
+                        🔒
+                      </span>
+                      <span className="tab-tooltip">{label} · Pro</span>
+                    </button>
+                  ) : (
+                    <Link href={href} className="tab-square">
+                      <Image src={icon} alt={label} width={15} height={15} />
+                      <span className="tab-tooltip">{label}</span>
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+        <div className="account-nav">
+          <div className="loggedin-username-label">
+            <ClerkAccountMenu />
+            <span className="signedin-label">Account</span>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+      <UpgradePrompt
+        open={upgradeOpen}
+        reason="planning"
+        onClose={() => setUpgradeOpen(false)}
+      />
+    </>
   );
 }

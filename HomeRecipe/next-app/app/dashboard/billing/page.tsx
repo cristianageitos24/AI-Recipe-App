@@ -64,12 +64,13 @@ export default async function BillingPage({
           <li>
             <strong>Free:</strong> your own manual and extracted recipes only (
             {FREE_EXTRACTION_LIMIT} extractions/month). Recipes expire after{" "}
-            {FREE_RECIPE_TTL_DAYS} days. Catalog and macros stay locked.
+            {FREE_RECIPE_TTL_DAYS} days. Catalog, macros, meal calendar, and
+            grocery list stay locked.
           </li>
           <li>
             <strong>Pro ($1.99/mo or $20/yr):</strong> full recipe library, web
             search, full nutrients &amp; macros, unlimited extractions, recipes
-            never expire.
+            never expire, plus meal planning and grocery lists.
           </li>
         </ul>
         <p className="billing-muted">
