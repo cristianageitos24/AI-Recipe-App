@@ -2,7 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@/utils/supabase/server";
-import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
+import { RECIPE_LIST_COLUMNS } from "@/lib/recipe-select";
 import type { RecipePayload } from "@/lib/types";
 
 export async function getFavorites() {
@@ -14,7 +14,7 @@ export async function getFavorites() {
     .from("favorites")
     .select(`
       recipe_id,
-      recipes (${RECIPE_WITH_NUTRITION})
+      recipes (${RECIPE_LIST_COLUMNS})
     `)
     .eq("user_id", userId);
 

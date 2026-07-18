@@ -2,11 +2,8 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
+import { RECIPE_LIST_COLUMNS } from "@/lib/recipe-select";
 import type { RecipeRow } from "@/lib/types";
-
-/** Narrow columns for list views (cards); avoids transferring ingredient_lines, steps */
-const RECIPE_LIST_COLUMNS =
-  "id, recipe_id, recipe_label, calories, cuisine_type, meal_type, time_in_minutes, image_url, website_url, recipe_nutrition(energy_kcal, nutrition_source)" as const;
 
 export type SearchSuggestions = {
   ingredients: string[];
@@ -129,7 +126,7 @@ export async function searchRecipes(
     .limit(50);
 
   if (error) return { error: error.message, data: null };
-  return { error: null, data: (data ?? []) as RecipeRow[] };
+  return { error: null, data: (data ?? []) as unknown as RecipeRow[] };
 }
 
 export async function searchByIngredients(
@@ -155,7 +152,7 @@ export async function searchByIngredients(
   const { data, error } = await query.limit(50);
 
   if (error) return { error: error.message, data: null };
-  return { error: null, data: (data ?? []) as RecipeRow[] };
+  return { error: null, data: (data ?? []) as unknown as RecipeRow[] };
 }
 
 export async function getSuggestedRecipes(
@@ -165,22 +162,7 @@ export async function getSuggestedRecipes(
   if (!userId) return { error: "Unauthorized", data: null };
 
   const supabase = await createClient();
-  const limit = Math.min(24, 12 + excludeRecipeIds.length);
-  const { data, error } = await supabase.rpc("get_random_recipes", {
-    p_limit: limit,
-  });
-
-  if (!error) {
-    const rows = (data ?? []) as RecipeRow[];
-    const excluded = new Set(excludeRecipeIds);
-    const filtered = rows.filter(
-      (r) =>
-        !excluded.has(r.recipe_id) &&
-        (r as { deleted_at?: string | null }).deleted_at == null
-    );
-    return { error: null, data: filtered.slice(0, 12) };
-  }
-
+  // Prefer a bounded list-column read over `get_random_recipes` (full-row ORDER BY random()).
   const excluded = new Set(excludeRecipeIds);
   const fetchLimit = Math.min(100, 12 + excluded.size * 2);
   const { data: rows, error: tableError } = await supabase
@@ -191,11 +173,9 @@ export async function getSuggestedRecipes(
 
   if (tableError) return { error: tableError.message, data: null };
 
-  const list = (rows ?? []) as RecipeRow[];
+  const list = (rows ?? []) as unknown as RecipeRow[];
   const filtered = list.filter((r) => !excluded.has(r.recipe_id));
-  const shuffled = filtered
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 12);
+  const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, 12);
 
   return { error: null, data: shuffled };
 }

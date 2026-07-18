@@ -10,6 +10,8 @@ import { RecipeFullView } from "@/components/RecipeFullView";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/CookbookFolderPage.css";
 
+const PAGE_SIZE = 24;
+
 export default function CollectionPage() {
   const params = useParams();
   const router = useRouter();
@@ -18,6 +20,8 @@ export default function CollectionPage() {
   const [favorites, setFavorites] = useState<RecipeRow[]>([]);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
 
   const collection = getCollectionBySlug(slug);
   const favoriteIds = new Set(favorites.map((r) => r.recipe_id));
@@ -27,8 +31,11 @@ export default function CollectionPage() {
       setIsLoading(false);
       return;
     }
-    getRecipesByCollection(slug).then((res) => {
-      if (res.data) setRecipes(res.data);
+    setIsLoading(true);
+    getRecipesByCollection(slug, { limit: PAGE_SIZE, offset: 0 }).then((res) => {
+      const rows = res.data ?? [];
+      setRecipes(rows);
+      setHasMore(rows.length >= PAGE_SIZE);
       setIsLoading(false);
     });
   }, [slug]);
@@ -38,6 +45,19 @@ export default function CollectionPage() {
       if (res.data) setFavorites(res.data);
     });
   }, []);
+
+  const handleLoadMore = useCallback(async () => {
+    if (!slug || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const res = await getRecipesByCollection(slug, {
+      limit: PAGE_SIZE,
+      offset: recipes.length,
+    });
+    const rows = res.data ?? [];
+    setRecipes((prev) => [...prev, ...rows]);
+    setHasMore(rows.length >= PAGE_SIZE);
+    setLoadingMore(false);
+  }, [slug, loadingMore, hasMore, recipes.length]);
 
   const handleFavoriteChange = useCallback((recipe: RecipeRow, isFavorited: boolean) => {
     if (isFavorited) {
@@ -109,17 +129,31 @@ export default function CollectionPage() {
           </p>
         </div>
       ) : (
-        <div className="cookbook-page-recipe-cards-container">
-          {recipes.map((recipe) => (
-            <CookbookPageRecipeCard
-              key={recipe.id}
-              recipeData={recipe}
-              onSelectRecipe={(r) => setSelectedRecipeId(r.id)}
-              isHearted={favoriteIds.has(recipe.recipe_id)}
-              onFavoriteChange={handleFavoriteChange}
-            />
-          ))}
-        </div>
+        <>
+          <div className="cookbook-page-recipe-cards-container">
+            {recipes.map((recipe) => (
+              <CookbookPageRecipeCard
+                key={recipe.id}
+                recipeData={recipe}
+                onSelectRecipe={(r) => setSelectedRecipeId(r.id)}
+                isHearted={favoriteIds.has(recipe.recipe_id)}
+                onFavoriteChange={handleFavoriteChange}
+              />
+            ))}
+          </div>
+          {hasMore ? (
+            <div style={{ display: "flex", justifyContent: "center", margin: "1.5rem 0" }}>
+              <button
+                type="button"
+                className="back-bttn"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+              >
+                {loadingMore ? "Loading…" : "Load more"}
+              </button>
+            </div>
+          ) : null}
+        </>
       )}
       {selectedRecipeId && (() => {
         const recipe = recipes.find((r) => r.id === selectedRecipeId);

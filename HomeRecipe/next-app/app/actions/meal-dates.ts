@@ -1,23 +1,38 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
-import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
+import { RECIPE_LIST_COLUMNS } from "@/lib/recipe-select";
 import { createClient } from "@/utils/supabase/server";
+
+/** Bound calendar payload: past 2 months through next 4 months. */
+function mealDateWindowIso(): { from: string; to: string } {
+  const from = new Date();
+  from.setUTCMonth(from.getUTCMonth() - 2);
+  const to = new Date();
+  to.setUTCMonth(to.getUTCMonth() + 4);
+  return {
+    from: from.toISOString().slice(0, 10),
+    to: to.toISOString().slice(0, 10),
+  };
+}
 
 export async function getMealDates() {
   const { userId } = await auth();
   if (!userId) return { error: "Unauthorized", data: [] };
 
   const supabase = await createClient();
+  const { from, to } = mealDateWindowIso();
   const { data: mealDates, error } = await supabase
     .from("meal_dates")
     .select(`
       id,
       event_id,
       date,
-      meal_date_recipes (recipe_id, recipes (${RECIPE_WITH_NUTRITION}))
+      meal_date_recipes (recipe_id, recipes (${RECIPE_LIST_COLUMNS}))
     `)
     .eq("user_id", userId)
+    .gte("date", from)
+    .lte("date", to)
     .order("date");
 
   if (error) return { error: error.message, data: [] };

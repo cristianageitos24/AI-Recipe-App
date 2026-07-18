@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { addRecipeToFolder } from "@/app/actions/folders";
-import { fetchCookbooksData, invalidateCookbooksData } from "@/lib/cookbooks-cache";
-import { invalidateFolderPageData } from "@/lib/folder-page-prefetch";
+import { listFolderNames, addRecipeToFolder } from "@/app/actions/folders";
 import { toRecipePayload } from "@/lib/processRecipeData";
 import type { ProcessedRecipe } from "@/lib/processRecipeData";
 import "@/app/styling/SaveToFolderButton.css";
@@ -39,18 +37,14 @@ export function SaveToFolderButton({ folders: initialFolders, recipeData }: Save
     if (initialFolders.length > 0) {
       setFolders(initialFolders);
     } else {
-      fetchCookbooksData().then((res) => {
-        if (res.data?.folders) setFolders(res.data.folders);
+      listFolderNames().then((res) => {
+        if (res.data) setFolders(res.data);
       });
     }
   }, [initialFolders.length, initialFolders]);
 
   async function handleCookbookClick(cookbookName: string) {
-    const res = await addRecipeToFolder(cookbookName, toRecipePayload(recipeData));
-    if (!res.error) {
-      invalidateCookbooksData();
-      invalidateFolderPageData(cookbookName);
-    }
+    await addRecipeToFolder(cookbookName, toRecipePayload(recipeData));
     setIsOpen(false);
   }
 

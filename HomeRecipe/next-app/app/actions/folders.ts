@@ -4,8 +4,9 @@ import { auth } from "@clerk/nextjs/server";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import { trashListCutoffIso } from "@/lib/trash-retention";
 import type { TrashActionResult } from "@/lib/trash-result";
-import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
+import { RECIPE_FOLDER_COLUMNS, RECIPE_LIST_COLUMNS } from "@/lib/recipe-select";
 import type { RecipePayload } from "@/lib/types";
+import { compressImageLossless } from "@/lib/compress-image";
 
 const COOKBOOK_COVER_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 
@@ -79,7 +80,7 @@ export async function getFolders() {
   const folderIds = folders.map((f: { id: string }) => f.id);
   const { data: folderRecipesRows, error: frError } = await supabase
     .from("folder_recipes")
-    .select(`folder_id, recipes (${RECIPE_WITH_NUTRITION})`)
+    .select(`folder_id, recipes (${RECIPE_LIST_COLUMNS})`)
     .in("folder_id", folderIds);
 
   if (frError) {
@@ -111,6 +112,29 @@ export async function getFolders() {
   };
 }
 
+/** Folder names only — for save-to-cookbook dropdowns (no recipe payloads). */
+export async function listFolderNames(): Promise<{
+  error: string | null;
+  data: string[];
+}> {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized", data: [] };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("folders")
+    .select("folder_name")
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .order("folder_name");
+
+  if (error) return { error: error.message, data: [] };
+  return {
+    error: null,
+    data: (data ?? []).map((f: { folder_name: string }) => f.folder_name),
+  };
+}
+
 export async function uploadCookbookCoverImage(formData: FormData): Promise<{
   error: string | null;
   url: string | null;
@@ -139,8 +163,12 @@ export async function uploadCookbookCoverImage(formData: FormData): Promise<{
   const storagePath = `users/${userId}/cookbook-covers/${Date.now()}-${labelSlug}.${ext}`;
 
   const svc = await createServiceRoleClient();
-  const { error: uploadError } = await svc.storage.from("recipe-covers").upload(storagePath, file, {
-    contentType: file.type || undefined,
+  const compressed = await compressImageLossless(
+    Buffer.from(await file.arrayBuffer()),
+    file.type || "image/png"
+  );
+  const { error: uploadError } = await svc.storage.from("recipe-covers").upload(storagePath, compressed.buffer, {
+    contentType: compressed.contentType,
     upsert: false,
   });
 
@@ -333,7 +361,7 @@ export async function getFolderRecipes(folderName: string) {
 
   const { data, error } = await supabase
     .from("folder_recipes")
-    .select(`recipes (${RECIPE_WITH_NUTRITION})`)
+    .select(`recipes (${RECIPE_FOLDER_COLUMNS})`)
     .eq("folder_id", folder.id);
   if (error) return { error: error.message, data: [] };
 

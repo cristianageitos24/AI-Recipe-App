@@ -17,6 +17,9 @@
     "worker:video": "tsx scripts/process-video-jobs.ts",
     "recipe-import-api": "cd ../services/recipe-url-import && python -m uvicorn app.main:app --host 127.0.0.1 --port 8000",
     "setup:storage": "tsx scripts/setup-storage.ts",
+    "compress:covers": "tsx scripts/compress-recipe-covers.ts",
+    "export:legacy-archive": "tsx scripts/export-legacy-recipes-archive.ts",
+    "restore:legacy-archive": "tsx scripts/restore-legacy-recipes-archive.ts",
     "db:push": "supabase db push",
     "db:migrations": "supabase migration list"
   },
@@ -41,6 +44,7 @@
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "19.2.3",
     "sharp": "^0.34.5",
+    "stripe": "^22.3.2",
     "tesseract.js": "^5.1.0",
     "uuid": "^13.0.0"
   },
