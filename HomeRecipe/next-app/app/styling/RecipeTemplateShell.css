@@ -295,6 +295,106 @@
   box-shadow: 0 1px 2px var(--shadow-black-04);
 }
 
+.recipe-template-stat-card--locked {
+  position: relative;
+  width: 100%;
+  appearance: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.recipe-template-stat-card--locked:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--gray-200));
+  box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.12);
+  transform: translateY(-1px);
+}
+
+.recipe-template-stat-card--locked:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.recipe-template-stat-locked-content {
+  display: block;
+  filter: blur(5px);
+  user-select: none;
+}
+
+.recipe-template-stat-pro-badge {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.25);
+}
+
+.recipe-template-nutrition-locked {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 220px;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.recipe-template-nutrition-locked-content {
+  display: block;
+  filter: blur(6px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.recipe-template-nutrition-locked-overlay {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  appearance: none;
+  border: none;
+  background: color-mix(in srgb, var(--color-bg) 52%, transparent);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.recipe-template-nutrition-unlock {
+  position: absolute;
+  z-index: 1;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.24);
+}
+
+.recipe-template-nutrition-locked-overlay:hover .recipe-template-nutrition-unlock {
+  filter: brightness(0.94);
+}
+
+.recipe-template-nutrition-locked-overlay:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
 .recipe-template-stat-icon {
   display: flex;
   justify-content: center;

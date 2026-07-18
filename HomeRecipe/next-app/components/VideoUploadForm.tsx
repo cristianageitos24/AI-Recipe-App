@@ -261,7 +261,7 @@ export function VideoUploadForm({
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [copyHint, setCopyHint] = useState<string | null>(null);
   const [groceryFeedback, setGroceryFeedback] = useState<string | null>(null);
-  const [planningUpgradeOpen, setPlanningUpgradeOpen] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<"planning" | "nutrition" | null>(null);
   const [addAllBusy, setAddAllBusy] = useState(false);
   const copyHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -357,7 +357,7 @@ export function VideoUploadForm({
 
   const handleAddIngredient = useCallback(async (item: string) => {
     if (!entitlements.isPro) {
-      setPlanningUpgradeOpen(true);
+      setUpgradeReason("planning");
       return;
     }
     const res = await addGroceryItem(item);
@@ -373,7 +373,7 @@ export function VideoUploadForm({
 
   const handleAddAllIngredients = useCallback(async () => {
     if (!entitlements.isPro) {
-      setPlanningUpgradeOpen(true);
+      setUpgradeReason("planning");
       return;
     }
     if (!editedRecipe || addAllBusy) return;
@@ -729,6 +729,8 @@ export function VideoUploadForm({
               >
                 <RecipeTemplateShell
                   template={recipeTemplate}
+                  nutritionLocked={!entitlements.isPro}
+                  onNutritionLockedClick={() => setUpgradeReason("nutrition")}
                   draftTitle={{
                     value: editedRecipe.title,
                     onChange: (value) =>
@@ -1161,9 +1163,9 @@ export function VideoUploadForm({
         payload={saveModalOpen ? getPayloadFromEdited() : null}
       />
       <UpgradePrompt
-        open={planningUpgradeOpen}
-        reason="planning"
-        onClose={() => setPlanningUpgradeOpen(false)}
+        open={upgradeReason !== null}
+        reason={upgradeReason ?? "nutrition"}
+        onClose={() => setUpgradeReason(null)}
       />
     </motion.div>
   );

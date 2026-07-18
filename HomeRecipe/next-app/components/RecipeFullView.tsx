@@ -669,6 +669,8 @@ export function RecipeFullView({
       <RecipeTemplateShell
         template={template}
         onClose={onClose}
+        nutritionLocked={nutritionLocked}
+        onNutritionLockedClick={() => setUpgradeReason("nutrition")}
         favoriteSlot={favoriteSlot}
         cookbookActionSlot={cookbookActionSlot}
         mobileSaveSlot={
@@ -691,30 +693,14 @@ export function RecipeFullView({
         cookIngredientsPanel={cookIngredientsPanel}
         cookInstructionsPanel={cookInstructionsPanel}
         nutritionPanel={
-          nutritionLocked ? (
-            <div className="nutrition-locked-wrap">
-              {expiryLabel ? (
-                <span className="recipe-expiry-badge" style={{ margin: "0 0 8px" }}>
-                  {expiryLabel}
-                </span>
-              ) : null}
-              <div className="nutrition-locked-blur">{nutritionPanel}</div>
-              <div className="nutrition-locked-overlay">
-                <button type="button" onClick={() => setUpgradeReason("nutrition")}>
-                  Unlock macros on Pro
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              {expiryLabel ? (
-                <span className="recipe-expiry-badge" style={{ margin: "0 0 8px" }}>
-                  {expiryLabel}
-                </span>
-              ) : null}
-              {nutritionPanel}
-            </>
-          )
+          <>
+            {expiryLabel ? (
+              <span className="recipe-expiry-badge" style={{ margin: "0 0 8px" }}>
+                {expiryLabel}
+              </span>
+            ) : null}
+            {nutritionPanel}
+          </>
         }
         heroOverlay={heroOverlay}
         draftTitle={draftTitle}

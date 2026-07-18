@@ -17,6 +17,8 @@ export type RecipeTemplateShellProps = {
   cookIngredientsPanel: React.ReactNode;
   cookInstructionsPanel: React.ReactNode;
   nutritionPanel: React.ReactNode;
+  nutritionLocked?: boolean;
+  onNutritionLockedClick?: () => void;
   /** Optional sticky mobile CTA (e.g. full-width Save / Heart). */
   mobileSaveSlot?: React.ReactNode;
   /** Replaces the static title (e.g. video extraction draft). */
@@ -89,6 +91,50 @@ function macroText(n: number | null, suffix = "g"): string {
   return `${Number(n).toFixed(0)}${suffix}`;
 }
 
+type MacroStatCardProps = {
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+  title?: string;
+  locked: boolean;
+  onLockedClick?: () => void;
+};
+
+function MacroStatCard({
+  icon,
+  value,
+  label,
+  title,
+  locked,
+  onLockedClick,
+}: MacroStatCardProps) {
+  const content = (
+    <>
+      <div className="recipe-template-stat-icon">{icon}</div>
+      <div className="recipe-template-stat-value" title={title}>{value}</div>
+      <div className="recipe-template-stat-label">{label}</div>
+    </>
+  );
+
+  if (!locked) {
+    return <div className="recipe-template-stat-card">{content}</div>;
+  }
+
+  return (
+    <button
+      type="button"
+      className="recipe-template-stat-card recipe-template-stat-card--locked"
+      aria-label={`Unlock ${label} with Pro`}
+      onClick={onLockedClick}
+    >
+      <span className="recipe-template-stat-locked-content" aria-hidden>
+        {content}
+      </span>
+      <span className="recipe-template-stat-pro-badge" aria-hidden>Pro</span>
+    </button>
+  );
+}
+
 export function RecipeTemplateShell({
   template,
   onClose,
@@ -96,6 +142,8 @@ export function RecipeTemplateShell({
   cookIngredientsPanel,
   cookInstructionsPanel,
   nutritionPanel,
+  nutritionLocked = false,
+  onNutritionLockedClick,
   mobileSaveSlot,
   draftTitle,
   heroOverlay,
@@ -311,28 +359,35 @@ export function RecipeTemplateShell({
           </div>
 
           <div className="recipe-template-stats" aria-label="Recipe summary">
-            <div className="recipe-template-stat-card">
-              <div className="recipe-template-stat-icon"><IconFlame /></div>
-              <div className="recipe-template-stat-value" title={template.nutrition.caloriesTitle}>
-                {kcal}
-              </div>
-              <div className="recipe-template-stat-label">Calories</div>
-            </div>
-            <div className="recipe-template-stat-card">
-              <div className="recipe-template-stat-icon"><IconProtein /></div>
-              <div className="recipe-template-stat-value">{macroText(template.nutrition.proteinG)}</div>
-              <div className="recipe-template-stat-label">Protein</div>
-            </div>
-            <div className="recipe-template-stat-card">
-              <div className="recipe-template-stat-icon"><IconCarb /></div>
-              <div className="recipe-template-stat-value">{macroText(template.nutrition.carbG)}</div>
-              <div className="recipe-template-stat-label">Carbs</div>
-            </div>
-            <div className="recipe-template-stat-card">
-              <div className="recipe-template-stat-icon"><IconFat /></div>
-              <div className="recipe-template-stat-value">{macroText(template.nutrition.fatG)}</div>
-              <div className="recipe-template-stat-label">Fat</div>
-            </div>
+            <MacroStatCard
+              icon={<IconFlame />}
+              value={kcal}
+              label="Calories"
+              title={template.nutrition.caloriesTitle}
+              locked={nutritionLocked}
+              onLockedClick={onNutritionLockedClick}
+            />
+            <MacroStatCard
+              icon={<IconProtein />}
+              value={macroText(template.nutrition.proteinG)}
+              label="Protein"
+              locked={nutritionLocked}
+              onLockedClick={onNutritionLockedClick}
+            />
+            <MacroStatCard
+              icon={<IconCarb />}
+              value={macroText(template.nutrition.carbG)}
+              label="Carbs"
+              locked={nutritionLocked}
+              onLockedClick={onNutritionLockedClick}
+            />
+            <MacroStatCard
+              icon={<IconFat />}
+              value={macroText(template.nutrition.fatG)}
+              label="Fat"
+              locked={nutritionLocked}
+              onLockedClick={onNutritionLockedClick}
+            />
             <div className="recipe-template-stat-card">
               <div className="recipe-template-stat-icon"><IconClock /></div>
               <div className="recipe-template-stat-value">
@@ -384,7 +439,27 @@ export function RecipeTemplateShell({
           </div>
         )}
         {tab === "nutrition" && (
-          <div className="recipe-template-panel-card">{nutritionPanel}</div>
+          <div className="recipe-template-panel-card">
+            {nutritionLocked ? (
+              <div className="recipe-template-nutrition-locked">
+                <span className="recipe-template-nutrition-locked-content" aria-hidden>
+                  {nutritionPanel}
+                </span>
+                <button
+                  type="button"
+                  className="recipe-template-nutrition-locked-overlay"
+                  aria-label="Unlock nutrition and macros with Pro"
+                  onClick={onNutritionLockedClick}
+                >
+                  <span className="recipe-template-nutrition-unlock">
+                    Unlock nutrition on Pro
+                  </span>
+                </button>
+              </div>
+            ) : (
+              nutritionPanel
+            )}
+          </div>
         )}
       </div>
 
