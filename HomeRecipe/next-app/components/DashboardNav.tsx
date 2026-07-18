@@ -86,15 +86,15 @@ export function DashboardNav() {
                   {locked ? (
                     <button
                       type="button"
-                      className="nav-premium-button"
+                      className="tab-square nav-premium-button"
                       aria-label={`${label} — Pro feature`}
                       onClick={() => setUpgradeOpen(true)}
                     >
                       <Image src={icon} alt="" width={15} height={15} />
-                      <span className="nav-premium-lock" aria-hidden>
-                        🔒
+                      <span className="tab-tooltip">
+                        {label}
+                        <span className="nav-premium-tag">Pro</span>
                       </span>
-                      <span className="tab-tooltip">{label} · Pro</span>
                     </button>
                   ) : (
                     <Link href={href} className="tab-square">
