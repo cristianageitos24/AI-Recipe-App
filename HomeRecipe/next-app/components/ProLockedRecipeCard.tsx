@@ -7,6 +7,8 @@ type Props = {
   onUnlock: () => void;
 };
 
+const FALLBACK_IMAGE = "/images/recipe-placeholder.png";
+
 export function ProLockedRecipeCard({ recipe, onUnlock }: Props) {
   return (
     <button
@@ -16,10 +18,17 @@ export function ProLockedRecipeCard({ recipe, onUnlock }: Props) {
       aria-label={`Pro recipe ${recipe.recipe_label} — upgrade to unlock`}
     >
       <div className="pro-locked-card-media">
-        {recipe.image_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={recipe.image_url} alt="" />
-        ) : null}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={recipe.image_url || FALLBACK_IMAGE}
+          alt=""
+          onError={(e) => {
+            const img = e.currentTarget;
+            if (!img.src.endsWith(FALLBACK_IMAGE)) {
+              img.src = FALLBACK_IMAGE;
+            }
+          }}
+        />
         <div className="pro-locked-card-overlay">
           <span aria-hidden>🔒</span>
           <span>Pro library</span>
