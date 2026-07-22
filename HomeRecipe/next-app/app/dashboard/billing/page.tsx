@@ -3,9 +3,9 @@ import { redirect } from "next/navigation";
 import { ensureProfile } from "@/app/actions/profiles";
 import { getProfileBilling } from "@/lib/billing";
 import { isProSubscriptionStatus } from "@/lib/stripe";
-import { FREE_EXTRACTION_LIMIT, FREE_RECIPE_TTL_DAYS } from "@/lib/entitlements";
 import { BillingActions } from "@/components/BillingActions";
 import { CheckoutSuccessPoller } from "@/components/CheckoutSuccessPoller";
+import { PlanCompareCards } from "@/components/PlanCompareCards";
 import "@/app/styling/BillingPage.css";
 
 type SearchParams = Promise<{ checkout?: string }>;
@@ -56,23 +56,14 @@ export default async function BillingPage({
         ) : null}
       </section>
 
-      <section aria-labelledby="billing-compare-heading">
+      <section
+        className="billing-compare"
+        aria-labelledby="billing-compare-heading"
+      >
         <h2 id="billing-compare-heading" className="billing-h2">
           What you get
         </h2>
-        <ul className="billing-list">
-          <li>
-            <strong>Free:</strong> your own manual and extracted recipes only (
-            {FREE_EXTRACTION_LIMIT} extractions/month). Recipes expire after{" "}
-            {FREE_RECIPE_TTL_DAYS} days. Catalog, macros, meal calendar, and
-            grocery list stay locked.
-          </li>
-          <li>
-            <strong>Pro ($1.99/mo or $20/yr):</strong> full recipe library, web
-            search, full nutrients &amp; macros, unlimited extractions, recipes
-            never expire, plus meal planning and grocery lists.
-          </li>
-        </ul>
+        <PlanCompareCards mode="static" emphasizePro={!isPro} />
         <p className="billing-muted">
           Tax is calculated at Checkout by Stripe Managed Payments based on your
           billing address — we never invent tax rates in the app.

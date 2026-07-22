@@ -2,7 +2,12 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
-import type { PlanLimitReason } from "@/lib/entitlements-constants";
+import {
+  FREE_EXTRACTION_LIMIT,
+  FREE_RECIPE_TTL_DAYS,
+  type PlanLimitReason,
+} from "@/lib/entitlements-constants";
+import { PlanCompareCards } from "@/components/PlanCompareCards";
 import "@/app/styling/UpgradePrompt.css";
 
 const COPY: Record<
@@ -19,11 +24,11 @@ const COPY: Record<
   },
   extractions: {
     title: "You've used your free extractions",
-    body: "Free includes 3 recipe extractions per month. Upgrade for unlimited URL and video imports.",
+    body: `Free includes ${FREE_EXTRACTION_LIMIT} recipe extractions per month. Upgrade for unlimited URL and video imports.`,
   },
   expiry: {
     title: "This recipe expired",
-    body: "Free recipes last 30 days. Upgrade to Pro to keep your recipes forever.",
+    body: `Free recipes last ${FREE_RECIPE_TTL_DAYS} days. Upgrade to Pro to keep your recipes forever.`,
   },
   planning: {
     title: "Unlock meal planning",
@@ -89,7 +94,7 @@ export function UpgradePrompt({ open, reason, onClose }: Props) {
       onClick={onClose}
     >
       <div
-        className="upgrade-prompt-dialog"
+        className="upgrade-prompt-dialog upgrade-prompt-dialog--compare"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -104,23 +109,16 @@ export function UpgradePrompt({ open, reason, onClose }: Props) {
             {error}
           </p>
         ) : null}
-        <div className="upgrade-prompt-actions">
-          <button
-            type="button"
-            className="upgrade-prompt-btn upgrade-prompt-btn-primary"
-            disabled={loading !== null}
-            onClick={() => void startCheckout("month")}
-          >
-            {loading === "month" ? "Redirecting…" : "Upgrade — $1.99/mo"}
-          </button>
-          <button
-            type="button"
-            className="upgrade-prompt-btn upgrade-prompt-btn-secondary"
-            disabled={loading !== null}
-            onClick={() => void startCheckout("year")}
-          >
-            {loading === "year" ? "Redirecting…" : "Upgrade — $20/yr"}
-          </button>
+
+        <PlanCompareCards
+          mode="interactive"
+          loading={loading}
+          onStayFree={onClose}
+          onCheckoutMonth={() => void startCheckout("month")}
+          onCheckoutYear={() => void startCheckout("year")}
+        />
+
+        <div className="upgrade-prompt-footer-row">
           <button
             ref={closeRef}
             type="button"
@@ -130,12 +128,12 @@ export function UpgradePrompt({ open, reason, onClose }: Props) {
           >
             Maybe later
           </button>
+          <p className="upgrade-prompt-footer">
+            <Link href="/dashboard/billing" onClick={onClose}>
+              View billing details
+            </Link>
+          </p>
         </div>
-        <p className="upgrade-prompt-footer">
-          <Link href="/dashboard/billing" onClick={onClose}>
-            Compare plans on Billing
-          </Link>
-        </p>
       </div>
     </div>
   );

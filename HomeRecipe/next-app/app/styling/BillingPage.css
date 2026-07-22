@@ -1,5 +1,5 @@
 .billing-page {
-  max-width: 40rem;
+  max-width: 44rem;
   margin: 0 auto;
   padding: 1.5rem 1rem 3rem;
 }
@@ -42,6 +42,14 @@
 
 .billing-list li + li {
   margin-top: 0.35rem;
+}
+
+.billing-compare {
+  margin-bottom: 0.5rem;
+}
+
+.billing-compare .plan-compare-grid {
+  margin-top: 0.75rem;
 }
 
 .billing-banner {
