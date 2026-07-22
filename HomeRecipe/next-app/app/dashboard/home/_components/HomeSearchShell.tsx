@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { RecipeListCard } from "@/components/RecipeListCard";
+import { ProPill } from "@/components/ProPill";
 import type { RecipeRow } from "@/lib/types";
 import type { useHomeSearch } from "../_hooks/useHomeSearch";
 
@@ -55,9 +56,12 @@ export function HomeSearchShell({
                 ? "Recipe name"
                 : mode === "ingredients"
                   ? "Ingredients"
-                  : webSearchLocked
-                    ? "Web (Pro)"
-                    : "Web"}
+                  : (
+                    <>
+                      Web
+                      {webSearchLocked ? <ProPill /> : null}
+                    </>
+                  )}
             </button>
           ))}
         </div>

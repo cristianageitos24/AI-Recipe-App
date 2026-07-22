@@ -8,6 +8,7 @@ import { getCollectionBySlug } from "@/lib/collections";
 import { CookbookPageRecipeCard } from "@/components/CookbookPageRecipeCard";
 import { RecipeFullView } from "@/components/RecipeFullView";
 import { ProLockedRecipeCard } from "@/components/ProLockedRecipeCard";
+import { ProPill } from "@/components/ProPill";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useEntitlements } from "@/components/EntitlementsProvider";
 import type { RecipeRow } from "@/lib/types";
@@ -118,9 +119,9 @@ export default function CollectionPage() {
             strokeLinejoin="round"
           />
         </svg>
-        <span className="folder-bttn" style={{ cursor: "default" }}>
+        <span className="folder-bttn pro-pill-inline" style={{ cursor: "default" }}>
           {collection.displayName}
-          {locked ? " (Pro)" : ""}
+          {locked ? <ProPill /> : null}
         </span>
       </div>
       {isLoading ? (
@@ -139,7 +140,7 @@ export default function CollectionPage() {
       ) : locked ? (
         <>
           <p className="home-section-caption" style={{ marginBottom: "0.75rem" }}>
-            This collection is part of the Pro library. Tap a card to upgrade.
+            This collection is part of the Recipe Library. Tap a card to upgrade.
           </p>
           <div className="pro-locked-strip">
             {recipes.map((recipe) => (

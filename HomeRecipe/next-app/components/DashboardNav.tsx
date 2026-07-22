@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { Playfair_Display } from "next/font/google";
 import { useState } from "react";
 import { useEntitlements } from "@/components/EntitlementsProvider";
+import { ProPill } from "@/components/ProPill";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 
 const playfairDisplay = Playfair_Display({
@@ -93,7 +94,7 @@ export function DashboardNav() {
                       <Image src={icon} alt="" width={15} height={15} />
                       <span className="tab-tooltip">
                         {label}
-                        <span className="nav-premium-tag">Pro</span>
+                        <ProPill />
                       </span>
                     </button>
                   ) : (

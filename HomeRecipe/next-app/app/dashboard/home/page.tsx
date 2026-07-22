@@ -9,6 +9,7 @@ import { RecipeFullView } from "@/components/RecipeFullView";
 import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
 import { FreePlanBanner } from "@/components/FreePlanBanner";
 import { ProLockedRecipeCard } from "@/components/ProLockedRecipeCard";
+import { ProPill } from "@/components/ProPill";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useEntitlements } from "@/components/EntitlementsProvider";
 import type { PlanLimitReason } from "@/lib/entitlements-constants";
@@ -104,7 +105,10 @@ export default function DashboardHomePage() {
 
         {!entitlements.isPro && suggestedRecipes.length > 0 ? (
           <section className="home-surface-card" style={{ marginBottom: "1rem", padding: "1rem" }}>
-            <h2 className="home-section-title">Pro library</h2>
+            <h2 className="home-section-title pro-pill-inline">
+              Recipe Library
+              <ProPill />
+            </h2>
             <p className="home-section-caption">
               Upgrade to open the full catalog. Tap a card to unlock.
             </p>

@@ -1,5 +1,6 @@
 "use client";
 
+import { ProPill } from "@/components/ProPill";
 import type { RecipeRow } from "@/lib/types";
 
 type Props = {
@@ -15,7 +16,7 @@ export function ProLockedRecipeCard({ recipe, onUnlock }: Props) {
       type="button"
       className="pro-locked-card"
       onClick={onUnlock}
-      aria-label={`Pro recipe ${recipe.recipe_label} — upgrade to unlock`}
+      aria-label={`Recipe Library recipe ${recipe.recipe_label} — upgrade to unlock`}
     >
       <div className="pro-locked-card-media">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -31,7 +32,10 @@ export function ProLockedRecipeCard({ recipe, onUnlock }: Props) {
         />
         <div className="pro-locked-card-overlay">
           <span aria-hidden>🔒</span>
-          <span>Pro library</span>
+          <span className="pro-locked-card-overlay-label">
+            Recipe Library
+            <ProPill />
+          </span>
         </div>
       </div>
       <div className="pro-locked-card-label">

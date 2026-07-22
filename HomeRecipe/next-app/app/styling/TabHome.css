@@ -21,6 +21,10 @@
   margin: 0;
 }
 
+.home-section-title.pro-pill-inline {
+  display: inline-flex;
+}
+
 .home-section-caption {
   margin: 0 0 var(--space-2);
   color: var(--gray-600);
@@ -80,6 +84,9 @@
 }
 
 .search-mode-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   min-height: 28px;
   padding: 0 12px;
   white-space: nowrap;

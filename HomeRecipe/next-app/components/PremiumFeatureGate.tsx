@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { useEntitlements } from "@/components/EntitlementsProvider";
+import { ProPill } from "@/components/ProPill";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import "@/app/styling/UpgradePrompt.css";
 
@@ -35,8 +36,10 @@ export function PremiumFeatureGate({
         <span className="premium-feature-lock" aria-hidden>
           🔒
         </span>
-        <p className="premium-feature-eyebrow">Pro feature</p>
-        <h1 id="premium-feature-title">{featureName}</h1>
+        <h1 id="premium-feature-title" className="pro-pill-inline premium-feature-title">
+          {featureName}
+          <ProPill />
+        </h1>
         <p>{description}</p>
         <button type="button" onClick={() => setUpgradeOpen(true)}>
           Upgrade to Pro

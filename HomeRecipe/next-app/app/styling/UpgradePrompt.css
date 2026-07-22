@@ -129,6 +129,12 @@
   font-size: 0.9rem;
 }
 
+.pro-locked-card-overlay-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .pro-locked-card-label {
   padding: 0.65rem 0.75rem 0.85rem;
 }
@@ -264,21 +270,14 @@
   font-size: 1.75rem;
 }
 
-.premium-feature-eyebrow {
-  margin: 0 0 0.35rem;
-  color: #dc2100;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.premium-feature-card h1 {
+.premium-feature-card h1,
+.premium-feature-title {
   margin: 0;
   font-size: 1.65rem;
+  justify-content: center;
 }
 
-.premium-feature-card > p:not(.premium-feature-eyebrow) {
+.premium-feature-card > p {
   margin: 0.75rem auto 1.25rem;
   color: color-mix(in srgb, CanvasText 68%, transparent);
   line-height: 1.5;
@@ -317,9 +316,11 @@
   gap: 8px;
 }
 
-.nav-premium-tag {
+/* Soft red PRO pill — shared marker for premium features */
+.pro-pill {
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
   padding: 2px 7px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--accent) 12%, var(--color-bg));
@@ -331,8 +332,14 @@
   line-height: 1.2;
 }
 
+.pro-pill-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 @media screen and (max-width: 900px) {
-  .nav-premium-tag,
+  .dock-tabs .nav-premium-button .pro-pill,
   .dock-tabs .nav-premium-button .tab-tooltip {
     display: none;
   }

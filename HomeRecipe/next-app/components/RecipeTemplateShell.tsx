@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { ProPill } from "@/components/ProPill";
 import type { RecipeTemplateData } from "@/lib/recipe-template";
 import {
   getRecipeSourceColumnAriaLabel,
   getRecipeSourceLinkBase,
 } from "@/lib/recipeSourceLink";
 import "@/app/styling/RecipeTemplateShell.css";
+import "@/app/styling/UpgradePrompt.css";
 
 export type RecipeTemplateShellProps = {
   template: RecipeTemplateData;
@@ -130,7 +132,9 @@ function MacroStatCard({
       <span className="recipe-template-stat-locked-content" aria-hidden>
         {content}
       </span>
-      <span className="recipe-template-stat-pro-badge" aria-hidden>Pro</span>
+      <span className="recipe-template-stat-pro-badge" aria-hidden>
+        <ProPill />
+      </span>
     </button>
   );
 }
@@ -451,8 +455,9 @@ export function RecipeTemplateShell({
                   aria-label="Unlock nutrition and macros with Pro"
                   onClick={onNutritionLockedClick}
                 >
-                  <span className="recipe-template-nutrition-unlock">
-                    Unlock nutrition on Pro
+                  <span className="recipe-template-nutrition-unlock pro-pill-inline">
+                    Unlock nutrition
+                    <ProPill />
                   </span>
                 </button>
               </div>
