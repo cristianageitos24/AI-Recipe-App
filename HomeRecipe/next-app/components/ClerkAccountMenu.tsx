@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 import { useEntitlements } from "@/components/EntitlementsProvider";
+import { ProPill } from "@/components/ProPill";
 import "@/app/styling/UpgradePrompt.css";
 
 function GearIcon() {
@@ -68,18 +70,25 @@ function BillingIcon() {
   );
 }
 
-export function ClerkAccountMenu() {
+type Props = {
+  displayName: string;
+};
+
+export function ClerkAccountMenu({ displayName }: Props) {
   const { entitlements } = useEntitlements();
 
   return (
     <span className="clerk-account-menu-wrap">
-      <span
-        className={`plan-badge-pill${entitlements.isPro ? " plan-badge-pill--pro" : ""}`}
-        title={entitlements.isPro ? "Pro plan" : "Free plan"}
+      <UserButton
+        appearance={{
+          elements: {
+            avatarBox: {
+              width: "2.5rem",
+              height: "2.5rem",
+            },
+          },
+        }}
       >
-        {entitlements.isPro ? "Pro" : "Free"}
-      </span>
-      <UserButton>
         <UserButton.MenuItems>
           <UserButton.Link label="Settings" labelIcon={<GearIcon />} href="/dashboard/settings" />
           <UserButton.Link
@@ -90,6 +99,22 @@ export function ClerkAccountMenu() {
           <UserButton.Link label="Trash" labelIcon={<TrashIcon />} href="/dashboard/settings#trash" />
         </UserButton.MenuItems>
       </UserButton>
+      <span className="clerk-account-menu-meta">
+        <span className="signedin-label">{displayName}</span>
+        {entitlements.isPro ? (
+          <span className="plan-badge-slot" title="Pro plan">
+            <ProPill />
+          </span>
+        ) : (
+          <Link
+            href="/dashboard/billing"
+            className="plan-upgrade-chip"
+            aria-label="Upgrade to Pro"
+          >
+            Upgrade to Pro
+          </Link>
+        )}
+      </span>
     </span>
   );
 }

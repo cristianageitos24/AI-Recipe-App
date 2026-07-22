@@ -475,8 +475,8 @@
   width: 100%;
   max-width: 90%;
   border: 1px solid #e3e8f0;
-  border-radius: 14px;
-  padding: 12px;
+  border-radius: 12px;
+  padding: 8px 10px;
   box-sizing: border-box;
 }
 
@@ -513,6 +513,19 @@
   .dashboard-brand span:last-child,
   .dock-tabs .tab-tooltip,
   .account-nav .signedin-label {
+    display: none;
+  }
+
+  .account-nav .plan-upgrade-chip {
+    font-size: 9px;
+    padding: 2px 6px;
+  }
+
+  .account-nav .clerk-account-menu-wrap {
+    justify-content: center;
+  }
+
+  .account-nav .clerk-account-menu-meta {
     display: none;
   }
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { Playfair_Display } from "next/font/google";
 import { useState } from "react";
 import { useEntitlements } from "@/components/EntitlementsProvider";
@@ -59,8 +60,13 @@ const navItems = [
 
 export function DashboardNav() {
   const pathname = usePathname();
+  const { user } = useUser();
   const { entitlements } = useEntitlements();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const displayName =
+    user?.firstName?.trim() ||
+    user?.fullName?.trim() ||
+    "Account";
 
   return (
     <>
@@ -110,8 +116,7 @@ export function DashboardNav() {
         </nav>
         <div className="account-nav">
           <div className="loggedin-username-label">
-            <ClerkAccountMenu />
-            <span className="signedin-label">Account</span>
+            <ClerkAccountMenu displayName={displayName} />
           </div>
         </div>
       </header>

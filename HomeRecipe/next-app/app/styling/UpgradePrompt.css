@@ -390,6 +390,71 @@
   color: #dc2100;
 }
 
+.clerk-account-menu-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+.clerk-account-menu-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  flex: 0 1 auto;
+  text-align: center;
+}
+
+.clerk-account-menu-wrap .signedin-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #102033;
+}
+
+.plan-badge-slot {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.plan-upgrade-chip {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  max-width: 100%;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent, #dc2100) 12%, var(--color-bg, #fff));
+  color: var(--accent, #dc2100);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.plan-upgrade-chip:hover {
+  background: color-mix(in srgb, var(--accent, #dc2100) 18%, var(--color-bg, #fff));
+}
+
+.plan-upgrade-chip:focus-visible {
+  outline: 2px solid var(--accent, #dc2100);
+  outline-offset: 2px;
+}
+
 .premium-feature-page {
   display: grid;
   min-height: min(70vh, 42rem);
