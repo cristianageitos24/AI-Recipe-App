@@ -393,11 +393,26 @@
 .clerk-account-menu-wrap {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   flex-wrap: nowrap;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   min-width: 0;
+  position: relative;
+}
+
+.account-menu-hitarea {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
 }
 
 .clerk-account-menu-meta {
@@ -407,8 +422,12 @@
   justify-content: center;
   gap: 4px;
   min-width: 0;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   text-align: center;
+  pointer-events: none;
+  /* Bias content slightly left within the remaining space */
+  padding-right: 12px;
+  box-sizing: border-box;
 }
 
 .clerk-account-menu-wrap .signedin-label {
@@ -429,6 +448,8 @@
 }
 
 .plan-upgrade-chip {
+  position: relative;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
@@ -443,6 +464,8 @@
   line-height: 1.2;
   text-decoration: none;
   white-space: nowrap;
+  pointer-events: auto;
+  cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
 

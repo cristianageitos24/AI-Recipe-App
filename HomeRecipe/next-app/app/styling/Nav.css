@@ -360,11 +360,12 @@
   z-index: 5000;
   display: flex;
   flex-direction: column;
-  padding: 42px 0 24px;
+  padding: 42px 0 20px;
   background: #ffffff;
   border-right: 1px solid #e8ecf3;
   box-sizing: border-box;
   pointer-events: auto;
+  overflow: hidden;
 }
 
 .dashboard-brand {
@@ -392,6 +393,9 @@
   transform: none;
   pointer-events: auto;
   width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .dock-tabs {
@@ -468,16 +472,35 @@
 }
 
 .account-nav {
-  position: static;
-  margin-top: auto;
+  position: relative;
+  top: auto;
+  right: auto;
+  left: auto;
+  bottom: auto;
+  z-index: auto;
   margin-left: auto;
   margin-right: auto;
   width: 100%;
   max-width: 90%;
   border: 1px solid #e3e8f0;
   border-radius: 12px;
-  padding: 8px 10px;
+  padding: 8px 10px 8px 8px;
   box-sizing: border-box;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.account-nav--menu:hover {
+  background: color-mix(in srgb, CanvasText 3%, #fff);
+  border-color: color-mix(in srgb, #e3e8f0 70%, var(--accent, #dc2100));
+}
+
+.account-nav-slot {
+  flex: 0 0 auto;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 4px;
+  margin-top: 0;
 }
 
 .loggedin-username-label {

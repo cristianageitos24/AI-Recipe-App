@@ -114,10 +114,8 @@ export function DashboardNav() {
             })}
           </ul>
         </nav>
-        <div className="account-nav">
-          <div className="loggedin-username-label">
-            <ClerkAccountMenu displayName={displayName} />
-          </div>
+        <div className="account-nav-slot">
+          <ClerkAccountMenu displayName={displayName} />
         </div>
       </header>
       <UpgradePrompt
