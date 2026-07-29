@@ -583,8 +583,15 @@ function GroceryPageContent() {
                   </div>
                 ))}
               </div>
-              <button type="button" className="grocery-instacart-btn">
-                Order Instacart
+              <button
+                type="button"
+                className="grocery-instacart-btn grocery-instacart-btn--coming-soon"
+                disabled
+                aria-disabled="true"
+                title="Instacart ordering is coming soon"
+              >
+                <span>Order with Instacart</span>
+                <span className="grocery-coming-soon-badge">Coming soon</span>
               </button>
               <button
                 type="button"
