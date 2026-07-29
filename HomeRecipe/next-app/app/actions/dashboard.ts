@@ -1,12 +1,12 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
 import type { RecipeRow } from "@/lib/types";
 import { getFavorites } from "@/app/actions/favorites";
 import { getFolders } from "@/app/actions/folders";
 import { getMealDates } from "@/app/actions/meal-dates";
 import { getGroceryTrips } from "@/app/actions/grocery-trips";
 import { getSuggestedRecipes } from "@/app/actions/search";
+import { getAuthUserId } from "@/lib/auth";
 import { isUserPro } from "@/lib/entitlements";
 import { requirePremiumPlanningAccess } from "@/lib/premium-access";
 
@@ -16,7 +16,7 @@ type FolderResults = {
 };
 
 export async function getHomeBootstrap() {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   const pro = userId ? await isUserPro(userId) : false;
   const [favRes, folderRes, mealRes] = await Promise.all([
     getFavorites(),

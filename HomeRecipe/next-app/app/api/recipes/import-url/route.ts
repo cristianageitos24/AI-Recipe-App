@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { requireAuthUserIdForApi } from "@/lib/auth";
 import { assertCanExtract } from "@/lib/entitlements";
 
 const IMPORT_API_BASE =
@@ -7,10 +7,9 @@ const IMPORT_API_BASE =
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const authResult = await requireAuthUserIdForApi();
+    if (authResult.response) return authResult.response;
+    const { userId } = authResult;
 
     const extractGate = await assertCanExtract(userId);
     if (!extractGate.ok) {

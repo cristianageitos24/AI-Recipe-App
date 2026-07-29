@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUserId } from "@/lib/auth";
 import {
   syncRecipeNutritionForRecipe,
   type SyncRecipeNutritionOptions,
@@ -69,7 +69,7 @@ export async function pickRecipeIngredientFdc(input: {
   lineIndex: number;
   fdcId: number;
 }): Promise<{ error: string | null }> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized" };
 
   const supabase = await createClient();
@@ -107,7 +107,7 @@ export async function getRecipeFull(
   code?: string;
   reason?: string;
 }> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized", data: null };
 
   const supabase = await createClient();
@@ -147,7 +147,7 @@ export async function getRecipeFull(
 }
 
 export async function softDeleteOwnedRecipe(recipeId: string): Promise<TrashActionResult> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { ok: false, reason: "forbidden" };
 
   const supabase = await createClient();
@@ -176,7 +176,7 @@ export async function softDeleteOwnedRecipe(recipeId: string): Promise<TrashActi
 }
 
 export async function restoreOwnedRecipe(recipeId: string): Promise<TrashActionResult> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { ok: false, reason: "forbidden" };
 
   const supabase = await createClient();
@@ -227,7 +227,7 @@ export async function getTrashedRecipes(): Promise<{
   error: string | null;
   data: TrashedRecipeRow[];
 }> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized", data: [] };
 
   const supabase = await createClient();
@@ -245,7 +245,7 @@ export async function getTrashedRecipes(): Promise<{
 }
 
 export async function getOrCreateRecipe(payload: RecipePayload) {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized", data: null };
 
   const isUserOwned =
@@ -327,7 +327,7 @@ export async function getOrCreateRecipe(payload: RecipePayload) {
 export async function createRecipeAndReturn(
   payload: RecipePayload
 ): Promise<{ error: string | null; data: RecipeRow | null }> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized", data: null };
 
   const res = await getOrCreateRecipe(payload);
@@ -359,7 +359,7 @@ export async function uploadManualRecipeImage(formData: FormData): Promise<{
   error: string | null;
   url: string | null;
 }> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized", url: null };
 
   const file = formData.get("image");

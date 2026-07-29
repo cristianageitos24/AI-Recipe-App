@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUserId } from "@/lib/auth";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import {
   RECIPE_LIST_COLUMNS,
@@ -22,7 +22,7 @@ function notExpiredFilter() {
 export async function getIngredientSuggestions(
   query: string
 ): Promise<{ error: string | null; data: string[] | null }> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized", data: null };
 
   const trimmed = query.trim();
@@ -60,7 +60,7 @@ export async function getIngredientSuggestions(
 export async function getSearchSuggestions(
   query: string
 ): Promise<{ error: string | null; data: SearchSuggestions | null }> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized", data: null };
 
   const trimmed = query.trim();
@@ -124,7 +124,7 @@ export async function getSearchSuggestions(
 export async function searchRecipes(
   query: string
 ): Promise<{ error: string | null; data: RecipeRow[] | null }> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized", data: null };
 
   const trimmed = query.trim();
@@ -165,7 +165,7 @@ export async function searchRecipes(
 export async function searchByIngredients(
   ingredients: string[]
 ): Promise<{ error: string | null; data: RecipeRow[] | null }> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized", data: null };
 
   const trimmed = ingredients.map((s) => s.trim()).filter(Boolean);
@@ -203,7 +203,7 @@ export async function searchByIngredients(
 export async function getSuggestedRecipes(
   excludeRecipeIds: string[] = []
 ): Promise<{ error: string | null; data: RecipeRow[] | null }> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized", data: null };
 
   const supabase = await createClient();

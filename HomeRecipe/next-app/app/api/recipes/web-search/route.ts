@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { requireAuthUserIdForApi } from "@/lib/auth";
 import { isUserPro, planLimitError } from "@/lib/entitlements";
 
 type TavilyResult = {
@@ -56,10 +56,9 @@ function sourceFromUrl(url: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const authResult = await requireAuthUserIdForApi();
+    if (authResult.response) return authResult.response;
+    const { userId } = authResult;
 
     if (!(await isUserPro(userId))) {
       return NextResponse.json(planLimitError("catalog"), { status: 403 });

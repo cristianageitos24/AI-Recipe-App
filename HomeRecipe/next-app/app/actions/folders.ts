@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUserId } from "@/lib/auth";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import { trashListCutoffIso } from "@/lib/trash-retention";
 import type { TrashActionResult } from "@/lib/trash-result";
@@ -50,7 +50,7 @@ function recipeRowNotTrashed(r: Record<string, unknown>): boolean {
 }
 
 export async function getFolders() {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized", data: emptyFoldersData() };
 
   const supabase = await createClient();
@@ -118,7 +118,7 @@ export async function listFolderNames(): Promise<{
   error: string | null;
   data: string[];
 }> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized", data: [] };
 
   const supabase = await createClient();
@@ -140,7 +140,7 @@ export async function uploadCookbookCoverImage(formData: FormData): Promise<{
   error: string | null;
   url: string | null;
 }> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized", url: null };
 
   const file = formData.get("image");
@@ -212,7 +212,7 @@ export async function uploadCookbookCoverImage(formData: FormData): Promise<{
 }
 
 export async function clearCookbookCoverImage(folderId: string) {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized" };
 
   const supabase = await createClient();
@@ -228,7 +228,7 @@ export async function clearCookbookCoverImage(folderId: string) {
 }
 
 export async function createFolder(folderName: string) {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized" };
 
   const supabase = await createClient();
@@ -245,7 +245,7 @@ export async function createFolder(folderName: string) {
 
 /** Rename an active folder by UUID (not by display name). */
 export async function renameFolder(folderId: string, newName: string) {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized" };
 
   const trimmed = newName.trim();
@@ -264,7 +264,7 @@ export async function renameFolder(folderId: string, newName: string) {
 }
 
 export async function softDeleteFolder(folderId: string): Promise<TrashActionResult> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { ok: false, reason: "forbidden" };
 
   const supabase = await createClient();
@@ -293,7 +293,7 @@ export async function softDeleteFolder(folderId: string): Promise<TrashActionRes
 }
 
 export async function restoreFolder(folderId: string): Promise<TrashActionResult> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { ok: false, reason: "forbidden" };
 
   const supabase = await createClient();
@@ -329,7 +329,7 @@ export async function getTrashedFolders(): Promise<{
   error: string | null;
   data: TrashedFolderRow[];
 }> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized", data: [] };
 
   const supabase = await createClient();
@@ -347,7 +347,7 @@ export async function getTrashedFolders(): Promise<{
 }
 
 export async function getFolderRecipes(folderName: string) {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized", data: [] };
 
   const supabase = await createClient();
@@ -377,7 +377,7 @@ export async function getActiveFolderMetaByName(folderName: string): Promise<{
   error: string | null;
   data: { id: string; folder_name: string } | null;
 }> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized", data: null };
 
   const supabase = await createClient();
@@ -397,7 +397,7 @@ export async function addRecipeToFolder(
   folderName: string,
   payload: RecipePayload | string
 ) {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized" };
 
   const supabase = await createClient();

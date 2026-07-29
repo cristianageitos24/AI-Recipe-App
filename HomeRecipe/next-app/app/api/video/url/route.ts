@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
+import { requireAuthUserIdForApi } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 import { ensureProfile } from "@/app/actions/profiles";
 import { assertCanExtract } from "@/lib/entitlements";
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const authResult = await requireAuthUserIdForApi();
+    if (authResult.response) return authResult.response;
+    const { userId } = authResult;
 
     const user = await currentUser();
     if (!user) {

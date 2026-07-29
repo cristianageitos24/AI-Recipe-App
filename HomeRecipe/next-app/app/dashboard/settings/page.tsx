@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
+import { requireAuthUserIdOrRedirect } from "@/lib/auth";
 import { getTrashedFolders } from "@/app/actions/folders";
 import { getTrashedRecipes } from "@/app/actions/recipes";
 import { getMyEntitlements } from "@/app/actions/entitlements";
@@ -56,8 +55,7 @@ function ChevronIcon() {
 }
 
 export default async function SettingsPage() {
-  const { userId } = await auth();
-  if (!userId) redirect("/signin");
+  await requireAuthUserIdOrRedirect();
 
   const [foldersRes, recipesRes, entitlementsRes] = await Promise.all([
     getTrashedFolders(),
