@@ -20,7 +20,7 @@ From the **`next-app`** directory (with Supabase CLI installed and project linke
    - App code uses `(await auth()).getToken()` (session token) in `utils/supabase/server.ts` — **not** JWT templates.
    - If inserts fail with **“new row violates row-level security policy”**, confirm Third-Party Auth is enabled and the Clerk domain matches. Do not add Supabase Auth session cookies or revive JWT templates.
 
-2. **Migrations** — **40** numbered files under `supabase/migrations/` (there is **no** `021_*`; the sequence jumps from `020_*` to `022_*`). They are the source of truth: FDC nutrition (`026+`), grocery tables (`027`), comments (`028`), `fdc_candidates` (`029`), legacy **`ingredients` removal (`030`)**, archive/alignment (`031`–`033`), FDC hourly quota (`034`–`035`), grocery item category (`036`), folder cover image URL (`037`), soft delete columns (`038`), trash purge + cron (`039`), **`040` drops `legacy_recipes_archive` after offline export**, and **`041` hardens `get_random_recipes`**. Apply via CLI or MCP as above. The SQL Editor is for one-off debugging only.
+2. **Migrations** — Numbered and timestamped files under `supabase/migrations/` (there is **no** `021_*`; the sequence jumps from `020_*` to `022_*`). They are the source of truth: FDC nutrition (`026+`), grocery tables (`027`), comments (`028`), `fdc_candidates` (`029`), legacy **`ingredients` removal (`030`)**, archive/alignment (`031`–`033`), FDC hourly quota (`034`–`035`), grocery item category (`036`), folder cover image URL (`037`), soft delete columns (`038`), trash purge + cron (`039`), **`040` drops `legacy_recipes_archive` after offline export**, **`041` hardens `get_random_recipes`**, and **`20260729214547` schedules meal calendar purge**. Apply via CLI or MCP as above. The SQL Editor is for one-off debugging only.
 
    Early files include: `001_initial_schema.sql` (base tables), `002_clerk_schema.sql`, `003_add_recipe_steps.sql`, `004_drop_django_legacy_tables.sql`, `005_enable_rls_on_app_tables.sql`, `006_drop_user_recipes.sql`, `007_ingredients_table.sql`, `008_recipes_search_indexes.sql`. Newer migrations extend the schema further; always apply the full chain on a fresh database.
 
@@ -35,6 +35,14 @@ From the **`next-app`** directory (with Supabase CLI installed and project linke
    ```
 
 4. **Trash purge (`038` + `039`)** — `038_soft_delete_trash.sql` adds `deleted_at` on `folders` and `recipes`. `039_trash_purge_cron.sql` defines `public.purge_trashed_rows()` and schedules it with **`pg_cron`** daily at **03:15 UTC** as job `purge_trashed_rows_daily`. Use the queries in §3 to confirm.
+
+5. **Meal calendar purge** — `20260729214547_purge_old_meal_dates_cron.sql` defines `public.purge_old_meal_dates()` and schedules it daily at **03:30 UTC** as job `purge_old_meal_dates_daily`. Deletes `meal_dates` older than **90 days** (`meal_date_recipes` cascade). Keep `lib/meal-calendar-retention.ts` in sync. Verify with:
+
+   ```sql
+   SELECT routine_name FROM information_schema.routines
+     WHERE routine_schema = 'public' AND routine_name = 'purge_old_meal_dates';
+   SELECT jobid, jobname, schedule, active FROM cron.job WHERE jobname = 'purge_old_meal_dates_daily';
+   ```
 
 ## Archive + wipe notes
 
