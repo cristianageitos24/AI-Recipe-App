@@ -1,6 +1,6 @@
 # Supabase setup
 
-This app uses **Clerk** for authentication and **Supabase** for the database. Clerk session tokens are passed to Supabase for RLS (Row Level Security).
+This app uses **Clerk** for authentication and **Supabase** for the database. Clerk **session tokens** are passed to Supabase via Third-Party Auth for RLS (Row Level Security).
 
 For the full auth/cookie model, login/logout, protected routes, and security notes, see **[AUTHENTICATION.md](../AUTHENTICATION.md)** in `next-app`.
 
@@ -13,10 +13,12 @@ From the **`next-app`** directory (with Supabase CLI installed and project linke
 
 ## Setup
 
-1. **Connect Clerk identity to Supabase RLS:**
-   - Preferred long-term: enable [Supabase Third-Party Auth with Clerk](https://supabase.com/docs/guides/auth/third-party/clerk) and pass Clerk **session tokens** via `accessToken` (see AUTHENTICATION.md).
-   - **Current working path (technical debt):** the Next.js server client still requests a Clerk **JWT template** (default name `supabase`, overridable with `CLERK_SUPABASE_JWT_TEMPLATE`) so `auth.jwt()->>'sub'` matches `recipes.user_id`. Supabase documents the JWT-template integration as **deprecated** — preserve it until you migrate; do not treat it as the preferred architecture.
-   - If inserts fail with **“new row violates row-level security policy”**, the template is missing/misnamed or Third-Party Auth is misconfigured. Fix the Clerk/Supabase bridge; do not add Supabase Auth session cookies to this app.
+1. **Connect Clerk to Supabase (Third-Party Auth — required):**
+   - In Clerk Dashboard → [Supabase integration](https://dashboard.clerk.com/setup/supabase) → **Activate** (adds `role: "authenticated"` to session tokens) → copy your **Clerk domain**.
+   - In Supabase Dashboard → **Authentication** → [Third-party auth](https://supabase.com/dashboard/project/_/auth/third-party) → **Add provider** → **Clerk** → paste the Clerk domain.
+   - Local stacks: `supabase/config.toml` already enables `[auth.third_party.clerk]` with this project’s Clerk domain.
+   - App code uses `(await auth()).getToken()` (session token) in `utils/supabase/server.ts` — **not** JWT templates.
+   - If inserts fail with **“new row violates row-level security policy”**, confirm Third-Party Auth is enabled and the Clerk domain matches. Do not add Supabase Auth session cookies or revive JWT templates.
 
 2. **Migrations** — **40** numbered files under `supabase/migrations/` (there is **no** `021_*`; the sequence jumps from `020_*` to `022_*`). They are the source of truth: FDC nutrition (`026+`), grocery tables (`027`), comments (`028`), `fdc_candidates` (`029`), legacy **`ingredients` removal (`030`)**, archive/alignment (`031`–`033`), FDC hourly quota (`034`–`035`), grocery item category (`036`), folder cover image URL (`037`), soft delete columns (`038`), trash purge + cron (`039`), **`040` drops `legacy_recipes_archive` after offline export**, and **`041` hardens `get_random_recipes`**. Apply via CLI or MCP as above. The SQL Editor is for one-off debugging only.
 

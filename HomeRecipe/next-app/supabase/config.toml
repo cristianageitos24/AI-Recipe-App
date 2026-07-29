@@ -337,10 +337,10 @@ enabled = false
 # user_pool_region = "us-east-1"
 
 # Use Clerk as a third-party provider alongside Supabase Auth.
+# Domain must match your Clerk Frontend API host (Clerk Dashboard → Supabase setup).
 [auth.third_party.clerk]
-enabled = false
-# Obtain from https://clerk.com/setup/supabase
-# domain = "example.clerk.accounts.dev"
+enabled = true
+domain = "selected-narwhal-27.clerk.accounts.dev"
 
 # OAuth server configuration
 [auth.oauth_server]

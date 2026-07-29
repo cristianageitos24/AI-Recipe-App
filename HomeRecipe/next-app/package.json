@@ -29,7 +29,6 @@
     "@fullcalendar/react": "^6.1.20",
     "@fullcalendar/timegrid": "^6.1.20",
     "@lottiefiles/dotlottie-react": "^0.18.1",
-    "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.93.3",
     "execa": "^9.5.2",
     "fluent-ffmpeg": "^2.1.3",
