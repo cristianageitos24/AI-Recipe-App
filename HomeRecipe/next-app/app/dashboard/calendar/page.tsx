@@ -24,6 +24,8 @@ import "@/app/styling/CalendarRecipeCard.css";
 import "@/app/styling/EventPopup.css";
 import "@/app/styling/EventSearchOptions.css";
 import "@/app/styling/RecipeFullView.css";
+import "@/app/styling/CookbookPageRecipeCard.css";
+import "@/app/styling/RecipeListCard.css";
 
 const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
@@ -219,8 +221,10 @@ function CalendarPageContent() {
   }
 
   function handleOpenUpcomingRecipe(event: CalendarEvent) {
-    if (!event.recipeUuid || event.eventType === "grocery") return;
-    setOpenRecipeUuid(event.recipeUuid);
+    if (event.eventType === "grocery") return;
+    const uuid = event.recipeUuid?.trim();
+    if (!uuid) return;
+    setOpenRecipeUuid(uuid);
   }
 
   function handleUpdateEvents() {
@@ -423,20 +427,19 @@ function CalendarPageContent() {
                           return (
                             <li key={event.eventID}>
                               <article className="calendar-upcoming-recipe-card">
-                                <div
+                                <button
+                                  type="button"
                                   className="calendar-upcoming-recipe-image"
                                   style={{
                                     backgroundImage: `url(${event.imageURL || "/images/recipe-placeholder.png"})`,
                                   }}
+                                  onClick={() => handleOpenUpcomingRecipe(event)}
+                                  aria-label={`Open recipe ${event.title}`}
                                 >
-                                  <button
-                                    type="button"
-                                    className="image-hover-bttn"
-                                    onClick={() => handleOpenUpcomingRecipe(event)}
-                                  >
-                                    <p>Open Recipe</p>
-                                  </button>
-                                </div>
+                                  <span className="image-hover-bttn">
+                                    <span>Open Recipe</span>
+                                  </span>
+                                </button>
                                 <div className="calendar-upcoming-recipe-content">
                                   <h1>{event.title}</h1>
                                   <div className="calendar-upcoming-recipe-subcontent">

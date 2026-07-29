@@ -79,10 +79,18 @@ export async function getMealDates() {
     ).meal_date_recipes;
     const mdr = Array.isArray(rawMdr) ? rawMdr : rawMdr ? [rawMdr] : [];
     const recipes = mdr
-      .map((r) => ({
-        ...(r.recipes as object),
-        eventID: row.event_id,
-      }))
+      .map((r) => {
+        const embedded =
+          r.recipes && typeof r.recipes === "object"
+            ? (r.recipes as Record<string, unknown>)
+            : {};
+        return {
+          ...embedded,
+          // meal_date_recipes.recipe_id is recipes.id (UUID); use as fallback.
+          id: (embedded.id as string | undefined) ?? r.recipe_id,
+          eventID: row.event_id,
+        };
+      })
       .filter((item) =>
         mealRecipeAllowed(
           item as {
