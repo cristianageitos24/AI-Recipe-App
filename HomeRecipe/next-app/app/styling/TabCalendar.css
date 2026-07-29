@@ -125,6 +125,25 @@
   color: var(--color-fg);
 }
 
+.fc .fc-daygrid-day.fc-day-today,
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-frame {
+  background: var(--fc-today-bg-color);
+}
+
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75em;
+  min-height: 1.75em;
+  margin: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--accent, #e85d4c);
+  color: #fff;
+  font-weight: 700;
+}
+
 .fc table {
   font-size: clamp(10px, 4vw, var(--text-xs));
   font-family: var(--font-body);
