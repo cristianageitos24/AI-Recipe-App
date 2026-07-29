@@ -1,5 +1,5 @@
 -- Add user_id to recipes for user-scoped manual/video recipes
--- user_id NULL = shared (Edamam); user_id set = private to that user
+-- user_id NULL = shared catalog recipe; user_id set = private to that user
 ALTER TABLE public.recipes ADD COLUMN IF NOT EXISTS user_id TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_recipes_user_id ON public.recipes(user_id);
