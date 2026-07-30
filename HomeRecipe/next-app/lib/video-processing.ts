@@ -4,7 +4,7 @@ import { existsSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 import { unlink } from "fs/promises";
-import ffmpeg from "fluent-ffmpeg";
+import ffmpeg from "@modernized/fluent-ffmpeg";
 import { createWorker } from "tesseract.js";
 import {
   analyzeFramesForOcr,
