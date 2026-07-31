@@ -72,6 +72,23 @@ export function useHomeData() {
       isCurrent = false;
     };
   }, [applyFolderData]);
+  const [suggestedRecipes, setSuggestedRecipes] = useState<RecipeRow[]>([]);
+
+  useEffect(() => {
+    getHomeBootstrap().then((res) => {
+      if (!res.data) return;
+      setFavorites(res.data.favorites);
+      setFoldersWithCounts(
+        res.data.folders.map((name) => ({
+          folderName: name,
+          count: (res.data.results[name] ?? []).length,
+        }))
+      );
+      setFolderRecipesByName((res.data.results ?? {}) as Record<string, RecipeRow[]>);
+      setMealDates((res.data.mealDates ?? []) as MealDay[]);
+      setSuggestedRecipes((res.data.suggestedRecipes ?? []) as RecipeRow[]);
+    });
+  }, []);
 
   const handleFavoriteChange = useCallback((recipe: RecipeRow, isFavorited: boolean) => {
     if (isFavorited) {
@@ -163,5 +180,6 @@ export function useHomeData() {
     upcomingMealPlans,
     favoriteIds,
     handleFavoriteChange,
+    suggestedRecipes,
   };
 }

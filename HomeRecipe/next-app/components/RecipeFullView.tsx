@@ -23,12 +23,16 @@ import { RecipeTemplateShell } from "@/components/RecipeTemplateShell";
 import { useTrashUndoOptional } from "@/components/TrashUndoProvider";
 import { HeartButton } from "@/components/HeartButton";
 import { SaveRecipeToCookbookModal } from "@/components/SaveRecipeToCookbookModal";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { useEntitlements } from "@/components/EntitlementsProvider";
+import type { PlanLimitReason } from "@/lib/entitlements-constants";
 import {
   canSaveRecipeToCookbook,
   recipeRowToProcessed,
   toRecipePayload,
 } from "@/lib/processRecipeData";
 import "@/app/styling/RecipeFullView.css";
+import "@/app/styling/UpgradePrompt.css";
 
 const INGREDIENT_PREVIEW_COUNT = 10;
 
@@ -147,6 +151,9 @@ export function RecipeFullView({
 }: RecipeFullViewProps) {
   const router = useRouter();
   const trashUndo = useTrashUndoOptional();
+  const { entitlements } = useEntitlements();
+  const nutritionLocked = !entitlements.isPro;
+  const [upgradeReason, setUpgradeReason] = useState<PlanLimitReason | null>(null);
   const template = useMemo(() => buildRecipeTemplateData(recipeData), [recipeData]);
   const [ingredientsExpanded, setIngredientsExpanded] = useState(false);
   const [groceryFeedback, setGroceryFeedback] = useState<string | null>(null);
@@ -158,6 +165,14 @@ export function RecipeFullView({
   const [fdcPickBusy, setFdcPickBusy] = useState(false);
   const [fdcPickError, setFdcPickError] = useState<string | null>(null);
   const [saveCookbookOpen, setSaveCookbookOpen] = useState(false);
+
+  const expiryLabel = useMemo(() => {
+    if (entitlements.isPro || !recipeData.expires_at) return null;
+    const exp = Date.parse(recipeData.expires_at);
+    if (!Number.isFinite(exp)) return null;
+    const days = Math.max(0, Math.ceil((exp - Date.now()) / 86_400_000));
+    return days === 1 ? "Expires in 1 day" : `Expires in ${days} days`;
+  }, [entitlements.isPro, recipeData.expires_at]);
 
   const canMoveOwnedRecipeToTrash = useMemo(() => {
     const rid = recipeData.recipe_id;
@@ -217,6 +232,10 @@ export function RecipeFullView({
       : ingredientRows.slice(0, INGREDIENT_PREVIEW_COUNT);
 
   async function handleAddIngredient(item: string) {
+    if (!entitlements.isPro) {
+      setUpgradeReason("planning");
+      return;
+    }
     const res = await addGroceryItem(item);
     if (res.error) {
       setGroceryFeedback(res.error);
@@ -229,6 +248,10 @@ export function RecipeFullView({
   }
 
   async function handleAddAllIngredients() {
+    if (!entitlements.isPro) {
+      setUpgradeReason("planning");
+      return;
+    }
     if (addAllDone || addAllBusy) return;
     setAddAllBusy(true);
     const res = await addGroceryItems(ingredientLines);
@@ -350,7 +373,7 @@ export function RecipeFullView({
                 <input type="checkbox" aria-label={`Got ${ing.displayName || item}`} />
                 <span className="recipe-template-ingredient-name">{ing.displayName || item}</span>
                 <span className="recipe-template-ingredient-qty">{ing.displayQuantity || ""}</span>
-                {lineNutritionMap.size > 0 && (
+                {lineNutritionMap.size > 0 && !nutritionLocked && (
                   <span
                     className={`recipe-ingredient-nut-badge recipe-ingredient-nut-badge--${nutBadge.classSuffix}`}
                     title={nutBadge.title}
@@ -581,7 +604,7 @@ export function RecipeFullView({
         </Link>
       </p>
 
-      {lineNutritionMap.size > 0 && (
+      {lineNutritionMap.size > 0 && !nutritionLocked && (
         <>
           <h3 className="recipe-template-panel-title" style={{ fontSize: "15px", margin: "20px 0 8px" }}>
             Ingredient nutrition confidence
@@ -646,6 +669,8 @@ export function RecipeFullView({
       <RecipeTemplateShell
         template={template}
         onClose={onClose}
+        nutritionLocked={nutritionLocked}
+        onNutritionLockedClick={() => setUpgradeReason("nutrition")}
         favoriteSlot={favoriteSlot}
         cookbookActionSlot={cookbookActionSlot}
         mobileSaveSlot={
@@ -667,11 +692,25 @@ export function RecipeFullView({
         }
         cookIngredientsPanel={cookIngredientsPanel}
         cookInstructionsPanel={cookInstructionsPanel}
-        nutritionPanel={nutritionPanel}
+        nutritionPanel={
+          <>
+            {expiryLabel ? (
+              <span className="recipe-expiry-badge" style={{ margin: "0 0 8px" }}>
+                {expiryLabel}
+              </span>
+            ) : null}
+            {nutritionPanel}
+          </>
+        }
         heroOverlay={heroOverlay}
         draftTitle={draftTitle}
         nutritionDisclaimerMenuSubtext={nutritionDisclaimerMenuSubtext}
         onMoveToTrash={canMoveOwnedRecipeToTrash ? handleMoveRecipeToTrash : undefined}
+      />
+      <UpgradePrompt
+        open={upgradeReason !== null}
+        reason={upgradeReason ?? "nutrition"}
+        onClose={() => setUpgradeReason(null)}
       />
       {showCookbookSave && cookbookSavePayload && (
         <SaveRecipeToCookbookModal

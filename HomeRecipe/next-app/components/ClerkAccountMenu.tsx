@@ -1,6 +1,11 @@
 "use client";
 
+import { useRef } from "react";
+import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
+import { useEntitlements } from "@/components/EntitlementsProvider";
+import { ProPill } from "@/components/ProPill";
+import "@/app/styling/UpgradePrompt.css";
 
 function GearIcon() {
   return (
@@ -46,13 +51,105 @@ function TrashIcon() {
   );
 }
 
-export function ClerkAccountMenu() {
+function BillingIcon() {
   return (
-    <UserButton>
-      <UserButton.MenuItems>
-        <UserButton.Link label="Settings" labelIcon={<GearIcon />} href="/dashboard/settings" />
-        <UserButton.Link label="Trash" labelIcon={<TrashIcon />} href="/dashboard/settings#trash" />
-      </UserButton.MenuItems>
-    </UserButton>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect width="20" height="14" x="2" y="5" rx="2" />
+      <line x1="2" x2="22" y1="10" y2="10" />
+    </svg>
+  );
+}
+
+type Props = {
+  displayName: string;
+};
+
+function findUserButtonTrigger(root: HTMLElement | null): HTMLElement | null {
+  if (!root) return null;
+  return (
+    root.querySelector<HTMLElement>(".cl-userButtonTrigger") ??
+    Array.from(root.querySelectorAll<HTMLElement>("button")).find(
+      (btn) => !btn.classList.contains("account-menu-hitarea")
+    ) ??
+    null
+  );
+}
+
+export function ClerkAccountMenu({ displayName }: Props) {
+  const { entitlements } = useEntitlements();
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  function openAccountMenu() {
+    findUserButtonTrigger(rootRef.current)?.click();
+  }
+
+  return (
+    <div className="account-nav account-nav--menu" ref={rootRef}>
+      <button
+        type="button"
+        className="account-menu-hitarea"
+        aria-label="Open account menu"
+        onClick={openAccountMenu}
+      />
+      <div className="loggedin-username-label">
+        <span className="clerk-account-menu-wrap">
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: {
+                  width: "2.5rem",
+                  height: "2.5rem",
+                },
+              },
+            }}
+          >
+            <UserButton.MenuItems>
+              <UserButton.Link
+                label="Settings"
+                labelIcon={<GearIcon />}
+                href="/dashboard/settings"
+              />
+              <UserButton.Link
+                label={entitlements.isPro ? "Billing" : "Upgrade / Billing"}
+                labelIcon={<BillingIcon />}
+                href="/dashboard/billing"
+              />
+              <UserButton.Link
+                label="Trash"
+                labelIcon={<TrashIcon />}
+                href="/dashboard/settings#trash"
+              />
+            </UserButton.MenuItems>
+          </UserButton>
+          <span className="clerk-account-menu-meta">
+            <span className="signedin-label">{displayName}</span>
+            {entitlements.isPro ? (
+              <span className="plan-badge-slot" title="Pro plan">
+                <ProPill />
+              </span>
+            ) : (
+              <Link
+                href="/dashboard/billing"
+                className="plan-upgrade-chip"
+                aria-label="Upgrade to Pro"
+              >
+                Upgrade to Pro
+              </Link>
+            )}
+          </span>
+        </span>
+      </div>
+    </div>
   );
 }

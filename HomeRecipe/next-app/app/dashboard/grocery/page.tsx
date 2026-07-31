@@ -14,6 +14,7 @@ import {
   uncheckAllGroceryItems,
 } from "@/app/actions/grocery-items";
 import { createGroceryTrip } from "@/app/actions/grocery-trips";
+import { PremiumFeatureGate } from "@/components/PremiumFeatureGate";
 import "@/app/styling/GroceryList.css";
 
 const playfairDisplay = Playfair_Display({
@@ -116,7 +117,7 @@ function getItemCategory(
   );
 }
 
-export default function GroceryPage() {
+function GroceryPageContent() {
   const [items, setItems] = useState<GroceryItem[]>([]);
   const [inputText, setInputText] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<GroceryCategoryKey>("produce");
@@ -694,5 +695,16 @@ export default function GroceryPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function GroceryPage() {
+  return (
+    <PremiumFeatureGate
+      featureName="Grocery List"
+      description="Build organized grocery lists from your recipes and schedule shopping trips with Pro."
+    >
+      <GroceryPageContent />
+    </PremiumFeatureGate>
   );
 }

@@ -23,6 +23,12 @@
 # Open Recipes data (large downloaded file)
 recipeitems*.json.gz
 
+# Local DB archive dumps (legacy_recipes_archive exports)
+/supabase/exports/*.ndjson
+/supabase/exports/*.ndjson.gz
+/supabase/exports/*.sql
+/supabase/exports/*.sql.gz
+
 # misc
 .DS_Store
 *.pem

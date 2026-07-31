@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateHashKey, normalizeSourceUrlForHash } from "@/lib/processRecipeData";
 import { createServiceRoleClient } from "@/utils/supabase/server";
+import { auth } from "@clerk/nextjs/server";
+import { assertCanExtract } from "@/lib/entitlements";
 
 const IMPORT_API_BASE =
   process.env.RECIPE_URL_IMPORT_API_URL || "http://localhost:8000";
@@ -8,6 +10,16 @@ const URL_IMPORT_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export async function POST(request: NextRequest) {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const extractGate = await assertCanExtract(userId);
+    if (!extractGate.ok) {
+      return NextResponse.json(extractGate.limit, { status: 403 });
+    }
+
     const body = await request.json();
     const url = typeof body?.url === "string" ? body.url.trim() : "";
 

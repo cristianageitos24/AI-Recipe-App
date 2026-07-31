@@ -7,28 +7,43 @@ import { getFavorites } from "@/app/actions/favorites";
 import { getCollectionBySlug } from "@/lib/collections";
 import { CookbookPageRecipeCard } from "@/components/CookbookPageRecipeCard";
 import { RecipeFullView } from "@/components/RecipeFullView";
+import { ProLockedRecipeCard } from "@/components/ProLockedRecipeCard";
+import { ProPill } from "@/components/ProPill";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { useEntitlements } from "@/components/EntitlementsProvider";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/CookbookFolderPage.css";
+import "@/app/styling/UpgradePrompt.css";
+
+const PAGE_SIZE = 24;
 
 export default function CollectionPage() {
   const params = useParams();
   const router = useRouter();
   const slug = (params.slug as string) ?? "";
+  const { entitlements } = useEntitlements();
   const [recipes, setRecipes] = useState<RecipeRow[]>([]);
   const [favorites, setFavorites] = useState<RecipeRow[]>([]);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   const collection = getCollectionBySlug(slug);
   const favoriteIds = new Set(favorites.map((r) => r.recipe_id));
+  const locked = !entitlements.isPro;
 
   useEffect(() => {
     if (!slug) {
       setIsLoading(false);
       return;
     }
-    getRecipesByCollection(slug).then((res) => {
-      if (res.data) setRecipes(res.data);
+    setIsLoading(true);
+    getRecipesByCollection(slug, { limit: PAGE_SIZE, offset: 0 }).then((res) => {
+      const rows = res.data ?? [];
+      setRecipes(rows);
+      setHasMore(rows.length >= PAGE_SIZE);
       setIsLoading(false);
     });
   }, [slug]);
@@ -38,6 +53,19 @@ export default function CollectionPage() {
       if (res.data) setFavorites(res.data);
     });
   }, []);
+
+  const handleLoadMore = useCallback(async () => {
+    if (!slug || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const res = await getRecipesByCollection(slug, {
+      limit: PAGE_SIZE,
+      offset: recipes.length,
+    });
+    const rows = res.data ?? [];
+    setRecipes((prev) => [...prev, ...rows]);
+    setHasMore(rows.length >= PAGE_SIZE);
+    setLoadingMore(false);
+  }, [slug, loadingMore, hasMore, recipes.length]);
 
   const handleFavoriteChange = useCallback((recipe: RecipeRow, isFavorited: boolean) => {
     if (isFavorited) {
@@ -91,8 +119,9 @@ export default function CollectionPage() {
             strokeLinejoin="round"
           />
         </svg>
-        <span className="folder-bttn" style={{ cursor: "default" }}>
+        <span className="folder-bttn pro-pill-inline" style={{ cursor: "default" }}>
           {collection.displayName}
+          {locked ? <ProPill /> : null}
         </span>
       </div>
       {isLoading ? (
@@ -108,18 +137,59 @@ export default function CollectionPage() {
             No recipes match this collection yet.
           </p>
         </div>
+      ) : locked ? (
+        <>
+          <p className="home-section-caption" style={{ marginBottom: "0.75rem" }}>
+            This collection is part of the Recipe Library. Tap a card to upgrade.
+          </p>
+          <div className="pro-locked-strip">
+            {recipes.map((recipe) => (
+              <ProLockedRecipeCard
+                key={recipe.id}
+                recipe={recipe}
+                onUnlock={() => setUpgradeOpen(true)}
+              />
+            ))}
+          </div>
+          {hasMore ? (
+            <div style={{ display: "flex", justifyContent: "center", margin: "1.5rem 0" }}>
+              <button
+                type="button"
+                className="back-bttn"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+              >
+                {loadingMore ? "Loading…" : "Load more"}
+              </button>
+            </div>
+          ) : null}
+        </>
       ) : (
-        <div className="cookbook-page-recipe-cards-container">
-          {recipes.map((recipe) => (
-            <CookbookPageRecipeCard
-              key={recipe.id}
-              recipeData={recipe}
-              onSelectRecipe={(r) => setSelectedRecipeId(r.id)}
-              isHearted={favoriteIds.has(recipe.recipe_id)}
-              onFavoriteChange={handleFavoriteChange}
-            />
-          ))}
-        </div>
+        <>
+          <div className="cookbook-page-recipe-cards-container">
+            {recipes.map((recipe) => (
+              <CookbookPageRecipeCard
+                key={recipe.id}
+                recipeData={recipe}
+                onSelectRecipe={(r) => setSelectedRecipeId(r.id)}
+                isHearted={favoriteIds.has(recipe.recipe_id)}
+                onFavoriteChange={handleFavoriteChange}
+              />
+            ))}
+          </div>
+          {hasMore ? (
+            <div style={{ display: "flex", justifyContent: "center", margin: "1.5rem 0" }}>
+              <button
+                type="button"
+                className="back-bttn"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+              >
+                {loadingMore ? "Loading…" : "Load more"}
+              </button>
+            </div>
+          ) : null}
+        </>
       )}
       {selectedRecipeId && (() => {
         const recipe = recipes.find((r) => r.id === selectedRecipeId);
@@ -145,6 +215,11 @@ export default function CollectionPage() {
           </div>
         ) : null;
       })()}
+      <UpgradePrompt
+        open={upgradeOpen}
+        reason="catalog"
+        onClose={() => setUpgradeOpen(false)}
+      />
     </div>
   );
 }

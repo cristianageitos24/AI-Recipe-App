@@ -1,0 +1,108 @@
+.billing-page {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.billing-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 1.25rem;
+}
+
+.billing-h2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+.billing-plan {
+  margin-bottom: 1.75rem;
+}
+
+.billing-plan-badge {
+  display: inline-block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0.25rem 0 0;
+}
+
+.billing-muted {
+  color: color-mix(in srgb, CanvasText 65%, transparent);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  margin: 0.5rem 0 0;
+}
+
+.billing-list {
+  margin: 0 0 0.75rem;
+  padding-left: 1.2rem;
+  line-height: 1.55;
+}
+
+.billing-list li + li {
+  margin-top: 0.35rem;
+}
+
+.billing-compare {
+  margin-bottom: 0.5rem;
+}
+
+.billing-compare .plan-compare-grid {
+  margin-top: 0.75rem;
+}
+
+.billing-banner {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, CanvasText 6%, Canvas);
+  margin: 0 0 1.25rem;
+  font-size: 0.95rem;
+}
+
+.billing-banner-success {
+  background: color-mix(in srgb, #2e7d32 14%, Canvas);
+}
+
+.billing-actions {
+  margin-top: 1.75rem;
+}
+
+.billing-upgrade-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.billing-btn {
+  appearance: none;
+  border: 1px solid color-mix(in srgb, CanvasText 18%, transparent);
+  border-radius: 0.5rem;
+  padding: 0.65rem 1.1rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  background: Canvas;
+  color: CanvasText;
+}
+
+.billing-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.billing-btn-primary {
+  background: CanvasText;
+  color: Canvas;
+  border-color: transparent;
+}
+
+.billing-btn-secondary {
+  background: transparent;
+}
+
+.billing-error {
+  color: #b00020;
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+}

@@ -1,7 +1,7 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@/utils/supabase/server";
+import { requirePremiumPlanningAccess } from "@/lib/premium-access";
 
 const GROCERY_CATEGORIES = ["produce", "dairy", "pantry", "condiments"] as const;
 type GroceryCategory = (typeof GROCERY_CATEGORIES)[number];
@@ -27,8 +27,9 @@ function isMissingCategoryColumnError(error: { code?: string; message?: string }
 }
 
 export async function getGroceryItems() {
-  const { userId } = await auth();
-  if (!userId) return { error: "Unauthorized", data: [] };
+  const access = await requirePremiumPlanningAccess();
+  if (!access.ok) return { ...access, data: [] };
+  const { userId } = access;
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -55,23 +56,25 @@ export async function getGroceryItems() {
 }
 
 export async function addGroceryItem(itemText: string, category?: string) {
-  const { userId } = await auth();
-  if (!userId) return { error: "Unauthorized", added: false };
+  const access = await requirePremiumPlanningAccess();
+  if (!access.ok) return { ...access, added: false };
+  const { userId } = access;
   const trimmed = itemText.trim();
   if (!trimmed) return { error: "Item cannot be empty", added: false };
   const normalizedCategory = normalizeCategory(category);
 
   const supabase = await createClient();
+  const escapeIlike = trimmed.replace(/[%_\\]/g, "\\$&");
   const { data: existing } = await supabase
     .from("grocery_items")
-    .select("item_text")
-    .eq("user_id", userId);
+    .select("id")
+    .eq("user_id", userId)
+    .ilike("item_text", escapeIlike)
+    .limit(1);
 
-  const normalized = normalizeItemText(trimmed);
-  const isDuplicate = (existing ?? []).some(
-    (row) => normalizeItemText((row as { item_text: string }).item_text ?? "") === normalized
-  );
-  if (isDuplicate) return { error: null, added: false, duplicate: true };
+  if ((existing ?? []).length > 0) {
+    return { error: null, added: false, duplicate: true };
+  }
 
   const { error } = await supabase.from("grocery_items").insert({
     user_id: userId,
@@ -96,8 +99,11 @@ export async function addGroceryItem(itemText: string, category?: string) {
 }
 
 export async function addGroceryItems(itemTexts: string[]) {
-  const { userId } = await auth();
-  if (!userId) return { error: "Unauthorized", added: 0, skipped: 0, addedItems: [] as string[] };
+  const access = await requirePremiumPlanningAccess();
+  if (!access.ok) {
+    return { ...access, added: 0, skipped: 0, addedItems: [] as string[] };
+  }
+  const { userId } = access;
 
   const supabase = await createClient();
   const { data: existing } = await supabase
@@ -139,8 +145,9 @@ export async function addGroceryItems(itemTexts: string[]) {
 }
 
 export async function removeGroceryItems(itemTexts: string[]) {
-  const { userId } = await auth();
-  if (!userId) return { error: "Unauthorized", removed: 0 };
+  const access = await requirePremiumPlanningAccess();
+  if (!access.ok) return { ...access, removed: 0 };
+  const { userId } = access;
 
   const normalizedToRemove = new Set(
     itemTexts.map((t) => normalizeItemText(t)).filter(Boolean)
@@ -174,8 +181,9 @@ export async function removeGroceryItems(itemTexts: string[]) {
 }
 
 export async function toggleGroceryItemChecked(id: string) {
-  const { userId } = await auth();
-  if (!userId) return { error: "Unauthorized" };
+  const access = await requirePremiumPlanningAccess();
+  if (!access.ok) return access;
+  const { userId } = access;
 
   const supabase = await createClient();
   const { data: row } = await supabase
@@ -198,8 +206,9 @@ export async function toggleGroceryItemChecked(id: string) {
 }
 
 export async function clearCheckedGroceryItems() {
-  const { userId } = await auth();
-  if (!userId) return { error: "Unauthorized" };
+  const access = await requirePremiumPlanningAccess();
+  if (!access.ok) return access;
+  const { userId } = access;
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -213,8 +222,9 @@ export async function clearCheckedGroceryItems() {
 }
 
 export async function checkAllGroceryItems() {
-  const { userId } = await auth();
-  if (!userId) return { error: "Unauthorized", updated: 0 };
+  const access = await requirePremiumPlanningAccess();
+  if (!access.ok) return { ...access, updated: 0 };
+  const { userId } = access;
 
   const supabase = await createClient();
   const { data, error: fetchError } = await supabase
@@ -239,8 +249,9 @@ export async function checkAllGroceryItems() {
 }
 
 export async function uncheckAllGroceryItems() {
-  const { userId } = await auth();
-  if (!userId) return { error: "Unauthorized", updated: 0 };
+  const access = await requirePremiumPlanningAccess();
+  if (!access.ok) return { ...access, updated: 0 };
+  const { userId } = access;
 
   const supabase = await createClient();
   const { data, error: fetchError } = await supabase
@@ -265,8 +276,9 @@ export async function uncheckAllGroceryItems() {
 }
 
 export async function deleteGroceryItem(id: string) {
-  const { userId } = await auth();
-  if (!userId) return { error: "Unauthorized" };
+  const access = await requirePremiumPlanningAccess();
+  if (!access.ok) return access;
+  const { userId } = access;
 
   const supabase = await createClient();
   const { error } = await supabase

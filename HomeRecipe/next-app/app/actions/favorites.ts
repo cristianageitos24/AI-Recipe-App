@@ -2,36 +2,63 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@/utils/supabase/server";
-import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
-import type { RecipePayload } from "@/lib/types";
+import { RECIPE_LIST_COLUMNS } from "@/lib/recipe-select";
+import type { RecipePayload, RecipeRow } from "@/lib/types";
+import { isUserPro, planLimitError } from "@/lib/entitlements";
+
+function isOwnNonExpired(
+  recipe: { user_id?: string | null; expires_at?: string | null; deleted_at?: string | null },
+  userId: string
+): boolean {
+  if (recipe.deleted_at != null) return false;
+  if (recipe.user_id !== userId) return false;
+  if (recipe.expires_at) {
+    const exp = Date.parse(recipe.expires_at);
+    if (Number.isFinite(exp) && exp < Date.now()) return false;
+  }
+  return true;
+}
 
 export async function getFavorites() {
   const { userId } = await auth();
   if (!userId) return { error: "Unauthorized", data: [] };
 
   const supabase = await createClient();
+  const pro = await isUserPro(userId);
   const { data, error } = await supabase
     .from("favorites")
     .select(`
       recipe_id,
-      recipes (${RECIPE_WITH_NUTRITION})
+      recipes (${RECIPE_LIST_COLUMNS})
     `)
     .eq("user_id", userId);
 
   if (error) return { error: error.message, data: [] };
   const recipes = (data ?? [])
     .map((row: { recipes: unknown }) => row.recipes)
-    .filter((r): r is Record<string, unknown> => {
+    .filter((r): r is RecipeRow => {
       if (r == null) return false;
-      const row = r as { deleted_at?: string | null };
-      return row.deleted_at == null;
+      const row = r as RecipeRow;
+      if (row.deleted_at != null) return false;
+      if (pro) return true;
+      return isOwnNonExpired(row, userId);
     });
-  return { error: null, data: recipes as import("@/lib/types").RecipeRow[] };
+  return { error: null, data: recipes };
 }
 
 export async function addFavorite(payload: RecipePayload) {
   const { userId } = await auth();
   if (!userId) return { error: "Unauthorized" };
+
+  const isUserOwned =
+    payload.recipeID.startsWith("manual-") ||
+    payload.recipeID.startsWith("video-recipe-") ||
+    payload.recipeID.startsWith("url-import-");
+
+  if (!isUserOwned && !(await isUserPro(userId))) {
+    const limit = planLimitError("catalog");
+    return { error: limit.error, code: limit.code, reason: limit.reason };
+  }
 
   const supabase = await createClient();
 
@@ -46,7 +73,7 @@ export async function addFavorite(payload: RecipePayload) {
     .single();
 
   if (error) {
-    if (error.code === "23505") return { error: null }; // already favorited
+    if (error.code === "23505") return { error: null };
     return { error: error.message };
   }
   return { error: null };
@@ -58,7 +85,6 @@ export async function removeFavorite(recipeId: string) {
 
   const supabase = await createClient();
 
-  // recipeId from frontend is the string recipe_id; we need recipes.id (uuid)
   const { data: recipe } = await supabase
     .from("recipes")
     .select("id")

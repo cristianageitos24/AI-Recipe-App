@@ -58,7 +58,7 @@
   justify-content: center;
 }
 
-.dock-tabs li a.tab-square {
+.dock-tabs li .tab-square {
   position: relative;
   display: flex;
   align-items: center;
@@ -91,16 +91,16 @@
   z-index: 1001;
 }
 
-.dock-tabs li a.tab-square:hover .tab-tooltip {
+.dock-tabs li .tab-square:hover .tab-tooltip {
   opacity: 1;
 }
 
-.dock-tabs li a.tab-square:hover {
+.dock-tabs li .tab-square:hover {
   background-color: var(--gray-300);
   cursor: pointer;
 }
 
-.dock-tabs li a.tab-square:active {
+.dock-tabs li .tab-square:active {
   background-color: var(--gray-400);
 }
 
@@ -122,7 +122,7 @@
 }
 
 /* Active tab: saturated brand-red tint */
-.dock-tabs .active a.tab-square {
+.dock-tabs .active .tab-square {
   background-color: color-mix(in srgb, var(--accent) 9%, var(--color-bg));
   box-shadow: 0 8px 22px rgba(var(--accent-rgb), 0.12);
 }
@@ -327,7 +327,7 @@
     padding: 10px 16px;
     gap: 8px;
   }
-  .dock-tabs li a.tab-square {
+  .dock-tabs li .tab-square {
     width: 40px;
     height: 40px;
   }
@@ -360,11 +360,12 @@
   z-index: 5000;
   display: flex;
   flex-direction: column;
-  padding: 42px 0 24px;
+  padding: 42px 0 20px;
   background: #ffffff;
   border-right: 1px solid #e8ecf3;
   box-sizing: border-box;
   pointer-events: auto;
+  overflow: hidden;
 }
 
 .dashboard-brand {
@@ -392,6 +393,9 @@
   transform: none;
   pointer-events: auto;
   width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .dock-tabs {
@@ -413,7 +417,7 @@
   width: 100%;
 }
 
-.dock-tabs li a.tab-square {
+.dock-tabs li .tab-square {
   position: relative;
   width: 88%;
   height: 56px;
@@ -455,29 +459,48 @@
   border-radius: 0;
 }
 
-.dock-tabs li a.tab-square:hover,
-.dock-tabs .active a.tab-square {
+.dock-tabs li .tab-square:hover,
+.dock-tabs .active .tab-square {
   background: color-mix(in srgb, var(--accent) 9%, var(--color-bg));
   box-shadow: none;
   color: var(--accent);
 }
 
 .dock-tabs .active img,
-.dock-tabs li a.tab-square:hover img {
+.dock-tabs li .tab-square:hover img {
   filter: invert(20%) sepia(94%) saturate(3949%) hue-rotate(358deg) brightness(96%) contrast(94%);
 }
 
 .account-nav {
-  position: static;
-  margin-top: auto;
+  position: relative;
+  top: auto;
+  right: auto;
+  left: auto;
+  bottom: auto;
+  z-index: auto;
   margin-left: auto;
   margin-right: auto;
   width: 100%;
   max-width: 90%;
   border: 1px solid #e3e8f0;
-  border-radius: 14px;
-  padding: 12px;
+  border-radius: 12px;
+  padding: 8px 10px 8px 8px;
   box-sizing: border-box;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.account-nav--menu:hover {
+  background: color-mix(in srgb, CanvasText 3%, #fff);
+  border-color: color-mix(in srgb, #e3e8f0 70%, var(--accent, #dc2100));
+}
+
+.account-nav-slot {
+  flex: 0 0 auto;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 4px;
+  margin-top: 0;
 }
 
 .loggedin-username-label {
@@ -516,7 +539,20 @@
     display: none;
   }
 
-  .dock-tabs li a.tab-square {
+  .account-nav .plan-upgrade-chip {
+    font-size: 9px;
+    padding: 2px 6px;
+  }
+
+  .account-nav .clerk-account-menu-wrap {
+    justify-content: center;
+  }
+
+  .account-nav .clerk-account-menu-meta {
+    display: none;
+  }
+
+  .dock-tabs li .tab-square {
     width: 88%;
     height: 46px;
     grid-template-columns: 1fr;

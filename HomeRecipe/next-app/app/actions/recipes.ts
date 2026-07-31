@@ -10,6 +10,13 @@ import { trashListCutoffIso } from "@/lib/trash-retention";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import type { TrashActionResult } from "@/lib/trash-result";
 import type { RecipePayload, RecipeRow } from "@/lib/types";
+import { compressImageLossless } from "@/lib/compress-image";
+import {
+  assertCanOpenRecipe,
+  freeRecipeExpiresAtIso,
+  isUserPro,
+  restoreGraceExpiresAtIso,
+} from "@/lib/entitlements";
 
 const MANUAL_RECIPE_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 
@@ -94,7 +101,12 @@ export async function pickRecipeIngredientFdc(input: {
  */
 export async function getRecipeFull(
   recipeId: string
-): Promise<{ error: string | null; data: RecipeRow | null }> {
+): Promise<{
+  error: string | null;
+  data: RecipeRow | null;
+  code?: string;
+  reason?: string;
+}> {
   const { userId } = await auth();
   if (!userId) return { error: "Unauthorized", data: null };
 
@@ -107,7 +119,31 @@ export async function getRecipeFull(
     .single();
 
   if (error) return { error: error.message, data: null };
-  return { error: null, data: data as RecipeRow };
+  if (!data) return { error: "Recipe not found", data: null };
+
+  const row = data as RecipeRow;
+  const access = await assertCanOpenRecipe(userId, {
+    user_id: row.user_id,
+    expires_at: row.expires_at,
+    deleted_at: row.deleted_at,
+  });
+
+  if (!access.ok) {
+    if ("forbidden" in access && access.forbidden) {
+      return { error: "Forbidden", data: null };
+    }
+    if ("limit" in access && access.limit) {
+      return {
+        error: access.limit.error,
+        data: null,
+        code: access.limit.code,
+        reason: access.limit.reason,
+      };
+    }
+    return { error: "Forbidden", data: null };
+  }
+
+  return { error: null, data: row };
 }
 
 export async function softDeleteOwnedRecipe(recipeId: string): Promise<TrashActionResult> {
@@ -146,7 +182,7 @@ export async function restoreOwnedRecipe(recipeId: string): Promise<TrashActionR
   const supabase = await createClient();
   const { data: existing, error: fetchErr } = await supabase
     .from("recipes")
-    .select("id, deleted_at, user_id")
+    .select("id, deleted_at, user_id, expires_at")
     .eq("id", recipeId)
     .maybeSingle();
 
@@ -155,9 +191,24 @@ export async function restoreOwnedRecipe(recipeId: string): Promise<TrashActionR
   if (existing.user_id !== userId) return { ok: false, reason: "forbidden" };
   if (existing.deleted_at === null) return { ok: false, reason: "already_active" };
 
+  const pro = await isUserPro(userId);
+  let nextExpiresAt: string | null = null;
+  if (pro) {
+    nextExpiresAt = null;
+  } else {
+    const existingExp = existing.expires_at
+      ? Date.parse(existing.expires_at)
+      : NaN;
+    if (Number.isFinite(existingExp) && existingExp > Date.now()) {
+      nextExpiresAt = existing.expires_at as string;
+    } else {
+      nextExpiresAt = restoreGraceExpiresAtIso();
+    }
+  }
+
   const { error } = await supabase
     .from("recipes")
-    .update({ deleted_at: null })
+    .update({ deleted_at: null, expires_at: nextExpiresAt })
     .eq("id", recipeId)
     .eq("user_id", userId);
 
@@ -239,6 +290,9 @@ export async function getOrCreateRecipe(payload: RecipePayload) {
   }
 
   const user_id = isUserOwned ? userId : null;
+  const pro = isUserOwned ? await isUserPro(userId) : true;
+  const expires_at =
+    isUserOwned && !pro ? freeRecipeExpiresAtIso() : null;
 
   const { data: inserted, error } = await svc
     .from("recipes")
@@ -254,6 +308,7 @@ export async function getOrCreateRecipe(payload: RecipePayload) {
       website_url: payload.website_url,
       image_url: payload.image_url,
       user_id,
+      expires_at,
     })
     .select("id")
     .single();
@@ -327,10 +382,14 @@ export async function uploadManualRecipeImage(formData: FormData): Promise<{
   const storagePath = `users/${userId}/manual/${timestamp}-${labelSlug}.${ext}`;
 
   const svc = await createServiceRoleClient();
+  const compressed = await compressImageLossless(
+    Buffer.from(await file.arrayBuffer()),
+    file.type || "image/png"
+  );
   const { error: uploadError } = await svc.storage
     .from("recipe-covers")
-    .upload(storagePath, file, {
-      contentType: file.type || undefined,
+    .upload(storagePath, compressed.buffer, {
+      contentType: compressed.contentType,
       upsert: false,
     });
 
