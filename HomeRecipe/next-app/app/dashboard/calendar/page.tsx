@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Playfair_Display } from "next/font/google";
 import FullCalendar from "@fullcalendar/react";
@@ -12,14 +13,19 @@ import { v4 as uuidv4 } from "uuid";
 import { getMealDates, createOrUpdateMealDate, deleteMealDate } from "@/app/actions/meal-dates";
 import { getGroceryTrips, deleteGroceryTrip } from "@/app/actions/grocery-trips";
 import { getCalendarBootstrap } from "@/app/actions/dashboard";
+import { getRecipeFull } from "@/app/actions/recipes";
 import { formatRecipeEnergyKcalDisplay } from "@/lib/nutrition/nutrition-display";
 import type { RecipeRow } from "@/lib/types";
 import { PremiumFeatureGate } from "@/components/PremiumFeatureGate";
+import { RecipeFullView } from "@/components/RecipeFullView";
 import "@/app/styling/TabCalendar.css";
 import "@/app/styling/TabCalendarHeader.css";
 import "@/app/styling/CalendarRecipeCard.css";
 import "@/app/styling/EventPopup.css";
 import "@/app/styling/EventSearchOptions.css";
+import "@/app/styling/RecipeFullView.css";
+import "@/app/styling/CookbookPageRecipeCard.css";
+import "@/app/styling/RecipeListCard.css";
 
 const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
@@ -33,7 +39,10 @@ type CalendarEvent = {
   title: string;
   start: string;
   eventID: string;
+  /** Public/stable recipe_id used by meal-date writes. */
   recipeID: string;
+  /** Internal recipes.id UUID for getRecipeFull / RecipeFullView. */
+  recipeUuid: string;
   imageURL: string;
   allDay: boolean;
   editable: boolean;
@@ -71,6 +80,7 @@ function mapEvents(
         start: mealDate.date,
         eventID: recipe.eventID ?? "",
         recipeID: recipe.recipe_id,
+        recipeUuid: recipe.id,
         imageURL: recipe.image_url ?? "",
         allDay: true,
         editable: true,
@@ -91,6 +101,7 @@ function mapEvents(
       start: trip.planned_date,
       eventID: trip.id,
       recipeID: "",
+      recipeUuid: "",
       imageURL: "",
       allDay: true,
       editable: false,
@@ -147,6 +158,10 @@ function CalendarPageContent() {
   const inputRef = useRef<HTMLInputElement>(null);
   const calendarRef = useRef<FullCalendar>(null);
   const [calendarKey, setCalendarKey] = useState(1);
+  const [openRecipeUuid, setOpenRecipeUuid] = useState<string | null>(null);
+  const [fullRecipe, setFullRecipe] = useState<RecipeRow | null>(null);
+  const [recipeViewLoading, setRecipeViewLoading] = useState(false);
+  const [recipeViewError, setRecipeViewError] = useState<string | null>(null);
   const loadEvents = useCallback(async () => {
     const [mealRes, tripsRes] = await Promise.all([getMealDates(), getGroceryTrips()]);
     setEvents(
@@ -181,6 +196,37 @@ function CalendarPageContent() {
     setFilteredOptions(getOptionsForFolder(selectedFolder, folderList, folderResults, favorites));
   }, [favorites, folderResults, folders, selectedFolder]);
 
+  useEffect(() => {
+    if (!openRecipeUuid) return;
+    let cancelled = false;
+    setRecipeViewLoading(true);
+    setRecipeViewError(null);
+    setFullRecipe(null);
+    getRecipeFull(openRecipeUuid).then((res) => {
+      if (cancelled) return;
+      if (res.error) setRecipeViewError(res.error);
+      else if (res.data) setFullRecipe(res.data);
+      setRecipeViewLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [openRecipeUuid]);
+
+  function closeRecipeView() {
+    setOpenRecipeUuid(null);
+    setFullRecipe(null);
+    setRecipeViewError(null);
+    setRecipeViewLoading(false);
+  }
+
+  function handleOpenUpcomingRecipe(event: CalendarEvent) {
+    if (event.eventType === "grocery") return;
+    const uuid = event.recipeUuid?.trim();
+    if (!uuid) return;
+    setOpenRecipeUuid(uuid);
+  }
+
   function handleUpdateEvents() {
     setCalendarKey((k) => (k >= 100 || k < 0 ? 1 : k + 1));
     loadEvents();
@@ -212,6 +258,7 @@ function CalendarPageContent() {
           ...next[idx],
           title: selectedSearchOption.recipe_label,
           recipeID: selectedSearchOption.recipe_id,
+          recipeUuid: selectedSearchOption.id,
           imageURL: selectedSearchOption.image_url ?? "",
           calories: energy.numeric,
           caloriesLabel: energy.kcalText,
@@ -250,6 +297,7 @@ function CalendarPageContent() {
       editable: true,
       eventID: uuidv4(),
       recipeID: "new",
+      recipeUuid: "",
       imageURL: "https://images.unsplash.com/photo-1485921325833-c519f76c4927?w=400",
       eventType: "recipe",
       calories: 0,
@@ -379,24 +427,19 @@ function CalendarPageContent() {
                           return (
                             <li key={event.eventID}>
                               <article className="calendar-upcoming-recipe-card">
-                                <div
+                                <button
+                                  type="button"
                                   className="calendar-upcoming-recipe-image"
                                   style={{
                                     backgroundImage: `url(${event.imageURL || "/images/recipe-placeholder.png"})`,
                                   }}
+                                  onClick={() => handleOpenUpcomingRecipe(event)}
+                                  aria-label={`Open recipe ${event.title}`}
                                 >
-                                  <button
-                                    type="button"
-                                    className="image-hover-bttn"
-                                    onClick={() => {
-                                      setClickedEvent(event);
-                                      setIsEventClicked(true);
-                                      setInputText(event.title === "(New event)" ? "" : event.title);
-                                    }}
-                                  >
-                                    <p>Open Recipe</p>
-                                  </button>
-                                </div>
+                                  <span className="image-hover-bttn">
+                                    <span>Open Recipe</span>
+                                  </span>
+                                </button>
                                 <div className="calendar-upcoming-recipe-content">
                                   <h1>{event.title}</h1>
                                   <div className="calendar-upcoming-recipe-subcontent">
@@ -599,6 +642,94 @@ function CalendarPageContent() {
           </div>
         </div>
       )}
+      {typeof document !== "undefined" &&
+        openRecipeUuid &&
+        createPortal(
+          <div
+            className="recipe-full-view-overlay"
+            onClick={closeRecipeView}
+            onKeyDown={(e) => e.key === "Escape" && closeRecipeView()}
+            role="button"
+            tabIndex={0}
+          >
+            <div
+              className="recipe-full-view-scroll-wrapper"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {recipeViewLoading && (
+                <div className="recipe-full-view-loading">
+                  <p className="recipe-full-view-loading-body" role="status">
+                    Loading recipe…
+                  </p>
+                  <button
+                    type="button"
+                    className="recipe-full-view-close-btn"
+                    onClick={closeRecipeView}
+                    aria-label="Close"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+              {!recipeViewLoading && recipeViewError && (
+                <div className="recipe-full-view-loading">
+                  <p
+                    className="recipe-full-view-loading-body recipe-full-view-error"
+                    role="alert"
+                  >
+                    {recipeViewError}
+                  </p>
+                  <div className="recipe-full-view-error-actions">
+                    <button
+                      type="button"
+                      className="recipe-full-view-try-again-btn"
+                      onClick={() => {
+                        if (!openRecipeUuid) return;
+                        setRecipeViewLoading(true);
+                        setRecipeViewError(null);
+                        getRecipeFull(openRecipeUuid).then((res) => {
+                          if (res.error) setRecipeViewError(res.error);
+                          else if (res.data) setFullRecipe(res.data);
+                          setRecipeViewLoading(false);
+                        });
+                      }}
+                    >
+                      Try again
+                    </button>
+                    <button
+                      type="button"
+                      className="recipe-full-view-close-btn"
+                      onClick={closeRecipeView}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
+              {!recipeViewLoading && !recipeViewError && fullRecipe && (
+                <RecipeFullView
+                  recipeData={fullRecipe}
+                  onClose={closeRecipeView}
+                  isHearted={favorites.some(
+                    (f) => f.recipe_id === fullRecipe.recipe_id
+                  )}
+                  onFavoriteChange={(recipe, isFavorited) => {
+                    setFavorites((prev) => {
+                      if (isFavorited) {
+                        if (prev.some((f) => f.recipe_id === recipe.recipe_id)) {
+                          return prev;
+                        }
+                        return [...prev, recipe];
+                      }
+                      return prev.filter((f) => f.recipe_id !== recipe.recipe_id);
+                    });
+                  }}
+                />
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

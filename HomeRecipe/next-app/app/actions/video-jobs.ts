@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUserId } from "@/lib/auth";
 import { unstable_noStore as noStore } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import type { ExtractedRecipe } from "@/lib/types";
@@ -47,7 +47,7 @@ const VIDEO_JOB_LIST_COLUMNS =
  */
 export async function getVideoJob(jobId: string, _refreshNonce?: number) {
   noStore();
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) {
     return { error: "Unauthorized", data: null };
   }
@@ -77,7 +77,7 @@ export async function getVideoJob(jobId: string, _refreshNonce?: number) {
  */
 export async function getVideoJobs() {
   noStore();
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) {
     return { error: "Unauthorized", data: [] };
   }
@@ -102,7 +102,7 @@ export async function getVideoJobs() {
  */
 export async function getLatestVideoJob() {
   noStore();
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) {
     return { error: "Unauthorized", data: null };
   }

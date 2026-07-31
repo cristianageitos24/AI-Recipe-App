@@ -1,5 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
+import { requireAuthUserIdOrRedirect } from "@/lib/auth";
 import { DashboardShell } from "@/components/DashboardShell";
 import { DashboardNav } from "@/components/DashboardNav";
 import { EnsureProfileOnMount } from "@/components/EnsureProfileOnMount";
@@ -14,10 +13,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { userId } = await auth();
-  if (!userId) {
-    redirect("/signin");
-  }
+  await requireAuthUserIdOrRedirect();
 
   const entitlementsRes = await getMyEntitlements();
 

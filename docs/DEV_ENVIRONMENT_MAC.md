@@ -116,7 +116,6 @@ Env template: `HomeRecipe/next-app/.env.local.example`
 | Clerk | Sign-in, sessions | https://dashboard.clerk.com |
 | Supabase | DB, Storage, SQL | https://supabase.com/dashboard |
 | OpenAI | Whisper + recipe extraction (worker) | https://platform.openai.com |
-| Edamam | Optional recipe search | https://developer.edamam.com |
 
 ---
 

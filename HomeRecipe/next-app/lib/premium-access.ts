@@ -1,6 +1,6 @@
 import "server-only";
 
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUserId } from "@/lib/auth";
 import { isUserPro, planLimitError } from "@/lib/entitlements";
 
 export type PremiumAccessResult =
@@ -13,7 +13,7 @@ export type PremiumAccessResult =
     };
 
 export async function requirePremiumPlanningAccess(): Promise<PremiumAccessResult> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { ok: false, error: "Unauthorized" };
   if (await isUserPro(userId)) return { ok: true, userId };
 

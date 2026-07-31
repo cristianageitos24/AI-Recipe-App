@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { requireAuthUserIdForApi } from "@/lib/auth";
 import { getAppBaseUrl, getStripe } from "@/lib/stripe";
 import { ensureStripeCustomer, getProfileBilling } from "@/lib/billing";
 
 /** Stripe Customer Portal — manage subscription, payment method, invoices. */
 export async function POST() {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const authResult = await requireAuthUserIdForApi();
+    if (authResult.response) return authResult.response;
+    const { userId } = authResult;
 
     await ensureStripeCustomer();
     const profile = await getProfileBilling(userId);

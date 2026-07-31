@@ -488,12 +488,35 @@
 }
 
 .grocery-instacart-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   border: none;
   background: #ff950f;
   color: #111114;
   font-family: var(--font-body);
   font-weight: 700;
   cursor: pointer;
+}
+
+.grocery-instacart-btn--coming-soon {
+  opacity: 0.72;
+  cursor: not-allowed;
+  background: #ffb45c;
+}
+
+.grocery-coming-soon-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(17, 17, 20, 0.14);
+  color: #111114;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .grocery-summary-clear-btn {

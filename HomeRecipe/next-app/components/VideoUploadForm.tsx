@@ -23,35 +23,122 @@ import "@/app/styling/RecipeTemplateShell.css";
 import "@/app/styling/RecipeFullView.css";
 
 const JOB_POLL_MS = 1750;
+const COOKING_PHRASE_ROTATE_MS = 2800;
 
-const STAGE_LABELS: Record<string, string> = {
-  downloading: "Grabbing your clip…",
-  validating: "Making sure the link looks good…",
-  thumbnail: "Creating a cover image…",
-  transcription: "Listening to what they say…",
-  ocr: "Gathering the ingredients…",
-  reasoning: "Reading through the steps…",
-  finalizing: "Double-checking cooking times…",
-  complete: "All set!",
-  error: "Something went wrong",
-};
+/** Fun kitchen-themed status lines shown while a video job runs (order shuffled per session). */
+const COOKING_PROGRESS_PHRASES = [
+  "Welcome to the kitchen…",
+  "Finding your recipe…",
+  "Getting everything ready…",
+  "Gathering the ingredients…",
+  "Checking the pantry…",
+  "Picking the freshest ingredients…",
+  "Washing the vegetables…",
+  "Cracking the eggs…",
+  "Measuring everything out…",
+  "Heating the pan…",
+  "Preheating the oven…",
+  "Lighting the stove…",
+  "Melting the butter…",
+  "Pouring the oil…",
+  "Chopping the veggies…",
+  "Dicing the onions…",
+  "Mincing the garlic…",
+  "Slicing the herbs…",
+  "Mixing everything together…",
+  "Stirring things up…",
+  "Whisking the batter…",
+  "Folding everything together…",
+  "Adding a pinch of magic…",
+  "Seasoning to perfection…",
+  "Adding the finishing touches…",
+  "Bringing it to a simmer…",
+  "Letting it cook…",
+  "Cooking up your recipe…",
+  "Keeping an eye on the oven…",
+  "Giving it a quick stir…",
+  "Taste testing…",
+  "Adjusting the seasoning…",
+  "Making it just right…",
+  "Almost ready…",
+  "Almost done…",
+  "Looking delicious…",
+  "Smells amazing…",
+  "The kitchen is busy…",
+  "Your chef is hard at work…",
+  "Chef is preparing your recipe…",
+  "Chef is putting on the finishing touches…",
+  "Writing your recipe card…",
+  "Organizing the ingredients…",
+  "Listing the cooking steps…",
+  "Making everything easy to follow…",
+  "Cleaning everything up…",
+  "Double checking the recipe…",
+  "Making sure nothing is missing…",
+  "Perfecting your recipe…",
+  "Formatting everything nicely…",
+  "Putting it all together…",
+  "Setting the table…",
+  "Plating your recipe…",
+  "Ready to serve…",
+  "Dinner is served!",
+  "Bon appétit!",
+  "Your recipe is almost ready…",
+  "One last sprinkle…",
+  "Just a little longer…",
+  "Making sure it's perfect…",
+  "Giving it the chef's approval…",
+  "Adding the secret ingredient…",
+  "Preparing something delicious…",
+  "Cooking with love…",
+  "Fresh from the kitchen…",
+  "Almost time to cook…",
+  "Ready for your next meal…",
+  "Putting the recipe into your cookbook…",
+  "Saving your recipe…",
+  "Getting everything ready for you…",
+  "Finding every ingredient…",
+  "Making cooking easier…",
+  "Building your recipe…",
+  "Preparing the perfect recipe card…",
+  "Final quality check…",
+  "Giving it one last look…",
+  "Putting on the finishing touches…",
+  "Looking over every step…",
+  "Making sure every measurement is right…",
+  "Making this recipe easy to follow…",
+  "Serving up something delicious…",
+  "The recipe is coming together…",
+  "The chef is almost finished…",
+  "This one's worth the wait…",
+  "Getting your kitchen ready…",
+  "Time to start cooking…",
+  "Ready when you are…",
+  "Preparing your next favorite recipe…",
+] as const;
 
-function videoJobPrimaryLine(job: VideoJob): string {
-  if (job.status === "uploaded" && !job.processing_stage) {
-    return "Waiting in the queue…";
-  }
-  if (job.processing_stage && STAGE_LABELS[job.processing_stage]) {
-    return STAGE_LABELS[job.processing_stage];
-  }
-  if (job.processing_stage) {
-    return job.processing_stage;
-  }
-  return "Working on your recipe…";
+const STAGE_ICON_KEYS = new Set([
+  "downloading",
+  "validating",
+  "thumbnail",
+  "transcription",
+  "ocr",
+  "reasoning",
+  "finalizing",
+  "error",
+]);
+
+function pickCookingPhrase(exclude?: string | null): string {
+  const pool =
+    exclude && COOKING_PROGRESS_PHRASES.length > 1
+      ? COOKING_PROGRESS_PHRASES.filter((p) => p !== exclude)
+      : COOKING_PROGRESS_PHRASES;
+  return pool[Math.floor(Math.random() * pool.length)] ?? COOKING_PROGRESS_PHRASES[0];
 }
 
 function videoJobStageIconKey(job: VideoJob): string {
   if (job.status === "uploaded" && !job.processing_stage) return "queued";
-  if (job.processing_stage && STAGE_LABELS[job.processing_stage]) {
+  if (job.processing_stage && STAGE_ICON_KEYS.has(job.processing_stage)) {
     return job.processing_stage;
   }
   return "default";
@@ -266,6 +353,7 @@ export function VideoUploadForm({
   const copyHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [elapsedTick, setElapsedTick] = useState(0);
+  const [cookingPhrase, setCookingPhrase] = useState(() => pickCookingPhrase());
 
   const inProgress =
     jobStatus?.status === "uploaded" || jobStatus?.status === "processing";
@@ -273,6 +361,15 @@ export function VideoUploadForm({
   useEffect(() => {
     if (!inProgress) return;
     const t = setInterval(() => setElapsedTick((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [inProgress, jobId]);
+
+  useEffect(() => {
+    if (!inProgress) return;
+    setCookingPhrase(pickCookingPhrase());
+    const t = setInterval(() => {
+      setCookingPhrase((prev) => pickCookingPhrase(prev));
+    }, COOKING_PHRASE_ROTATE_MS);
     return () => clearInterval(t);
   }, [inProgress, jobId]);
 
@@ -666,9 +763,18 @@ export function VideoUploadForm({
                 <span className="video-job-stage-icon">
                   <VideoJobStageGlyph stageKey={stageIconKey} />
                 </span>
-                <p className="video-job-stage-primary">
-                  {videoJobPrimaryLine(jobStatus)}
-                </p>
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.p
+                    key={cookingPhrase}
+                    className="video-job-stage-primary"
+                    initial={homeMotionEnabled ? { opacity: 0, y: 4 } : false}
+                    animate={homeMotionEnabled ? { opacity: 1, y: 0 } : undefined}
+                    exit={homeMotionEnabled ? { opacity: 0, y: -4 } : undefined}
+                    transition={{ duration: 0.25 }}
+                  >
+                    {cookingPhrase}
+                  </motion.p>
+                </AnimatePresence>
               </div>
               <div className="video-job-progress-bar-wrap">
                 <div
@@ -688,9 +794,6 @@ export function VideoUploadForm({
               <p className="video-job-progress-percent">
                 {progressPercent}% complete
               </p>
-              {jobStatus.processing_detail ? (
-                <p className="video-job-stage-detail">{jobStatus.processing_detail}</p>
-              ) : null}
               {elapsedLabel ? (
                 <div className="video-job-meta-times">
                   <p className="video-job-elapsed">Elapsed {elapsedLabel}</p>

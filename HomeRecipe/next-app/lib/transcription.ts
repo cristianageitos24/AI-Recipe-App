@@ -3,7 +3,7 @@
  * Extracts audio from video and transcribes speech-to-text
  */
 
-import ffmpeg from "fluent-ffmpeg";
+import ffmpeg from "@modernized/fluent-ffmpeg";
 import { promises as fs } from "fs";
 import path from "path";
 import OpenAI, { toFile } from "openai";

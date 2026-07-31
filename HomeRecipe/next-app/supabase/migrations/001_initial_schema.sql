@@ -10,7 +10,7 @@ CREATE TABLE public.profiles (
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- Recipes: shared by recipe_id (e.g. hash from Edamam)
+-- Recipes: shared by recipe_id (stable external / app recipe key)
 CREATE TABLE public.recipes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   recipe_id TEXT NOT NULL UNIQUE,

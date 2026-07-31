@@ -5,7 +5,16 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 /**
  * One Supabase client per React request (Server Components / Actions).
  * Speaks PostgREST over HTTP — not a direct Postgres pool — but avoids
- * re-allocating clients and re-fetching Clerk JWTs within the same request.
+ * re-allocating clients and re-fetching Clerk tokens within the same request.
+ *
+ * Auth model (Clerk Third-Party Auth):
+ * - Clerk owns the browser session cookies.
+ * - This client does NOT use Supabase Auth cookies or @supabase/ssr session refresh.
+ * - It forwards the Clerk **session token** via `accessToken` so RLS can authorize
+ *   with `auth.jwt()->>'sub'` (Clerk user id). Requires Clerk’s Supabase integration
+ *   (adds `role: "authenticated"`) and Clerk as a Third-Party Auth provider in Supabase.
+ * - Do not use Clerk JWT templates for Supabase (deprecated).
+ * See AUTHENTICATION.md.
  */
 export const createClient = cache(async () => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -23,19 +32,7 @@ export const createClient = cache(async () => {
         const authObj = await auth();
         const getToken = authObj?.getToken;
         if (typeof getToken !== "function") return null;
-
-        // RLS policies use auth.jwt()->>'sub', which must match recipes.user_id (Clerk user id).
-        // That requires Clerk's Supabase JWT template so PostgREST gets a compatible token.
-        // Clerk Dashboard → JWT Templates → "supabase" (see Supabase integration setup).
-        const template =
-          process.env.CLERK_SUPABASE_JWT_TEMPLATE?.trim() || "supabase";
-        try {
-          const supabaseJwt = await getToken({ template });
-          if (supabaseJwt) return supabaseJwt;
-        } catch {
-          /* template name missing or not deployed */
-        }
-
+        // Default session token (Third-Party Auth) — not a JWT template.
         return (await getToken()) ?? null;
       } catch {
         return null;

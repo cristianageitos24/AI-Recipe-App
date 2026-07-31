@@ -1,5 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
+import { requireAuthUserIdOrRedirect } from "@/lib/auth";
 import { ensureProfile } from "@/app/actions/profiles";
 import { getProfileBilling } from "@/lib/billing";
 import { isProSubscriptionStatus } from "@/lib/stripe";
@@ -15,8 +14,7 @@ export default async function BillingPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const { userId } = await auth();
-  if (!userId) redirect("/signin");
+  const userId = await requireAuthUserIdOrRedirect();
 
   await ensureProfile();
   const profile = await getProfileBilling(userId);

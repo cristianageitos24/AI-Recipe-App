@@ -1,16 +1,20 @@
 "use server";
 
 import { RECIPE_LIST_COLUMNS } from "@/lib/recipe-select";
+import {
+  MEAL_CALENDAR_LOOKAHEAD_MONTHS,
+  MEAL_CALENDAR_RETENTION_DAYS,
+} from "@/lib/meal-calendar-retention";
 import { createClient } from "@/utils/supabase/server";
 import { isUserPro, planLimitError } from "@/lib/entitlements";
 import { requirePremiumPlanningAccess } from "@/lib/premium-access";
 
-/** Bound calendar payload: past 2 months through next 4 months. */
+/** Bound calendar payload: retention lookback through lookahead months. */
 function mealDateWindowIso(): { from: string; to: string } {
   const from = new Date();
-  from.setUTCMonth(from.getUTCMonth() - 2);
+  from.setUTCDate(from.getUTCDate() - MEAL_CALENDAR_RETENTION_DAYS);
   const to = new Date();
-  to.setUTCMonth(to.getUTCMonth() + 4);
+  to.setUTCMonth(to.getUTCMonth() + MEAL_CALENDAR_LOOKAHEAD_MONTHS);
   return {
     from: from.toISOString().slice(0, 10),
     to: to.toISOString().slice(0, 10),
@@ -75,10 +79,18 @@ export async function getMealDates() {
     ).meal_date_recipes;
     const mdr = Array.isArray(rawMdr) ? rawMdr : rawMdr ? [rawMdr] : [];
     const recipes = mdr
-      .map((r) => ({
-        ...(r.recipes as object),
-        eventID: row.event_id,
-      }))
+      .map((r) => {
+        const embedded =
+          r.recipes && typeof r.recipes === "object"
+            ? (r.recipes as Record<string, unknown>)
+            : {};
+        return {
+          ...embedded,
+          // meal_date_recipes.recipe_id is recipes.id (UUID); use as fallback.
+          id: (embedded.id as string | undefined) ?? r.recipe_id,
+          eventID: row.event_id,
+        };
+      })
       .filter((item) =>
         mealRecipeAllowed(
           item as {

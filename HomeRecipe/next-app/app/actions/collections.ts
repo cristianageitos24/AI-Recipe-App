@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUserId } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 import {
   RECIPE_FOLDER_COLUMNS,
@@ -41,7 +41,7 @@ export async function getRecipesByCollection(
   slug: string,
   options?: { limit?: number; offset?: number }
 ): Promise<{ error: string | null; data: RecipeRow[] | null }> {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized", data: null };
 
   const config = getCollectionBySlug(slug);

@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateHashKey, normalizeSourceUrlForHash } from "@/lib/processRecipeData";
+import {
+  generateHashKey,
+  normalizeSourceUrlForHash,
+} from "@/lib/processRecipeData";
 import { createServiceRoleClient } from "@/utils/supabase/server";
-import { auth } from "@clerk/nextjs/server";
+import { requireAuthUserIdForApi } from "@/lib/auth";
 import { assertCanExtract } from "@/lib/entitlements";
 
 const IMPORT_API_BASE =
@@ -10,10 +13,9 @@ const URL_IMPORT_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const authResult = await requireAuthUserIdForApi();
+    if (authResult.response) return authResult.response;
+    const { userId } = authResult;
 
     const extractGate = await assertCanExtract(userId);
     if (!extractGate.ok) {
@@ -29,7 +31,9 @@ export async function POST(request: NextRequest) {
 
     const urlHash = generateHashKey(normalizeSourceUrlForHash(url));
     const supabase = await createServiceRoleClient();
-    const cacheFreshAfter = new Date(Date.now() - URL_IMPORT_CACHE_TTL_MS).toISOString();
+    const cacheFreshAfter = new Date(
+      Date.now() - URL_IMPORT_CACHE_TTL_MS,
+    ).toISOString();
 
     // Fresh cache hit — return without calling FastAPI
     const { data: cached } = await supabase
@@ -70,7 +74,7 @@ export async function POST(request: NextRequest) {
         url,
         scraped: payload,
         cached_at: new Date().toISOString(),
-      })
+      }),
     ).catch(() => {});
 
     return NextResponse.json(payload, { status: 200 });
@@ -83,7 +87,9 @@ export async function POST(request: NextRequest) {
         ? String((cause as { code?: string }).code)
         : "";
     const upstreamUnreachable =
-      err.message === "fetch failed" || errno === "ECONNREFUSED" || errno === "ENOTFOUND";
+      err.message === "fetch failed" ||
+      errno === "ECONNREFUSED" ||
+      errno === "ENOTFOUND";
 
     if (upstreamUnreachable) {
       return NextResponse.json(

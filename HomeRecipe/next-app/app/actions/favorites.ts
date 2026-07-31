@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUserId } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 import { RECIPE_LIST_COLUMNS } from "@/lib/recipe-select";
 import type { RecipePayload, RecipeRow } from "@/lib/types";
@@ -20,7 +20,7 @@ function isOwnNonExpired(
 }
 
 export async function getFavorites() {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized", data: [] };
 
   const supabase = await createClient();
@@ -47,7 +47,7 @@ export async function getFavorites() {
 }
 
 export async function addFavorite(payload: RecipePayload) {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized" };
 
   const isUserOwned =
@@ -80,7 +80,7 @@ export async function addFavorite(payload: RecipePayload) {
 }
 
 export async function removeFavorite(recipeId: string) {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) return { error: "Unauthorized" };
 
   const supabase = await createClient();
