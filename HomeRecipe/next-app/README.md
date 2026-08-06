@@ -47,6 +47,7 @@ Optional:
 - `OPENAI_AUDIO_TRANSCRIPTION_KEY` – video worker audio transcription (Whisper); worker-only
 - `OPENAI_REASONING_API_KEY` – video worker AI recipe extraction; also fallback for nutrition estimate when `NUTRITION_ESTIMATE_OPENAI_API_KEY` is unset
 - `SUPABASE_DB_PASSWORD` – optional; for Supabase CLI database connection (`supabase link` / `db push`), not read by the app at runtime
+- `REVENUECAT_WEBHOOK_SECRET` – Authorization header value for `POST /api/webhooks/revenuecat` (Apple IAP → `profiles.plan_tier` sync). Configure the same value in RevenueCat Dashboard → Integrations → Webhooks pointing at `https://<production-host>/api/webhooks/revenuecat`. Sandbox and production events are both fine.
 
 ## Database
 
