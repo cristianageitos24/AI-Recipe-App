@@ -5,6 +5,7 @@ import { getFavorites } from "@/app/actions/favorites";
 import { getFolders } from "@/app/actions/folders";
 import { getMealDates } from "@/app/actions/meal-dates";
 import { getGroceryTrips } from "@/app/actions/grocery-trips";
+import { getOwnedLibraryRecipes } from "@/app/actions/recipes";
 import { getSuggestedRecipes } from "@/app/actions/search";
 import { getAuthUserId } from "@/lib/auth";
 import { isUserPro } from "@/lib/entitlements";
@@ -18,19 +19,22 @@ type FolderResults = {
 export async function getHomeBootstrap() {
   const userId = await getAuthUserId();
   const pro = userId ? await isUserPro(userId) : false;
-  const [favRes, folderRes, mealRes] = await Promise.all([
+  const [favRes, folderRes, mealRes, ownedRes] = await Promise.all([
     getFavorites(),
     getFolders(),
     pro
       ? getMealDates()
       : Promise.resolve({ error: null, data: [] }),
+    getOwnedLibraryRecipes(),
   ]);
 
   const favorites = (favRes.data ?? []) as RecipeRow[];
+  const ownedRecipes = (ownedRes.data ?? []) as RecipeRow[];
   const folderResults = (folderRes.data ?? { folders: [], results: {} }) as FolderResults;
 
   const savedIds = new Set<string>();
   for (const recipe of favorites) savedIds.add(recipe.recipe_id);
+  for (const recipe of ownedRecipes) savedIds.add(recipe.recipe_id);
   for (const folderName of folderResults.folders) {
     for (const recipe of folderResults.results[folderName] ?? []) {
       savedIds.add(recipe.recipe_id);
@@ -40,13 +44,34 @@ export async function getHomeBootstrap() {
   const suggestedRes = await getSuggestedRecipes(Array.from(savedIds));
 
   return {
-    error: favRes.error ?? folderRes.error ?? mealRes.error ?? suggestedRes.error,
+    error:
+      favRes.error ??
+      folderRes.error ??
+      mealRes.error ??
+      ownedRes.error ??
+      suggestedRes.error,
     data: {
       favorites,
+      ownedRecipes,
       folders: folderResults.folders,
       results: folderResults.results,
       mealDates: mealRes.data ?? [],
       suggestedRecipes: (suggestedRes.data ?? []) as RecipeRow[],
+    },
+  };
+}
+
+/** Bootstrap for filtered library lists (`/dashboard/recipes`). */
+export async function getRecipesLibraryBootstrap() {
+  const [ownedRes, favRes] = await Promise.all([
+    getOwnedLibraryRecipes(),
+    getFavorites(),
+  ]);
+  return {
+    error: ownedRes.error ?? favRes.error,
+    data: {
+      ownedRecipes: (ownedRes.data ?? []) as RecipeRow[],
+      favorites: (favRes.data ?? []) as RecipeRow[],
     },
   };
 }

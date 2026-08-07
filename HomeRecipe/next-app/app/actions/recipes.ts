@@ -5,7 +5,7 @@ import {
   syncRecipeNutritionForRecipe,
   type SyncRecipeNutritionOptions,
 } from "@/lib/nutrition/sync-recipe-nutrition";
-import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
+import { RECIPE_LIST_COLUMNS, RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
 import { trashListCutoffIso } from "@/lib/trash-retention";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import type { TrashActionResult } from "@/lib/trash-result";
@@ -221,6 +221,37 @@ export type TrashedRecipeRow = {
   recipe_label: string;
   deleted_at: string;
 };
+
+function notExpiredFilter() {
+  return `expires_at.is.null,expires_at.gt.${new Date().toISOString()}`;
+}
+
+/** Active user-owned recipes in the library (non-deleted; free tier excludes expired). */
+export async function getOwnedLibraryRecipes(): Promise<{
+  error: string | null;
+  data: RecipeRow[];
+}> {
+  const userId = await getAuthUserId();
+  if (!userId) return { error: "Unauthorized", data: [] };
+
+  const supabase = await createClient();
+  const pro = await isUserPro(userId);
+
+  let query = supabase
+    .from("recipes")
+    .select(RECIPE_LIST_COLUMNS)
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+
+  if (!pro) {
+    query = query.or(notExpiredFilter());
+  }
+
+  const { data, error } = await query;
+  if (error) return { error: error.message, data: [] };
+  return { error: null, data: (data ?? []) as unknown as RecipeRow[] };
+}
 
 /** User-owned soft-deleted recipes still within the retention window (see `purge_trashed_rows`). */
 export async function getTrashedRecipes(): Promise<{

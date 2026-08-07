@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { getHomeBootstrap } from "@/app/actions/dashboard";
+import { computeHomeStatCounts } from "@/lib/stat-filters";
 import type { RecipeRow } from "@/lib/types";
 
 type FolderWithCount = { folderName: string; count: number };
@@ -26,6 +27,7 @@ function formatDateKey(dateKey: string): string {
 
 export function useHomeData() {
   const [favorites, setFavorites] = useState<RecipeRow[]>([]);
+  const [ownedRecipes, setOwnedRecipes] = useState<RecipeRow[]>([]);
   const [mealDates, setMealDates] = useState<MealDay[]>([]);
   const [foldersWithCounts, setFoldersWithCounts] = useState<FolderWithCount[]>([]);
   const [folderRecipesByName, setFolderRecipesByName] = useState<Record<string, RecipeRow[]>>({});
@@ -35,6 +37,7 @@ export function useHomeData() {
     getHomeBootstrap().then((res) => {
       if (!res.data) return;
       setFavorites(res.data.favorites);
+      setOwnedRecipes(res.data.ownedRecipes ?? []);
       setFoldersWithCounts(
         res.data.folders.map((name) => ({
           folderName: name,
@@ -93,28 +96,14 @@ export function useHomeData() {
       cuisineCounts.set(cuisine, (cuisineCounts.get(cuisine) ?? 0) + 1);
     }
 
-    const now = new Date();
-    const oneWeekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    let recipesThisWeek = 0;
-    let importedThisMonth = 0;
-    for (const recipe of savedMap.values()) {
-      if (recipe.created_at) {
-        const createdAt = new Date(recipe.created_at);
-        if (createdAt >= oneWeekAgo) recipesThisWeek++;
-        if (createdAt >= startOfMonth) importedThisMonth++;
-      }
-    }
+    const counts = computeHomeStatCounts(ownedRecipes, favorites.length);
 
     return {
-      totalRecipesSaved: savedMap.size,
-      favoritesCount: favorites.length,
+      ...counts,
       mostCommonCuisine:
         [...cuisineCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "N/A",
-      recipesThisWeek,
-      importedThisMonth,
     };
-  }, [favorites, folderRecipesByName, mealDates]);
+  }, [favorites, folderRecipesByName, mealDates, ownedRecipes]);
 
   const upcomingMealPlans = useMemo(() => {
     if (mealDates.length === 0) return [];

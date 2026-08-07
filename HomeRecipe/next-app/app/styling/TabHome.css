@@ -629,6 +629,27 @@
   box-shadow: 0 var(--space-1) var(--space-4) var(--overlay-light);
 }
 
+a.home-stat-card-clickable {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+a.home-stat-card-clickable:hover {
+  opacity: 0.92;
+}
+
+a.home-stat-card-clickable:hover .home-stat-card-link,
+a.home-stat-card-clickable:focus-visible .home-stat-card-link {
+  text-decoration: underline;
+}
+
+a.home-stat-card-clickable:focus-visible {
+  outline: 2px solid var(--accent, #dc2100);
+  outline-offset: 2px;
+}
+
 .home-stat-icon-circle {
   flex-shrink: 0;
   width: 52px;
