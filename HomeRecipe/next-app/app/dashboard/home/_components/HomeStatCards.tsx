@@ -13,7 +13,7 @@ type StatCardDef = {
   filter: StatFilterId;
   label: string;
   count: number;
-  linkClass: string;
+  accentClass: string;
   iconClass: string;
   icon: ReactNode;
 };
@@ -24,7 +24,7 @@ export function HomeStatCards({ stats }: { stats: HomeStats }) {
       filter: "all",
       label: "Total Recipes",
       count: stats.totalRecipesSaved,
-      linkClass: "home-stat-card-link-blue",
+      accentClass: "home-stat-card-accent-blue",
       iconClass: "home-stat-icon-blue",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -37,7 +37,7 @@ export function HomeStatCards({ stats }: { stats: HomeStats }) {
       filter: "favorites",
       label: "Favorites",
       count: stats.favoritesCount,
-      linkClass: "home-stat-card-link-green",
+      accentClass: "home-stat-card-accent-green",
       iconClass: "home-stat-icon-green",
       icon: (
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -49,7 +49,7 @@ export function HomeStatCards({ stats }: { stats: HomeStats }) {
       filter: "week",
       label: "Recipes This Week",
       count: stats.recipesThisWeek,
-      linkClass: "home-stat-card-link-red",
+      accentClass: "home-stat-card-accent-red",
       iconClass: "home-stat-icon-red",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -64,7 +64,7 @@ export function HomeStatCards({ stats }: { stats: HomeStats }) {
       filter: "imported",
       label: "Imported This Month",
       count: stats.importedThisMonth,
-      linkClass: "home-stat-card-link-blue",
+      accentClass: "home-stat-card-accent-purple",
       iconClass: "home-stat-icon-purple",
       icon: (
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -82,7 +82,7 @@ export function HomeStatCards({ stats }: { stats: HomeStats }) {
           <Link
             key={card.filter}
             href={getStatFilterHref(card.filter)}
-            className="home-stat-card home-stat-card-clickable"
+            className={`home-stat-card home-stat-card-clickable ${card.accentClass}`}
             aria-label={`${card.label}, ${card.count}. ${caption}`}
           >
             <div className={`home-stat-icon-circle ${card.iconClass}`}>
@@ -91,9 +91,7 @@ export function HomeStatCards({ stats }: { stats: HomeStats }) {
             <div className="home-stat-card-body">
               <p className="home-stat-card-label">{card.label}</p>
               <p className="home-stat-card-value">{card.count}</p>
-              <span className={`home-stat-card-link ${card.linkClass}`}>
-                {caption}
-              </span>
+              <span className="home-stat-card-caption">{caption}</span>
             </div>
           </Link>
         );
