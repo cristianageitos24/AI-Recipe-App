@@ -1,13 +1,74 @@
-# Ignore large CSV in data/; track scripts, requirements, and docs
-data/*.csv
-# Keep import script local (not shared)
-data/import_full_dataset.py
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Single ignore file for the whole repo (root, HomeRecipe/, next-app/, supabase/).
 
+# --- OS / editor ---
+.DS_Store
+.claude
+.cursor
 # Cursor IDE debug session logs (NDJSON)
 .cursor/debug*.log
 
-# macOS Finder metadata
-.DS_Store
+# --- dependencies ---
+node_modules/
+.pnp
+.pnp.js
+.pnp.*
+**/.yarn/*
+!**/.yarn/patches
+!**/.yarn/plugins
+!**/.yarn/releases
+!**/.yarn/versions
 
-.claude
-.cursor
+# --- python ---
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- build output ---
+build/
+coverage/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+.nvmrc
+
+# --- logs ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# --- env / secrets ---
+.env
+.env.*
+!.env*.example
+*.pem
+# clerk configuration (can include secrets)
+/HomeRecipe/next-app/.clerk/
+
+# --- hosting ---
+.vercel
+
+# --- supabase ---
+.branches
+.temp
+.env.keys
+# Local DB archive dumps (legacy_recipes_archive exports)
+/HomeRecipe/next-app/supabase/exports/*.ndjson
+/HomeRecipe/next-app/supabase/exports/*.ndjson.gz
+/HomeRecipe/next-app/supabase/exports/*.sql
+/HomeRecipe/next-app/supabase/exports/*.sql.gz
+
+# --- data ---
+# Ignore large CSV in data/; track scripts, requirements, and docs
+/data/*.csv
+# Keep import script local (not shared)
+/data/import_full_dataset.py
+# Open Recipes data (large downloaded file)
+recipeitems*.json.gz
+
+*.md
+*.txt
