@@ -1,4 +1,5 @@
 import "@/app/styling/AboutPage.css";
+import "@/app/styling/mobile/settings-billing-about.css";
 
 export default function AboutPage() {
   return (

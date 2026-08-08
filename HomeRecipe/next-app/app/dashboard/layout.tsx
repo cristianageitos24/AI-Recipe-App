@@ -7,6 +7,8 @@ import { EntitlementsProvider } from "@/components/EntitlementsProvider";
 import { getMyEntitlements } from "@/app/actions/entitlements";
 import "@/app/styling/Nav.css";
 import "@/app/styling/UpgradePrompt.css";
+import "@/app/styling/mobile/dashboard-shell.css";
+import "@/app/styling/mobile/modals.css";
 
 export default async function DashboardLayout({
   children,

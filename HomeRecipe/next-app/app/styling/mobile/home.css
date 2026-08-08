@@ -1,0 +1,97 @@
+/* Phone-only home (≤700px). Desktop home lives in ../TabHome.css */
+
+@media screen and (max-width: 700px) {
+  .home-main-panel.main-panel,
+  .main-panel.home-main-panel {
+    padding: 12px 12px 24px;
+  }
+
+  .home-welcome-heading {
+    font-size: 22px !important;
+    line-height: 1.25;
+  }
+
+  .home-welcome-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .home-create-recipe-btn {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+    white-space: normal;
+  }
+
+  .home-stat-cards-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .home-import-card {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .home-import-decoration {
+    display: none;
+  }
+
+  .home-import-main {
+    padding: 16px;
+  }
+
+  .home-import-card .home-section-caption {
+    white-space: normal;
+  }
+
+  .home-import-form .video-extractor-url-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-import-form .video-extractor-submit {
+    width: 100%;
+    min-width: 0;
+    justify-self: stretch;
+  }
+
+  .home-lower-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-collections-panel,
+  .home-upcoming-panel {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+  }
+
+  .search-mode-tabs {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    white-space: normal;
+  }
+
+  .search-fullscreen-modal {
+    left: 8px !important;
+    right: 8px !important;
+    top: calc(var(--mobile-top-brand-height, 52px) + env(safe-area-inset-top, 0px) + 8px) !important;
+    bottom: calc(var(--mobile-tab-bar-height, 64px) + env(safe-area-inset-bottom, 0px) + 8px) !important;
+    z-index: 300;
+    padding: 56px 12px 12px;
+    border-radius: 16px;
+  }
+
+  .free-plan-banner {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .free-plan-banner button,
+  .free-plan-banner a {
+    width: 100%;
+    justify-content: center;
+  }
+}

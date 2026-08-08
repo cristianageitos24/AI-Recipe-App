@@ -1,0 +1,42 @@
+/* Phone-only calendar (≤700px). */
+
+@media screen and (max-width: 700px) {
+  .calendar-upcoming-recipe-card {
+    width: min(100%, 335px) !important;
+    max-width: 100%;
+    grid-template-columns: 88px minmax(0, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  .calendar-upcoming-events-container,
+  .calendar-upcoming-header,
+  .calendar-section-label {
+    padding-left: 12px !important;
+  }
+
+  .calendar-today-subhead {
+    display: none !important;
+  }
+
+  .calendar-event-date {
+    margin-right: 12px;
+  }
+
+  .fc .fc-toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .fc .fc-toolbar-chunk {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .event-search-options,
+  .calendar-event-search,
+  .event-search-options-container {
+    width: min(100%, 420px);
+    max-width: calc(100vw - 24px);
+  }
+}

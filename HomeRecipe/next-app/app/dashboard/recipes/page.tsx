@@ -20,6 +20,8 @@ import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/TabCookbook.css";
 import "@/app/styling/FilteredRecipesPage.css";
 import "@/app/styling/TabHome.css";
+import "@/app/styling/mobile/recipe-cards.css";
+import "@/app/styling/mobile/home.css";
 
 const playfairDisplay = Playfair_Display({
   subsets: ["latin"],

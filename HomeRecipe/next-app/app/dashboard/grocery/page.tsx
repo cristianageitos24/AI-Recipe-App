@@ -16,6 +16,7 @@ import {
 import { createGroceryTrip } from "@/app/actions/grocery-trips";
 import { PremiumFeatureGate } from "@/components/PremiumFeatureGate";
 import "@/app/styling/GroceryList.css";
+import "@/app/styling/mobile/grocery.css";
 
 const playfairDisplay = Playfair_Display({
   subsets: ["latin"],

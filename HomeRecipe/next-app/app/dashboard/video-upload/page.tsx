@@ -6,6 +6,7 @@ import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useEntitlements } from "@/components/EntitlementsProvider";
 import "@/app/styling/VideoUpload.css";
 import "@/app/styling/UpgradePrompt.css";
+import "@/app/styling/mobile/create-import.css";
 
 export default function VideoUploadPage() {
   const { entitlements, refreshEntitlements } = useEntitlements();

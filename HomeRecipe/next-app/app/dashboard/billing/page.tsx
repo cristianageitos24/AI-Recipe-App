@@ -6,6 +6,7 @@ import { BillingActions } from "@/components/BillingActions";
 import { CheckoutSuccessPoller } from "@/components/CheckoutSuccessPoller";
 import { PlanCompareCards } from "@/components/PlanCompareCards";
 import "@/app/styling/BillingPage.css";
+import "@/app/styling/mobile/settings-billing-about.css";
 
 type SearchParams = Promise<{ checkout?: string }>;
 

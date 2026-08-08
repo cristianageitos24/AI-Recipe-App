@@ -10,6 +10,7 @@ import {
 } from "@/lib/recipeSourceLink";
 import "@/app/styling/RecipeTemplateShell.css";
 import "@/app/styling/UpgradePrompt.css";
+import "@/app/styling/mobile/recipe-shell.css";
 
 export type RecipeTemplateShellProps = {
   template: RecipeTemplateData;

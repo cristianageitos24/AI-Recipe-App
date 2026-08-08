@@ -19,6 +19,9 @@ import { useTrashUndoOptional } from "@/components/TrashUndoProvider";
 import { buildManualRecipePayload } from "@/lib/processRecipeData";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/CookbookFolderPage.css";
+import "@/app/styling/mobile/cookbook-folder.css";
+import "@/app/styling/mobile/recipe-cards.css";
+import "@/app/styling/mobile/create-import.css";
 
 export default function CookbookFolderPage() {
   const params = useParams();

@@ -11,6 +11,7 @@ import { OpenAccountButton } from "./OpenAccountButton";
 import { ProfileSection } from "./ProfileSection";
 import { TrashRestoreSection } from "./TrashRestoreSection";
 import "@/app/styling/SettingsPage.css";
+import "@/app/styling/mobile/settings-billing-about.css";
 
 function AccountIcon() {
   return (

@@ -12,6 +12,8 @@ import { CuratedCookbooks } from "@/components/CuratedCookbooks";
 import { RecipeListCard } from "@/components/RecipeListCard";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/TabCookbook.css";
+import "@/app/styling/mobile/cookbooks-list.css";
+import "@/app/styling/mobile/recipe-cards.css";
 
 const playfairDisplay = Playfair_Display({
   subsets: ["latin"],

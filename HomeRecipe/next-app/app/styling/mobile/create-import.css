@@ -1,0 +1,43 @@
+/* Phone-only create recipe + video/import (≤700px). */
+
+@media screen and (max-width: 700px) {
+  .manual-recipe-tabs,
+  .create-recipe-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+
+  .manual-recipe-title-input,
+  .create-recipe-title input,
+  .video-extractor-title,
+  .video-extractor-header h1 {
+    font-size: 22px !important;
+    line-height: 1.25;
+  }
+
+  .manual-recipe-line-row,
+  .manual-ingredient-row,
+  .manual-step-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .video-extractor-url-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .video-extractor-submit {
+    width: 100%;
+    min-width: 0 !important;
+  }
+
+  .video-save-modal,
+  .video-save-dialog {
+    width: min(92vw, 420px) !important;
+    max-width: calc(100vw - 24px);
+  }
+}

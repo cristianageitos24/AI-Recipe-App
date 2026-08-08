@@ -1,0 +1,11 @@
+/* Phone-only recipe template sticky CTA clearance (≤700px). */
+
+@media screen and (max-width: 700px) {
+  .recipe-template-sticky-cta {
+    bottom: 0;
+    padding-bottom: calc(
+      var(--space-3) + var(--mobile-tab-bar-height, 64px) + env(safe-area-inset-bottom, 0px)
+    ) !important;
+    z-index: 190;
+  }
+}

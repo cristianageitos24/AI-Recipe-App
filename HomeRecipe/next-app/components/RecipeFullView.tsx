@@ -33,6 +33,8 @@ import {
 } from "@/lib/processRecipeData";
 import "@/app/styling/RecipeFullView.css";
 import "@/app/styling/UpgradePrompt.css";
+import "@/app/styling/mobile/recipe-fullview.css";
+import "@/app/styling/mobile/recipe-shell.css";
 
 const INGREDIENT_PREVIEW_COUNT = 10;
 

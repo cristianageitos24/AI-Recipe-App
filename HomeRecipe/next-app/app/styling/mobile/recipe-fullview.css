@@ -1,0 +1,10 @@
+/* Phone-only recipe full view (≤700px). */
+
+@media screen and (max-width: 700px) {
+  .more-information-container {
+    width: min(96vw, 390px) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: 88dvh !important;
+    box-sizing: border-box;
+  }
+}

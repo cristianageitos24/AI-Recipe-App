@@ -1,0 +1,32 @@
+/* Phone-only grocery list (≤700px). */
+
+@media screen and (max-width: 700px) {
+  .grocery-page h1,
+  .grocery-header h1,
+  .main-panel h1 {
+    font-size: 24px;
+  }
+
+  .grocery-summary-card {
+    padding: 16px !important;
+  }
+
+  .grocery-summary-card.is-pinned {
+    position: static !important;
+    top: auto !important;
+  }
+
+  .grocery-add-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .grocery-add-control,
+  .grocery-add-btn {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+}
