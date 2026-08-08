@@ -156,6 +156,26 @@
   text-align: center;
 }
 
+.auth-legal {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  color: var(--color-fg-muted);
+  text-align: center;
+  margin: var(--space-2) 0 0;
+  max-width: 28rem;
+}
+
+.auth-legal a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.auth-legal a:hover {
+  color: var(--accent-hover);
+}
+
 .auth-page .auth-link-wrap {
   margin-top: var(--space-2);
   font-family: var(--font-body);

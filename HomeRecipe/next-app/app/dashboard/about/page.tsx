@@ -1,3 +1,4 @@
+import Link from "next/link";
 import "@/app/styling/AboutPage.css";
 import "@/app/styling/mobile/settings-billing-about.css";
 
@@ -20,6 +21,18 @@ export default function AboutPage() {
             USDA FoodData Central
           </a>
           , a public-domain U.S. Government dataset (CC0).
+        </p>
+      </section>
+      <section className="dashboard-about-section" aria-labelledby="about-privacy-heading">
+        <h2 id="about-privacy-heading" className="dashboard-about-h2">
+          Privacy
+        </h2>
+        <p className="dashboard-about-p">
+          Read how we handle account, recipe, media, and billing data in our{" "}
+          <Link className="dashboard-about-link" href="/privacy">
+            Privacy Policy
+          </Link>
+          .
         </p>
       </section>
     </div>

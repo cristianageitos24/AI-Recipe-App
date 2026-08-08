@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { ClientSignUp } from "@/components/ClientSignUp";
 
 export default function SignUpPage() {
@@ -15,6 +16,11 @@ export default function SignUpPage() {
       <p className="auth-subtitle">Let&apos;s get started!</p>
 
       <ClientSignUp />
+
+      <p className="auth-legal">
+        By continuing, you agree we may process your data as described in our{" "}
+        <Link href="/privacy">Privacy Policy</Link>.
+      </p>
     </div>
   );
 }

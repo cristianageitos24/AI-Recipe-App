@@ -228,6 +228,10 @@ export default async function SettingsPage() {
               </p>
             </div>
           </div>
+          <Link href="/privacy" className="settings-row-link">
+            <span>Privacy Policy</span>
+            <ChevronIcon />
+          </Link>
         </section>
 
         <TrashRestoreSection
