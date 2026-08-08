@@ -340,7 +340,8 @@ enabled = false
 # Domain must match your Clerk Frontend API host (Clerk Dashboard → Supabase setup).
 [auth.third_party.clerk]
 enabled = true
-domain = "selected-narwhal-27.clerk.accounts.dev"
+# Production Clerk Frontend API (must match Clerk Dashboard → Domains / Supabase integration)
+domain = "clerk.homerecipe.co"
 
 # OAuth server configuration
 [auth.oauth_server]
