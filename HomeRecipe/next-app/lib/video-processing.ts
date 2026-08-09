@@ -188,11 +188,7 @@ export function applyOcrTypoCorrections(text: string): string {
 }
 
 /**
- * Extract frames from video
- * @param videoPath Path to video file
- * @param outputDir Directory to save frames
- * @param maxFrames Maximum number of frames to extract (default: 60)
- * @returns Array of frame file paths
+ * Extract frames from video for OCR (grayscale, 1fps).
  */
 export async function extractFrames(
   videoPath: string,
@@ -200,20 +196,16 @@ export async function extractFrames(
   maxFrames: number = 60
 ): Promise<string[]> {
   return new Promise((resolve, reject) => {
-    const framePaths: string[] = [];
-    let frameCount = 0;
-
     ffmpeg(videoPath)
       .outputOptions([
         "-vf",
         // OCR-optimized: 1fps, 2x scale, grayscale, contrast, light sharpen for text
         "fps=1,scale=iw*2:ih*2,format=gray,eq=contrast=1.2:brightness=0.02,unsharp=5:5:0.5:5:5:0",
         "-frames:v",
-        maxFrames.toString(), // Limit frames
+        maxFrames.toString(),
       ])
       .output(join(outputDir, "frame-%03d.png"))
       .on("end", () => {
-        // Collect all frame files
         const fs = require("fs");
         const files = fs.readdirSync(outputDir);
         const frameFiles = files
@@ -225,6 +217,47 @@ export async function extractFrames(
       })
       .on("error", (err) => {
         reject(new Error(`Frame extraction failed: ${err.message}`));
+      })
+      .run();
+  });
+}
+
+/**
+ * Extract color frames spaced across the video for multimodal vision (not grayscale).
+ */
+export async function extractColorFrames(
+  videoPath: string,
+  outputDir: string,
+  maxFrames: number,
+  durationSec: number
+): Promise<string[]> {
+  const fs = require("fs");
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+  const count = Math.max(1, Math.min(maxFrames, Math.max(1, Math.ceil(durationSec))));
+  // fps so we get ~count frames over the whole clip
+  const fps = Math.max(0.05, count / Math.max(durationSec, 1));
+
+  return new Promise((resolve, reject) => {
+    ffmpeg(videoPath)
+      .outputOptions([
+        "-vf",
+        `fps=${fps},scale=iw:ih`,
+        "-frames:v",
+        count.toString(),
+      ])
+      .output(join(outputDir, "color-%03d.png"))
+      .on("end", () => {
+        const files = fs.readdirSync(outputDir);
+        const frameFiles = files
+          .filter((f: string) => f.startsWith("color-") && f.endsWith(".png"))
+          .sort()
+          .map((f: string) => join(outputDir, f));
+        resolve(frameFiles);
+      })
+      .on("error", (err) => {
+        reject(new Error(`Color frame extraction failed: ${err.message}`));
       })
       .run();
   });
@@ -249,9 +282,10 @@ function shouldFilterLine(line: string): boolean {
     /^(like|share|follow|subscribe|comment|save)/i,
     /^(tap|click|swipe)/i,
     /^@\w+/, // @mentions
-    /^#\w+/, // Hashtags
+    /^#\w+(\s|$)/, // Hashtag-only / leading hashtag lines
     /save for when you need it/i,
     /^tiktok$/i,
+    /\btiktok\b/i,
     /@\s*foodieshares/i,
     /foodieshare/i, // common typo
     /^cancel$/i,
@@ -259,6 +293,9 @@ function shouldFilterLine(line: string): boolean {
     /^broil\s*start/i,
     /^\d+\s*[:\/]\s*\d+$/, // time overlays like "3:45"
     /^\d+\s*%\s*$/, // "1%", "2%" etc
+    /\blink\s+in\s+bio\b/i,
+    /\bfollow\s+for\s+more\b/i,
+    /\bduet\b/i,
   ];
 
   // Check for junk patterns
@@ -338,13 +375,14 @@ export async function processVideo(
   maxFrames: number = 60,
   onFrameProgress?: (
     payload: VideoFrameProgressPayload
-  ) => void | Promise<void>
+  ) => void | Promise<void>,
+  visionConfigOverride?: ReturnType<typeof readVisionConfig>
 ): Promise<ProcessVideoResult> {
   const tempDir = join(tmpdir(), `video-ocr-${Date.now()}`);
   const fs = require("fs");
   fs.mkdirSync(tempDir, { recursive: true });
 
-  const visionConfig = readVisionConfig();
+  const visionConfig = visionConfigOverride ?? readVisionConfig();
 
   try {
     const framePaths = await extractFrames(videoPath, tempDir, maxFrames);

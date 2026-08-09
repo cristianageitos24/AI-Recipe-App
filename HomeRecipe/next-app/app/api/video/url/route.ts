@@ -69,8 +69,11 @@ export async function POST(request: NextRequest) {
         id: jobId,
         user_id: userId,
         status: "uploaded",
-        video_url: "", // will be provided by worker for URL-based jobs
+        video_url: "", // filled by worker for URL-based jobs
         tiktok_url: url,
+        source_type: "url",
+        source_url: url,
+        source_platform: "tiktok",
       })
       .select()
       .single();
@@ -88,6 +91,8 @@ export async function POST(request: NextRequest) {
         jobId: job.id,
         status: job.status,
         message: "TikTok URL received. Processing will begin shortly.",
+        longVideoHint:
+          "Videos over 2 minutes may take longer to extract. Maximum length is 4 minutes.",
       },
       { status: 201 }
     );

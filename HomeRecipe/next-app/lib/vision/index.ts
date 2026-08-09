@@ -1,4 +1,4 @@
-export { readVisionConfig, type VisionConfig } from "./config";
+export { readVisionConfig, withOcrBudget, type VisionConfig } from "./config";
 export type { VisionJobMetrics, FrameAnalysis, VisionEngineKind } from "./types";
 export { analyzeFramesForOcr } from "./analyzeFrames";
 export { maybeCropForOcr, cleanupCropPath } from "./cropTextRegion";
@@ -7,3 +7,8 @@ export {
   visionJobMetricsToDbJson,
   type VisionMetricsDbJson,
 } from "./metricsDb";
+export {
+  ocrBudgetForDuration,
+  visionLlmFrameCountForDuration,
+  extractFrameCapForDuration,
+} from "./frameBudget";

@@ -15,6 +15,13 @@ export type VisionJobMetrics = {
   /** When metrics-only mode: counts that would have been skipped */
   wouldSkipBlur: number;
   wouldSkipDuplicate: number;
+  /** Multimodal vision LLM (optional) */
+  visionLlmEnabled?: boolean;
+  visionLlmFrames?: number;
+  visionLlmMs?: number;
+  visionLlmIngredientCount?: number;
+  visionLlmModel?: string | null;
+  ocrBudget?: number;
 };
 
 export type FrameAnalysis = {

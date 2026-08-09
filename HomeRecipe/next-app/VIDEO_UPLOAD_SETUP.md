@@ -136,13 +136,14 @@ OPENAI_REASONING_API_KEY=sk-...  # Worker-only, not exposed to browser
 Optional worker configuration:
 
 ```env
-VIDEO_MAX_DURATION_SECONDS=120          # Max video duration in seconds (default: 120)
+VIDEO_MAX_DURATION_SECONDS=240          # Max video duration in seconds (default: 240 = 4 min)
+VIDEO_LONG_WARN_SECONDS=120             # Soft UX warning threshold (default: 120)
 VIDEO_MAX_FRAMES=300                    # Max frames to OCR per video (default: 300). 1 fps, so 300 = 5 min.
 VIDEO_PROCESSING_TIMEOUT_MS=600000      # Per-job timeout in ms (default: 600000 = 10 min). Increase for longer videos.
 TRANSCRIPTION_TIMEOUT_MS=60000          # Whisper transcription timeout (default: 60000 = 60s)
 WORKER_ID=my-worker                     # Worker identifier (default: hostname-pid)
 WORKER_POLL_INTERVAL_MS=5000            # Polling interval (default: 5000)
-WORKER_LOCK_TIMEOUT_MINUTES=10          # Lock expiration (default: 10)
+WORKER_LOCK_TIMEOUT_MINUTES=20          # Lock expiration / reclaim stale processing (default: 20)
 ```
 
 ## Running the Application

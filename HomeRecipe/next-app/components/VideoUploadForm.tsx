@@ -123,6 +123,7 @@ const STAGE_ICON_KEYS = new Set([
   "thumbnail",
   "transcription",
   "ocr",
+  "vision_llm",
   "reasoning",
   "finalizing",
   "error",
@@ -260,6 +261,13 @@ function VideoJobStageGlyph({ stageKey }: { stageKey: string }) {
       return (
         <svg {...common}>
           <path d="M3 3h8v8H3V3zM13 3h8v4h-8V3zM13 9h8v12h-8V9zM3 13h8v8H3v-8z" stroke={stroke} strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      );
+    case "vision_llm":
+      return (
+        <svg {...common}>
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke={stroke} strokeWidth="2" />
+          <circle cx="12" cy="12" r="3" stroke={stroke} strokeWidth="2" />
         </svg>
       );
     case "reasoning":
@@ -737,6 +745,14 @@ export function VideoUploadForm({
         </div>
 
         {error && <div className="error-message">{error}</div>}
+        <p className="video-extractor-duration-hint" style={{ marginTop: "0.5rem", fontSize: "0.85rem", opacity: 0.75 }}>
+          Videos up to 4 minutes are supported. Clips over 2 minutes may take longer to extract.
+        </p>
+        {jobStatus?.processing_detail?.toLowerCase().includes("longer video") && (
+          <p className="video-extractor-long-warn" role="status" style={{ marginTop: "0.35rem", fontSize: "0.9rem" }}>
+            This is a longer video — extraction may take a while.
+          </p>
+        )}
       </form>
 
       {jobStatus && (
