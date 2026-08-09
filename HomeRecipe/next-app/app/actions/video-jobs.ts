@@ -32,11 +32,12 @@ export interface VideoJob {
   processing_ms: number | null;
   created_at: string;
   updated_at: string;
+  vision_metrics?: Record<string, unknown> | null;
 }
 
 /** Single-job poll: includes OCR/transcript for the upload debug panels. */
 const VIDEO_JOB_POLL_COLUMNS =
-  "id, user_id, status, video_url, source_type, source_url, source_platform, video_deleted_at, tiktok_url, ocr_text, transcript_text, extracted_recipe, thumbnail_url, processing_progress, processing_stage, processing_detail, error_message, attempts, started_at, finished_at, processing_ms, created_at, updated_at" as const;
+  "id, user_id, status, video_url, source_type, source_url, source_platform, video_deleted_at, tiktok_url, ocr_text, transcript_text, extracted_recipe, thumbnail_url, processing_progress, processing_stage, processing_detail, error_message, attempts, started_at, finished_at, processing_ms, created_at, updated_at, vision_metrics" as const;
 
 const VIDEO_JOB_LIST_COLUMNS =
   "id, status, thumbnail_url, source_type, source_url, source_platform, processing_progress, processing_stage, error_message, created_at, updated_at, finished_at" as const;

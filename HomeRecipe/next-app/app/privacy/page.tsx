@@ -250,8 +250,10 @@ export default function PrivacyPage() {
           </p>
           <ul>
             <li>
-              Video recipe import: audio transcription (Whisper) and structured
-              recipe extraction from transcript/OCR text.
+              Video recipe import: audio transcription (Whisper), OCR of on-screen
+              text (Tesseract), optional analysis of selected video frames by an
+              OpenAI vision model to identify visible foods and ingredient labels,
+              and structured recipe extraction from that combined evidence.
             </li>
             <li>
               Nutrition: when an ingredient line cannot be confidently matched to
@@ -259,8 +261,9 @@ export default function PrivacyPage() {
               a match.
             </li>
             <li>
-              On-device / worker OCR (Tesseract) may run in our video processing
-              pipeline to read on-screen text from frames.
+              Frame images used for vision analysis are processed transiently on
+              our servers and are not retained as a permanent gallery of your
+              videos beyond job metadata needed to run the feature.
             </li>
           </ul>
           <p>
