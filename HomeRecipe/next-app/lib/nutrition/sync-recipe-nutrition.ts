@@ -306,22 +306,53 @@ export async function applyRecipeNutritionSnapshot(
 
   if (ingredientLines && ingredientLines.length > 0) {
     await svc.from("recipe_ingredient_lines").delete().eq("recipe_id", recipeId);
-    const lineRows = ingredientLines.map((line) => ({
-      recipe_id: recipeId,
-      line_index: line.line_index,
-      raw_text: line.raw_text,
-      item: line.item,
-      quantity: null,
-      unit: null,
-      notes: null,
-      fdc_id: line.fdc_id,
-      fdc_match_score: null,
-      line_nutrition_source: line.line_nutrition_source,
-      grams: null,
-      ml: null,
-      estimation_reason: line.estimation_reason,
-      fdc_candidates: line.fdc_candidates ?? null,
-    }));
+    const ids = [
+      ...new Set(
+        ingredientLines
+          .map((l) => l.fdc_id)
+          .filter((id): id is number => id != null && Number.isFinite(Number(id)))
+          .map(Number)
+      ),
+    ];
+    const knownFdc = new Set<number>();
+    for (let i = 0; i < ids.length; i += 200) {
+      const slice = ids.slice(i, i + 200);
+      const { data: foods } = await svc
+        .from("fdc_foods")
+        .select("fdc_id")
+        .in("fdc_id", slice);
+      for (const f of foods ?? []) {
+        knownFdc.add(Number((f as { fdc_id: number }).fdc_id));
+      }
+    }
+    const lineRows = ingredientLines.map((line) => {
+      const fdcId =
+        line.fdc_id != null && knownFdc.has(Number(line.fdc_id))
+          ? Number(line.fdc_id)
+          : null;
+      const candidates = Array.isArray(line.fdc_candidates)
+        ? line.fdc_candidates.filter((c) => knownFdc.has(Number(c.fdc_id)))
+        : line.fdc_candidates;
+      return {
+        recipe_id: recipeId,
+        line_index: line.line_index,
+        raw_text: line.raw_text,
+        item: line.item,
+        quantity: null,
+        unit: null,
+        notes: null,
+        fdc_id: fdcId,
+        fdc_match_score: null,
+        line_nutrition_source:
+          fdcId == null && line.line_nutrition_source === "fdc"
+            ? ("estimated" as const)
+            : line.line_nutrition_source,
+        grams: null,
+        ml: null,
+        estimation_reason: line.estimation_reason,
+        fdc_candidates: candidates?.length ? candidates : null,
+      };
+    });
     const { error: insErr } = await svc.from("recipe_ingredient_lines").insert(lineRows);
     if (insErr) {
       return { ok: false, error: insErr.message };
@@ -400,10 +431,54 @@ export async function syncRecipeNutritionForRecipe(
     lineFdcOverrides: options?.lineFdcOverrides,
   });
 
-  const lineRows = computed.lines.map((row) => ({
-    recipe_id: recipeId,
-    ...row,
-  }));
+  // Drop fdc_ids that are not in local fdc_foods (API matches can outlive / miss local import).
+  const candidateIds = new Set<number>();
+  for (const row of computed.lines) {
+    if (row.fdc_id != null && Number.isFinite(Number(row.fdc_id))) {
+      candidateIds.add(Number(row.fdc_id));
+    }
+    if (Array.isArray(row.fdc_candidates)) {
+      for (const c of row.fdc_candidates) {
+        if (c?.fdc_id != null && Number.isFinite(Number(c.fdc_id))) {
+          candidateIds.add(Number(c.fdc_id));
+        }
+      }
+    }
+  }
+  const knownFdc = new Set<number>();
+  const idList = [...candidateIds];
+  const chunk = 200;
+  for (let i = 0; i < idList.length; i += chunk) {
+    const slice = idList.slice(i, i + chunk);
+    const { data: foods } = await svc
+      .from("fdc_foods")
+      .select("fdc_id")
+      .in("fdc_id", slice);
+    for (const f of foods ?? []) {
+      knownFdc.add(Number((f as { fdc_id: number }).fdc_id));
+    }
+  }
+
+  const lineRows = computed.lines.map((row) => {
+    const fdcId =
+      row.fdc_id != null && knownFdc.has(Number(row.fdc_id))
+        ? Number(row.fdc_id)
+        : null;
+    const candidates = Array.isArray(row.fdc_candidates)
+      ? row.fdc_candidates.filter((c) => knownFdc.has(Number(c.fdc_id)))
+      : row.fdc_candidates;
+    return {
+      recipe_id: recipeId,
+      ...row,
+      fdc_id: fdcId,
+      fdc_candidates: candidates?.length ? candidates : null,
+      // Keep line source; totals already computed. Missing local FDC id should not fail the save.
+      line_nutrition_source:
+        fdcId == null && row.line_nutrition_source === "fdc"
+          ? ("estimated" as const)
+          : row.line_nutrition_source,
+    };
+  });
 
   if (lineRows.length) {
     const { error: insErr } = await svc.from("recipe_ingredient_lines").insert(lineRows);
