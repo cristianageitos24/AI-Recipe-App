@@ -12,7 +12,11 @@ import {
   type ResolvedLine,
   type ResolvedLineWithCandidates,
 } from "@/lib/nutrition/resolve-line";
-import type { FdcCandidateSnapshot, RecipeIngredientLineSnapshot } from "@/lib/types";
+import type {
+  FdcCandidateSnapshot,
+  RecipeIngredientLineSnapshot,
+  RecipeNutritionSnapshot,
+} from "@/lib/types";
 
 export type RecipeNutritionSourceRollup = "fdc" | "estimated" | "mixed" | "incomplete";
 
@@ -464,14 +468,18 @@ export async function syncRecipeNutritionForRecipe(
       row.fdc_id != null && knownFdc.has(Number(row.fdc_id))
         ? Number(row.fdc_id)
         : null;
-    const candidates = Array.isArray(row.fdc_candidates)
-      ? row.fdc_candidates.filter((c) => knownFdc.has(Number(c.fdc_id)))
-      : row.fdc_candidates;
+    const candidates: FdcCandidateSnapshot[] | null = Array.isArray(
+      row.fdc_candidates
+    )
+      ? (row.fdc_candidates as FdcCandidateSnapshot[]).filter((c) =>
+          knownFdc.has(Number(c.fdc_id))
+        )
+      : null;
     return {
       recipe_id: recipeId,
       ...row,
       fdc_id: fdcId,
-      fdc_candidates: candidates?.length ? candidates : null,
+      fdc_candidates: candidates && candidates.length > 0 ? candidates : null,
       // Keep line source; totals already computed. Missing local FDC id should not fail the save.
       line_nutrition_source:
         fdcId == null && row.line_nutrition_source === "fdc"
