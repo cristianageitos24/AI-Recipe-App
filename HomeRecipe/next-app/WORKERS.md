@@ -35,6 +35,8 @@ It loads **`next-app/.env.local`** only (see `scripts/process-video-jobs.ts`); r
 
 **After changing worker code:** rebuild the Docker image (`docker compose build video-worker && docker compose up -d video-worker`) from the HomeRecipe folder that contains `docker-compose.yml`. Env-only changes need a container restart, not a rebuild.
 
+**Production memory (Railway / similar):** prefer **≥1 GB RAM** for `video-worker`. OCR frames are width-capped (default 960px) so ffmpeg does not OOM on HD TikToks; 512 MB plans often die with `ffmpeg was killed with signal SIGKILL`.
+
 ---
 
 ## Run both (separate processes)

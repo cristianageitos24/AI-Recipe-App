@@ -19,6 +19,8 @@ import {
   extractThumbnailFrame,
   extractColorFrames,
   getVideoDuration,
+  ocrFrameMaxWidth,
+  colorFrameMaxWidth,
   processVideo,
   withTimeout,
 } from "../lib/video-processing";
@@ -279,15 +281,22 @@ async function claimJob(): Promise<VideoJob | null> {
 
 /**
  * Reset job for retry with available_at backoff so claim_video_job waits.
+ * Keeps last progress (does not snap to 0%) and surfaces a retrying stage for the UI.
  */
-async function resetJobForRetry(jobId: string, attempt: number) {
+async function resetJobForRetry(
+  jobId: string,
+  attempt: number,
+  opts?: { lastError?: string }
+) {
   const backoffDelay = getBackoffDelay(attempt);
   const availableAt = new Date(Date.now() + backoffDelay).toISOString();
+  const waitSec = Math.round(backoffDelay / 1000);
   log("INFO", `Resetting job for retry`, {
     jobId,
     attempt,
     backoffMs: backoffDelay,
     availableAt,
+    lastError: opts?.lastError?.slice(0, 160),
   });
 
   const { error } = await supabase
@@ -298,9 +307,9 @@ async function resetJobForRetry(jobId: string, attempt: number) {
       locked_by: null,
       started_at: null,
       error_message: null,
-      processing_progress: 0,
-      processing_stage: null,
-      processing_detail: null,
+      // Keep processing_progress as-is so the bar does not jump 30%→0% on retry.
+      processing_stage: "retrying",
+      processing_detail: `Retrying soon (attempt ${attempt}/${MAX_ATTEMPTS}) · waiting ~${waitSec}s`,
       available_at: availableAt,
     })
     .eq("id", jobId);
@@ -806,6 +815,8 @@ async function processJob(job: VideoJob): Promise<void> {
       duration,
       maxFrames,
       ocrBudget,
+      ocrFrameMaxWidth: ocrFrameMaxWidth(),
+      colorFrameMaxWidth: colorFrameMaxWidth(),
       selectMode: visionConfig.selectMode,
     });
 
@@ -1019,7 +1030,7 @@ async function processJob(job: VideoJob): Promise<void> {
 
     // Check if we should retry
     if (!hardFailNoRetry && job.attempts < MAX_ATTEMPTS) {
-      await resetJobForRetry(job.id, job.attempts);
+      await resetJobForRetry(job.id, job.attempts, { lastError: errorMessage });
     } else {
       await markJobFailed(job.id, errorMessage);
       // Refund free-tier quota on terminal hard failure (download/duration/etc.)
@@ -1057,6 +1068,8 @@ async function main() {
     maxDuration: MAX_DURATION_SECONDS,
     longVideoWarnSeconds: LONG_VIDEO_WARN_SECONDS,
     maxFrames: MAX_FRAMES,
+    ocrFrameMaxWidth: ocrFrameMaxWidth(),
+    colorFrameMaxWidth: colorFrameMaxWidth(),
     lockTimeoutMinutes: LOCK_TIMEOUT_MINUTES,
     timeout: PROCESSING_TIMEOUT_MS,
     transcriptionTimeout: TRANSCRIPTION_TIMEOUT_MS,

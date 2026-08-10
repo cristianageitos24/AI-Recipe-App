@@ -75,7 +75,7 @@ This will install:
 - `@u4/opencv4nodejs` (optional) - OpenCV bindings; installs when the platform can compile it (Docker worker image includes `libopencv-dev`)
 - `@types/fluent-ffmpeg` - TypeScript types
 
-OCR preprocessing (grayscale, contrast, sharpening) is done via ffmpeg. The vision layer (blur / duplicate / selection) uses OpenCV when available and **sharp**-based fallbacks otherwise.
+OCR preprocessing (grayscale, contrast, sharpening) is done via ffmpeg at **1 fps** with a **width-capped** scale (default `VIDEO_OCR_FRAME_MAX_WIDTH=960`) — not unconditional 2× upscale, which OOMs small Railway containers (`ffmpeg` SIGKILL). The vision layer (blur / duplicate / selection) uses OpenCV when available and **sharp**-based fallbacks otherwise.
 
 **Optional (local dev, non-Docker worker):** To use OpenCV outside Docker, install OpenCV for your OS (e.g. `brew install opencv` on macOS, `libopencv-dev` on Debian) so `npm install` can build `@u4/opencv4nodejs`. On Windows, prefer running the worker in **Docker** (see [WORKERS.md](WORKERS.md)) or rely on fallbacks.
 
@@ -138,7 +138,9 @@ Optional worker configuration:
 ```env
 VIDEO_MAX_DURATION_SECONDS=240          # Max video duration in seconds (default: 240 = 4 min)
 VIDEO_LONG_WARN_SECONDS=120             # Soft UX warning threshold (default: 120)
-VIDEO_MAX_FRAMES=300                    # Max frames to OCR per video (default: 300). 1 fps, so 300 = 5 min.
+VIDEO_MAX_FRAMES=300                    # Max frames to extract per video (default: 300). 1 fps, so 300 = 5 min.
+VIDEO_OCR_FRAME_MAX_WIDTH=960           # OCR frame max width (default: 960). Lower if worker OOMs; raise only with ≥2GB RAM.
+VIDEO_COLOR_FRAME_MAX_WIDTH=1024        # Vision-LLM color frame max width (default: 1024).
 VIDEO_PROCESSING_TIMEOUT_MS=600000      # Per-job timeout in ms (default: 600000 = 10 min). Increase for longer videos.
 TRANSCRIPTION_TIMEOUT_MS=60000          # Whisper transcription timeout (default: 60000 = 60s)
 WORKER_ID=my-worker                     # Worker identifier (default: hostname-pid)
