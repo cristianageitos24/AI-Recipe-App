@@ -640,6 +640,7 @@ export function VideoUploadForm({
       editedRecipe.imageUrl?.trim() ||
       jobStatus?.thumbnail_url?.trim() ||
       null;
+    const ex = jobStatus?.extracted_recipe;
     return buildVideoRecipePayload(
       {
         title: editedRecipe.title,
@@ -651,6 +652,9 @@ export function VideoUploadForm({
       {
         sourceUrl: jobStatus?.tiktok_url ?? null,
         imageUrl,
+        recipe_nutrition: ex?.recipe_nutrition ?? null,
+        recipe_ingredient_lines: ex?.recipe_ingredient_lines ?? null,
+        servings: editedRecipe.servings ?? ex?.servings ?? null,
       }
     );
   }

@@ -223,7 +223,15 @@ export function RecipeFullView({
   const showFavorite = !draft && !hideFavoriteAction;
   const cookbookSavePayload = useMemo(() => {
     if (!canSaveRecipeToCookbook(recipeData)) return null;
-    return toRecipePayload(recipeRowToProcessed(recipeData));
+    const base = toRecipePayload(recipeRowToProcessed(recipeData));
+    const snap = pickNutritionSnapshot(recipeData);
+    if (!snap) return base;
+    return {
+      ...base,
+      calories: Math.round(Number(snap.energy_kcal)) || base.calories,
+      recipe_nutrition: snap,
+      recipe_ingredient_lines: recipeData.recipe_ingredient_lines ?? null,
+    };
   }, [recipeData]);
   const showCookbookSave = cookbookSavePayload != null;
 

@@ -2,6 +2,7 @@
 
 import { getAuthUserId } from "@/lib/auth";
 import {
+  applyRecipeNutritionSnapshot,
   syncRecipeNutritionForRecipe,
   type SyncRecipeNutritionOptions,
 } from "@/lib/nutrition/sync-recipe-nutrition";
@@ -59,6 +60,40 @@ async function syncNutritionIfOwner(
   } catch (e) {
     console.error("syncNutritionIfOwner:", e);
   }
+}
+
+/** Prefer extract-time nutrition snapshot; fall back to full FDC sync. */
+async function persistNutritionAfterSave(
+  recipeUuid: string,
+  userId: string,
+  payload: RecipePayload
+) {
+  const snap = payload.recipe_nutrition;
+  if (snap && typeof snap.energy_kcal === "number") {
+    try {
+      const svc = await createServiceRoleClient();
+      const { data: row } = await svc
+        .from("recipes")
+        .select("user_id")
+        .eq("id", recipeUuid)
+        .maybeSingle();
+      if (!row || row.user_id !== userId) return;
+      const res = await applyRecipeNutritionSnapshot(
+        svc,
+        recipeUuid,
+        snap,
+        payload.recipe_ingredient_lines
+      );
+      if (!res.ok) {
+        console.error("applyRecipeNutritionSnapshot:", res.error);
+        await syncNutritionIfOwner(recipeUuid, userId);
+      }
+      return;
+    } catch (e) {
+      console.error("persistNutritionAfterSave snapshot:", e);
+    }
+  }
+  await syncNutritionIfOwner(recipeUuid, userId);
 }
 
 /**
@@ -315,7 +350,7 @@ export async function getOrCreateRecipe(payload: RecipePayload) {
         .eq("id", existing.id)
         .eq("user_id", userId);
       if (updError) return { error: updError.message, data: null };
-      await syncNutritionIfOwner(existing.id, userId);
+      await persistNutritionAfterSave(existing.id, userId, payload);
     }
     return { error: null, data: { id: existing.id } };
   }
@@ -346,7 +381,7 @@ export async function getOrCreateRecipe(payload: RecipePayload) {
 
   if (error) return { error: error.message, data: null };
   if (isUserOwned) {
-    await syncNutritionIfOwner(inserted.id, userId);
+    await persistNutritionAfterSave(inserted.id, userId, payload);
   }
   return { error: null, data: inserted };
 }

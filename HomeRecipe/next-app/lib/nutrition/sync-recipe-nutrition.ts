@@ -271,6 +271,92 @@ export type SyncRecipeNutritionOptions = {
   lineFdcOverrides?: Record<number, number>;
 };
 
+/**
+ * Persist nutrition already computed elsewhere (video worker / extract preview).
+ * Avoids a second full FDC+AI pass during cookbook save (common Vercel timeout → empty macros).
+ */
+export async function applyRecipeNutritionSnapshot(
+  svc: SupabaseClient,
+  recipeId: string,
+  nutrition: RecipeNutritionSnapshot,
+  ingredientLines?: RecipeIngredientLineSnapshot[] | null
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const energy = Number(nutrition.energy_kcal);
+  const protein = Number(nutrition.protein_g);
+  const fat = Number(nutrition.fat_g);
+  const carb = Number(nutrition.carb_g);
+  if (![energy, protein, fat, carb].every((n) => Number.isFinite(n))) {
+    return { ok: false, error: "Invalid nutrition snapshot numbers" };
+  }
+
+  const source = nutrition.nutrition_source;
+  if (
+    source !== "fdc" &&
+    source !== "estimated" &&
+    source !== "mixed" &&
+    source !== "incomplete"
+  ) {
+    return { ok: false, error: "Invalid nutrition_source on snapshot" };
+  }
+
+  let servings: number | null = null;
+  if (nutrition.servings != null && Number.isFinite(Number(nutrition.servings))) {
+    servings = Number(nutrition.servings);
+  }
+
+  if (ingredientLines && ingredientLines.length > 0) {
+    await svc.from("recipe_ingredient_lines").delete().eq("recipe_id", recipeId);
+    const lineRows = ingredientLines.map((line) => ({
+      recipe_id: recipeId,
+      line_index: line.line_index,
+      raw_text: line.raw_text,
+      item: line.item,
+      quantity: null,
+      unit: null,
+      notes: null,
+      fdc_id: line.fdc_id,
+      fdc_match_score: null,
+      line_nutrition_source: line.line_nutrition_source,
+      grams: null,
+      ml: null,
+      estimation_reason: line.estimation_reason,
+      fdc_candidates: line.fdc_candidates ?? null,
+    }));
+    const { error: insErr } = await svc.from("recipe_ingredient_lines").insert(lineRows);
+    if (insErr) {
+      return { ok: false, error: insErr.message };
+    }
+  }
+
+  const { error: nutErr } = await svc.from("recipe_nutrition").upsert(
+    {
+      recipe_id: recipeId,
+      energy_kcal: energy,
+      protein_g: protein,
+      fat_g: fat,
+      carb_g: carb,
+      nutrition_source: source,
+      computed_at: new Date().toISOString(),
+      fdc_release_label: FDC_RELEASE_LABEL,
+      servings,
+    },
+    { onConflict: "recipe_id" }
+  );
+  if (nutErr) {
+    return { ok: false, error: nutErr.message };
+  }
+
+  const { error: calErr } = await svc
+    .from("recipes")
+    .update({ calories: energy })
+    .eq("id", recipeId);
+  if (calErr) {
+    return { ok: false, error: calErr.message };
+  }
+
+  return { ok: true };
+}
+
 export async function syncRecipeNutritionForRecipe(
   svc: SupabaseClient,
   recipeId: string,

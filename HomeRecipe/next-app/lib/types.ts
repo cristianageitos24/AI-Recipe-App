@@ -64,6 +64,12 @@ export type RecipePayload = {
   steps: string | null;
   website_url: string | null;
   image_url: string | null;
+  /**
+   * When set (e.g. video extract), persist these instead of relying on a post-save
+   * FDC re-sync that can time out on Vercel and leave macros empty.
+   */
+  recipe_nutrition?: RecipeNutritionSnapshot | null;
+  recipe_ingredient_lines?: RecipeIngredientLineSnapshot[] | null;
 };
 
 export type FolderRow = {
