@@ -3,12 +3,15 @@ import { requireAuthUserIdOrRedirect } from "@/lib/auth";
 import { getTrashedFolders } from "@/app/actions/folders";
 import { getTrashedRecipes } from "@/app/actions/recipes";
 import { getMyEntitlements } from "@/app/actions/entitlements";
+import { getMyProfile } from "@/app/actions/profiles";
 import { FREE_RECIPE_TTL_DAYS } from "@/lib/entitlements";
 import { TRASH_RETENTION_DAYS } from "@/lib/trash-retention";
 import { ProPill } from "@/components/ProPill";
 import { OpenAccountButton } from "./OpenAccountButton";
+import { ProfileSection } from "./ProfileSection";
 import { TrashRestoreSection } from "./TrashRestoreSection";
 import "@/app/styling/SettingsPage.css";
+import "@/app/styling/mobile/settings-billing-about.css";
 
 function AccountIcon() {
   return (
@@ -57,11 +60,13 @@ function ChevronIcon() {
 export default async function SettingsPage() {
   await requireAuthUserIdOrRedirect();
 
-  const [foldersRes, recipesRes, entitlementsRes] = await Promise.all([
-    getTrashedFolders(),
-    getTrashedRecipes(),
-    getMyEntitlements(),
-  ]);
+  const [foldersRes, recipesRes, entitlementsRes, profileRes] =
+    await Promise.all([
+      getTrashedFolders(),
+      getTrashedRecipes(),
+      getMyEntitlements(),
+      getMyProfile(),
+    ]);
 
   const listError =
     [foldersRes.error, recipesRes.error].filter(Boolean).join(" · ") || null;
@@ -70,6 +75,14 @@ export default async function SettingsPage() {
   const used = entitlements?.extractionsUsed ?? 0;
   const limit = entitlements?.extractionsLimit ?? 3;
   const usagePct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+
+  const profileEmail = profileRes.clerkEmail;
+  const initialDisplayName =
+    profileRes.data?.display_name?.trim() ||
+    profileRes.clerkDisplayNameFallback ||
+    "";
+  const initialPhone = profileRes.data?.phone_number?.trim() || "";
+  const initialBirthday = profileRes.data?.birthday?.trim() || "";
 
   return (
     <div className="dashboard-settings">
@@ -81,22 +94,33 @@ export default async function SettingsPage() {
       </header>
 
       <div className="settings-stack">
-        <section className="settings-panel" aria-labelledby="settings-account-heading">
+        <section className="settings-panel" aria-labelledby="settings-profile-heading">
           <div className="settings-panel-head">
             <span className="settings-panel-icon settings-panel-icon--blue">
               <AccountIcon />
             </span>
             <div>
-              <h2 id="settings-account-heading" className="dashboard-settings-h2">
-                Account
+              <h2 id="settings-profile-heading" className="dashboard-settings-h2">
+                Profile
               </h2>
               <p className="settings-panel-desc">
-                Profile, email, password, and security settings.
+                Display name, phone, and birthday — optional and synced with the
+                mobile app.
               </p>
             </div>
           </div>
-          <div className="settings-panel-actions">
+          <ProfileSection
+            email={profileEmail}
+            initialDisplayName={initialDisplayName}
+            initialPhone={initialPhone}
+            initialBirthday={initialBirthday}
+            loadError={profileRes.error}
+          />
+          <div className="settings-panel-actions settings-profile-clerk-actions">
             <OpenAccountButton />
+            <p className="settings-panel-desc settings-profile-clerk-hint">
+              Password and security settings open in Clerk.
+            </p>
           </div>
         </section>
 
@@ -204,6 +228,10 @@ export default async function SettingsPage() {
               </p>
             </div>
           </div>
+          <Link href="/privacy" className="settings-row-link">
+            <span>Privacy Policy</span>
+            <ChevronIcon />
+          </Link>
         </section>
 
         <TrashRestoreSection

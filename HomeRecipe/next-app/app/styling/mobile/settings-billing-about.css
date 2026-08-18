@@ -1,0 +1,30 @@
+/* Phone-only settings / billing / about (≤700px). */
+
+@media screen and (max-width: 700px) {
+  .settings-page,
+  .billing-page,
+  .about-page,
+  .main-panel.settings-main,
+  .main-panel.billing-main,
+  .main-panel.about-main {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .billing-upgrade-actions a,
+  .billing-upgrade-actions button,
+  .plan-compare-cta,
+  .billing-page .upgrade-cta,
+  .settings-page a.button,
+  .settings-page button.primary {
+    width: 100%;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .about-page h1,
+  .about-hero-title {
+    font-size: 26px;
+    line-height: 1.25;
+  }
+}

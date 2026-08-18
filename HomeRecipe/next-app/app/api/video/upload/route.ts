@@ -7,7 +7,7 @@ import { assertCanExtract } from "@/lib/entitlements";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const MAX_DURATION_SECONDS = parseInt(
-  process.env.VIDEO_MAX_DURATION_SECONDS || "120",
+  process.env.VIDEO_MAX_DURATION_SECONDS || "240",
   10
 );
 

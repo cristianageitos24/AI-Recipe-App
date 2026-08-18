@@ -11,13 +11,16 @@ import * as dotenv from "dotenv";
 import { resolve } from "path";
 import { hostname } from "os";
 import { existsSync, readdirSync } from "fs";
-import { writeFile, unlink, mkdir, readFile } from "fs/promises";
+import { writeFile, unlink, mkdir, readFile, rmdir } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 import {
   createOCRProvider,
   extractThumbnailFrame,
+  extractColorFrames,
   getVideoDuration,
+  ocrFrameMaxWidth,
+  colorFrameMaxWidth,
   processVideo,
   withTimeout,
 } from "../lib/video-processing";
@@ -32,9 +35,16 @@ import { compressImageLossless } from "../lib/compress-image";
 import type { ExtractedRecipe } from "../lib/types";
 import {
   readVisionConfig,
+  withOcrBudget,
   visionJobMetricsToDbJson,
+  ocrBudgetForDuration,
+  visionLlmFrameCountForDuration,
+  extractFrameCapForDuration,
 } from "../lib/vision";
 import type { VisionJobMetrics } from "../lib/vision/types";
+import { inventoryIngredientsFromColorFrames } from "../lib/vision-llm-inventory";
+import type { VisionInventoryResult } from "../lib/vision-llm-inventory";
+import { FREE_EXTRACTION_LIMIT } from "../lib/entitlements-constants";
 
 // Load only next-app/.env.local (same file Next.js uses in this project)
 const nextAppDir = resolve(__dirname, "..");
@@ -70,7 +80,11 @@ const supabaseHost =
 // Configuration
 const MAX_ATTEMPTS = 3;
 const MAX_DURATION_SECONDS = parseInt(
-  process.env.VIDEO_MAX_DURATION_SECONDS || "120",
+  process.env.VIDEO_MAX_DURATION_SECONDS || "240",
+  10
+);
+const LONG_VIDEO_WARN_SECONDS = parseInt(
+  process.env.VIDEO_LONG_WARN_SECONDS || "120",
   10
 );
 const PROCESSING_TIMEOUT_MS = parseInt(
@@ -86,11 +100,15 @@ const POLL_INTERVAL_MS = parseInt(
   10
 );
 const LOCK_TIMEOUT_MINUTES = parseInt(
-  process.env.WORKER_LOCK_TIMEOUT_MINUTES || "10",
+  process.env.WORKER_LOCK_TIMEOUT_MINUTES || "20",
   10
 );
 const TRANSCRIPTION_TIMEOUT_MS = parseInt(
-  process.env.TRANSCRIPTION_TIMEOUT_MS || "60000",
+  process.env.TRANSCRIPTION_TIMEOUT_MS || "120000",
+  10
+);
+const REASONING_TIMEOUT_MS = parseInt(
+  process.env.REASONING_TIMEOUT_MS || "120000",
   10
 );
 const WORKER_ID =
@@ -104,11 +122,13 @@ const P = {
   thumbnailDone: 20,
   transcriptionExtract: 23,
   transcriptionMid: 30,
-  transcriptionDone: 38,
-  ocrStartWithTranscription: 40,
+  transcriptionDone: 36,
+  ocrStartWithTranscription: 38,
   ocrStartNoTranscription: 22,
-  ocrEnd: 82,
-  reasoningStart: 84,
+  ocrEnd: 70,
+  visionLlmStart: 72,
+  visionLlmEnd: 80,
+  reasoningStart: 82,
   reasoningEnd: 94,
   finalizing: 97,
   complete: 100,
@@ -240,6 +260,7 @@ async function claimJob(): Promise<VideoJob | null> {
   try {
     const { data, error } = await supabase.rpc("claim_video_job", {
       worker_id: WORKER_ID,
+      lock_timeout_minutes: LOCK_TIMEOUT_MINUTES,
     });
 
     if (error) {
@@ -259,14 +280,23 @@ async function claimJob(): Promise<VideoJob | null> {
 }
 
 /**
- * Reset job for retry
+ * Reset job for retry with available_at backoff so claim_video_job waits.
+ * Keeps last progress (does not snap to 0%) and surfaces a retrying stage for the UI.
  */
-async function resetJobForRetry(jobId: string, attempt: number) {
+async function resetJobForRetry(
+  jobId: string,
+  attempt: number,
+  opts?: { lastError?: string }
+) {
   const backoffDelay = getBackoffDelay(attempt);
+  const availableAt = new Date(Date.now() + backoffDelay).toISOString();
+  const waitSec = Math.round(backoffDelay / 1000);
   log("INFO", `Resetting job for retry`, {
     jobId,
     attempt,
     backoffMs: backoffDelay,
+    availableAt,
+    lastError: opts?.lastError?.slice(0, 160),
   });
 
   const { error } = await supabase
@@ -277,14 +307,43 @@ async function resetJobForRetry(jobId: string, attempt: number) {
       locked_by: null,
       started_at: null,
       error_message: null,
-      processing_progress: 0,
-      processing_stage: null,
-      processing_detail: null,
+      // Keep processing_progress as-is so the bar does not jump 30%→0% on retry.
+      processing_stage: "retrying",
+      processing_detail: `Retrying soon (attempt ${attempt}/${MAX_ATTEMPTS}) · waiting ~${waitSec}s`,
+      available_at: availableAt,
     })
     .eq("id", jobId);
 
   if (error) {
     log("ERROR", "Failed to reset job", { jobId, error: error.message });
+  }
+}
+
+async function refundExtractionQuota(userId: string, reason: string) {
+  try {
+    const { data, error } = await supabase.rpc("refund_extraction_quota", {
+      p_user_id: userId,
+    });
+    if (error) {
+      log("WARN", "Failed to refund extraction quota", {
+        userId,
+        reason,
+        error: error.message,
+      });
+      return;
+    }
+    log("INFO", "Refunded extraction quota", {
+      userId,
+      reason,
+      refunded: data === true,
+      freeLimit: FREE_EXTRACTION_LIMIT,
+    });
+  } catch (e) {
+    log("WARN", "Exception refunding extraction quota", {
+      userId,
+      reason,
+      error: e instanceof Error ? e.message : String(e),
+    });
   }
 }
 
@@ -662,7 +721,10 @@ async function processJob(job: VideoJob): Promise<void> {
     await updateJobProgress(job.id, {
       progress: P.validated,
       stage: "validating",
-      detail: `${Math.round(duration * 10) / 10}s clip`,
+      detail:
+        duration > LONG_VIDEO_WARN_SECONDS
+          ? `${Math.round(duration * 10) / 10}s clip (longer video)`
+          : `${Math.round(duration * 10) / 10}s clip`,
     });
 
     // Thumbnail: extract one color frame and upload to recipe-covers (non-fatal on failure)
@@ -743,14 +805,25 @@ async function processJob(job: VideoJob): Promise<void> {
       log("DEBUG", "OPENAI_AUDIO_TRANSCRIPTION_KEY not set, skipping transcription", { jobId: job.id });
     }
 
-    // Process video with timeout (1 frame/sec, capped at MAX_FRAMES)
-    const maxFrames = Math.min(Math.ceil(duration), MAX_FRAMES);
-    log("DEBUG", "Processing frames", { jobId: job.id, duration, maxFrames });
+    // Process video with timeout (1 frame/sec extract, duration-scaled OCR budget)
+    const maxFrames = extractFrameCapForDuration(duration, MAX_FRAMES);
+    const ocrBudget = ocrBudgetForDuration(duration);
+    const visionBase = readVisionConfig();
+    const visionConfig = withOcrBudget(visionBase, ocrBudget);
+    log("DEBUG", "Processing frames", {
+      jobId: job.id,
+      duration,
+      maxFrames,
+      ocrBudget,
+      ocrFrameMaxWidth: ocrFrameMaxWidth(),
+      colorFrameMaxWidth: colorFrameMaxWidth(),
+      selectMode: visionConfig.selectMode,
+    });
 
     await updateJobProgress(job.id, {
       progress: ocrProgressMin,
       stage: "ocr",
-      detail: maxFrames > 0 ? `Preparing ${maxFrames} frames` : "Running OCR",
+      detail: maxFrames > 0 ? `Preparing up to ${maxFrames} frames (OCR budget ${ocrBudget})` : "Running OCR",
     });
 
     const ocrThrottle = createOcrThrottleState();
@@ -773,19 +846,27 @@ async function processJob(job: VideoJob): Promise<void> {
           });
           ocrThrottle.markWritten();
         }
-      }
+      },
+      visionConfig
     );
-    const { ocrText, metrics: visionMetrics } = await withTimeout(
+    const { ocrText, metrics: visionMetricsBase } = await withTimeout(
       processingPromise,
       PROCESSING_TIMEOUT_MS,
       `Processing exceeded timeout of ${PROCESSING_TIMEOUT_MS}ms`
     );
+
+    let visionMetrics: VisionJobMetrics = {
+      ...visionMetricsBase,
+      ocrBudget,
+      visionLlmEnabled: visionConfig.visionLlmEnabled,
+    };
 
     log("INFO", "Vision/OCR metrics", {
       jobId: job.id,
       vision: {
         framesExtracted: visionMetrics.framesExtracted,
         framesOcrd: visionMetrics.framesOcrd,
+        ocrBudget,
         framesSkippedBlur: visionMetrics.framesSkippedBlur,
         framesSkippedDuplicate: visionMetrics.framesSkippedDuplicate,
         wouldSkipBlur: visionMetrics.wouldSkipBlur,
@@ -796,9 +877,73 @@ async function processJob(job: VideoJob): Promise<void> {
       },
     });
 
+    // Multimodal color-frame inventory (non-fatal)
+    let visionInventory: VisionInventoryResult | null = null;
+    const reasoningKeyEarly = process.env.OPENAI_REASONING_API_KEY;
+    if (visionConfig.visionLlmEnabled && reasoningKeyEarly) {
+      await updateJobProgress(job.id, {
+        progress: P.visionLlmStart,
+        stage: "vision_llm",
+        detail: "Scanning frames for foods and labels",
+      });
+      const colorDir = join(tmpdir(), `video-color-${job.id}-${Date.now()}`);
+      try {
+        await mkdir(colorDir, { recursive: true });
+        const colorCount = visionLlmFrameCountForDuration(duration);
+        const colorPaths = await extractColorFrames(
+          videoPath,
+          colorDir,
+          colorCount,
+          duration
+        );
+        visionInventory = await inventoryIngredientsFromColorFrames({
+          framePaths: colorPaths,
+          apiKey: reasoningKeyEarly,
+          model: visionConfig.visionLlmModel,
+          timeoutMs: visionConfig.visionLlmTimeoutMs,
+          log: (message, data) => log("DEBUG", message, data),
+        });
+        visionMetrics = {
+          ...visionMetrics,
+          visionLlmFrames: colorPaths.length,
+          visionLlmMs: visionInventory?.ms ?? 0,
+          visionLlmIngredientCount: visionInventory?.ingredients.length ?? 0,
+          visionLlmModel: visionConfig.visionLlmModel,
+        };
+      } catch (visionErr: unknown) {
+        log("ERROR", "Vision LLM pass failed, continuing", {
+          jobId: job.id,
+          error:
+            visionErr instanceof Error ? visionErr.message : String(visionErr),
+        });
+      } finally {
+        try {
+          const { readdirSync } = await import("fs");
+          for (const f of readdirSync(colorDir)) {
+            try {
+              await unlink(join(colorDir, f));
+            } catch (_) {}
+          }
+          await rmdir(colorDir);
+        } catch (_) {}
+      }
+      await updateJobProgress(job.id, {
+        progress: P.visionLlmEnd,
+        stage: "vision_llm",
+        detail: visionInventory
+          ? `${visionInventory.ingredients.length} foods/labels found`
+          : "Vision scan skipped",
+      });
+    } else {
+      log("DEBUG", "Vision LLM disabled or no reasoning key", {
+        jobId: job.id,
+        enabled: visionConfig.visionLlmEnabled,
+      });
+    }
+
     const processingMs = Date.now() - startTime;
 
-    // AI reasoning: extract structured recipe from OCR + transcript (non-fatal)
+    // AI reasoning: extract structured recipe (non-fatal)
     let extractedRecipe: ExtractedRecipe | null = null;
     const reasoningKey = process.env.OPENAI_REASONING_API_KEY;
     await updateJobProgress(job.id, {
@@ -807,12 +952,22 @@ async function processJob(job: VideoJob): Promise<void> {
       detail: "Extracting recipe structure",
     });
 
-    if (reasoningKey && (ocrText.trim().length > 0 || (transcriptText ?? "").trim().length > 0)) {
+    if (
+      reasoningKey &&
+      (ocrText.trim().length > 0 ||
+        (transcriptText ?? "").trim().length > 0 ||
+        (visionInventory && visionInventory.ingredients.length > 0))
+    ) {
       try {
-        extractedRecipe = await extractRecipeFromVideo(ocrText, transcriptText, {
-          apiKey: reasoningKey,
-          log: (message, data) => log("DEBUG", message, data),
-        });
+        extractedRecipe = await withTimeout(
+          extractRecipeFromVideo(ocrText, transcriptText, {
+            apiKey: reasoningKey,
+            log: (message, data) => log("DEBUG", message, data),
+            visionInventory,
+          }),
+          REASONING_TIMEOUT_MS,
+          `Recipe reasoning exceeded timeout of ${REASONING_TIMEOUT_MS}ms`
+        );
         if (extractedRecipe) {
           log("DEBUG", "Recipe reasoning succeeded", { jobId: job.id });
         } else {
@@ -870,11 +1025,16 @@ async function processJob(job: VideoJob): Promise<void> {
       attempts: job.attempts,
     });
 
+    const hardFailNoRetry =
+      /exceeds maximum|No TikTok URL|Invalid video duration/i.test(errorMessage);
+
     // Check if we should retry
-    if (job.attempts < MAX_ATTEMPTS) {
-      await resetJobForRetry(job.id, job.attempts);
+    if (!hardFailNoRetry && job.attempts < MAX_ATTEMPTS) {
+      await resetJobForRetry(job.id, job.attempts, { lastError: errorMessage });
     } else {
       await markJobFailed(job.id, errorMessage);
+      // Refund free-tier quota on terminal hard failure (download/duration/etc.)
+      await refundExtractionQuota(job.user_id, errorMessage.slice(0, 120));
     }
   } finally {
     // Cleanup downloaded video
@@ -906,9 +1066,14 @@ async function main() {
   log("INFO", "Worker starting", {
     workerId: WORKER_ID,
     maxDuration: MAX_DURATION_SECONDS,
+    longVideoWarnSeconds: LONG_VIDEO_WARN_SECONDS,
     maxFrames: MAX_FRAMES,
+    ocrFrameMaxWidth: ocrFrameMaxWidth(),
+    colorFrameMaxWidth: colorFrameMaxWidth(),
+    lockTimeoutMinutes: LOCK_TIMEOUT_MINUTES,
     timeout: PROCESSING_TIMEOUT_MS,
     transcriptionTimeout: TRANSCRIPTION_TIMEOUT_MS,
+    reasoningTimeout: REASONING_TIMEOUT_MS,
     pollInterval: POLL_INTERVAL_MS,
     OPENAI_AUDIO_TRANSCRIPTION_KEY: hasTranscriptionKey ? "set" : "not set",
     OPENAI_REASONING_API_KEY: hasReasoningKey ? "set" : "not set",
@@ -924,7 +1089,11 @@ async function main() {
       skipDupes: vision.skipDuplicate,
       selectMode: vision.selectMode,
       maxOcrFrames: vision.maxOcrFrames,
+      minOcrFrames: vision.minOcrFrames,
       cropTextRegions: vision.cropTextRegions,
+      keepBlurryMinTextLikelihood: vision.keepBlurryMinTextLikelihood,
+      visionLlmEnabled: vision.visionLlmEnabled,
+      visionLlmModel: vision.visionLlmModel,
     },
   });
   if (!hasTranscriptionKey) {

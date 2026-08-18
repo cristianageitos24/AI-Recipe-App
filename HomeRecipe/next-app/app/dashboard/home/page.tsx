@@ -25,6 +25,9 @@ import "@/app/styling/VideoUpload.css";
 import "@/app/styling/CookbookFolderPage.css";
 import "@/app/styling/CookbookPageRecipeCard.css";
 import "@/app/styling/UpgradePrompt.css";
+import "@/app/styling/mobile/home.css";
+import "@/app/styling/mobile/recipe-cards.css";
+import "@/app/styling/mobile/create-import.css";
 
 const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
@@ -76,11 +79,9 @@ export default function DashboardHomePage() {
         <div className="home-welcome-row">
           <div>
             <h1
-              className="home-welcome-heading"
+              className={`home-welcome-heading ${playfairDisplay.className}`}
               style={{
-                fontFamily: playfairDisplay.style.fontFamily,
                 fontWeight: 800,
-                fontSize: "28px",
                 fontOpticalSizing: "auto",
               }}
             >

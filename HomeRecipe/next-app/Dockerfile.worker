@@ -44,6 +44,7 @@ RUN export OPENCV_INCLUDE_DIR="$(pkg-config --variable=includedir opencv4 2>/dev
   && node -e "require('@u4/opencv4nodejs'); console.log('[docker] @u4/opencv4nodejs loaded')"
 
 # Rebuild image after changing scripts/process-video-jobs.ts or lib/* (COPY bakes code at build time).
+# 2026-08-10: memory-safe OCR frame width (VIDEO_OCR_FRAME_MAX_WIDTH) — rebuild required after extractFrames change.
 COPY . .
 
 ENV NODE_ENV=production

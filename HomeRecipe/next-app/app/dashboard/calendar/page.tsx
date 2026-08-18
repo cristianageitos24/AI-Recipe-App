@@ -26,6 +26,8 @@ import "@/app/styling/EventSearchOptions.css";
 import "@/app/styling/RecipeFullView.css";
 import "@/app/styling/CookbookPageRecipeCard.css";
 import "@/app/styling/RecipeListCard.css";
+import "@/app/styling/mobile/calendar.css";
+import "@/app/styling/mobile/recipe-cards.css";
 
 const playfairDisplay = Playfair_Display({
   subsets: ["latin"],

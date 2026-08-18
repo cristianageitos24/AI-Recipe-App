@@ -16,6 +16,8 @@ import "@/app/styling/CookbookFolderPage.css";
 import "@/app/styling/CookbookPageRecipeCard.css";
 import "@/app/styling/VideoUpload.css";
 import "@/app/styling/UpgradePrompt.css";
+import "@/app/styling/mobile/create-import.css";
+import "@/app/styling/mobile/cookbook-folder.css";
 
 const URL_IMPORT_STATUS_LINES = [
   "Fetching the page…",

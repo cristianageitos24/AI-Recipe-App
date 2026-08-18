@@ -83,8 +83,13 @@ export function selectFramesForOcr(
   let lastUniqueHash: string | null = null;
   const withDup: FrameAnalysis[] = [];
 
+  const keepBlurryAt = config.keepBlurryMinTextLikelihood ?? 0.35;
+
   for (const f of frames) {
-    const blurFail = f.laplacianVariance < config.minLaplacianVariance;
+    const rawBlurFail = f.laplacianVariance < config.minLaplacianVariance;
+    // Accuracy-first: keep texty frames even if Laplacian says blurry (ingredient overlays)
+    const blurFail =
+      rawBlurFail && !(f.textLikelihood >= keepBlurryAt);
     if (blurFail) wouldSkipBlur++;
 
     let dupFail = false;

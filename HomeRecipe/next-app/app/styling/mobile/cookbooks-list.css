@@ -1,0 +1,29 @@
+/* Phone-only cookbooks list (≤700px). */
+
+@media screen and (max-width: 700px) {
+  .cookbook-page-header,
+  .cookbook-section-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .cookbook-page-header h1 {
+    font-size: 24px;
+  }
+
+  .cookbook-folders-content-container {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+    gap: 12px;
+  }
+
+  .add-new-folder-btn {
+    min-height: 180px;
+  }
+
+  .curated-cookbook-tile,
+  .curated-cookbooks-grid > * {
+    width: 100%;
+    max-width: 100%;
+  }
+}

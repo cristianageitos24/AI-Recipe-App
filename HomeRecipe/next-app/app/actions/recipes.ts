@@ -2,10 +2,11 @@
 
 import { getAuthUserId } from "@/lib/auth";
 import {
+  applyRecipeNutritionSnapshot,
   syncRecipeNutritionForRecipe,
   type SyncRecipeNutritionOptions,
 } from "@/lib/nutrition/sync-recipe-nutrition";
-import { RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
+import { RECIPE_LIST_COLUMNS, RECIPE_WITH_NUTRITION } from "@/lib/recipe-select";
 import { trashListCutoffIso } from "@/lib/trash-retention";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import type { TrashActionResult } from "@/lib/trash-result";
@@ -59,6 +60,40 @@ async function syncNutritionIfOwner(
   } catch (e) {
     console.error("syncNutritionIfOwner:", e);
   }
+}
+
+/** Prefer extract-time nutrition snapshot; fall back to full FDC sync. */
+async function persistNutritionAfterSave(
+  recipeUuid: string,
+  userId: string,
+  payload: RecipePayload
+) {
+  const snap = payload.recipe_nutrition;
+  if (snap && typeof snap.energy_kcal === "number") {
+    try {
+      const svc = await createServiceRoleClient();
+      const { data: row } = await svc
+        .from("recipes")
+        .select("user_id")
+        .eq("id", recipeUuid)
+        .maybeSingle();
+      if (!row || row.user_id !== userId) return;
+      const res = await applyRecipeNutritionSnapshot(
+        svc,
+        recipeUuid,
+        snap,
+        payload.recipe_ingredient_lines
+      );
+      if (!res.ok) {
+        console.error("applyRecipeNutritionSnapshot:", res.error);
+        await syncNutritionIfOwner(recipeUuid, userId);
+      }
+      return;
+    } catch (e) {
+      console.error("persistNutritionAfterSave snapshot:", e);
+    }
+  }
+  await syncNutritionIfOwner(recipeUuid, userId);
 }
 
 /**
@@ -222,6 +257,37 @@ export type TrashedRecipeRow = {
   deleted_at: string;
 };
 
+function notExpiredFilter() {
+  return `expires_at.is.null,expires_at.gt.${new Date().toISOString()}`;
+}
+
+/** Active user-owned recipes in the library (non-deleted; free tier excludes expired). */
+export async function getOwnedLibraryRecipes(): Promise<{
+  error: string | null;
+  data: RecipeRow[];
+}> {
+  const userId = await getAuthUserId();
+  if (!userId) return { error: "Unauthorized", data: [] };
+
+  const supabase = await createClient();
+  const pro = await isUserPro(userId);
+
+  let query = supabase
+    .from("recipes")
+    .select(RECIPE_LIST_COLUMNS)
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+
+  if (!pro) {
+    query = query.or(notExpiredFilter());
+  }
+
+  const { data, error } = await query;
+  if (error) return { error: error.message, data: [] };
+  return { error: null, data: (data ?? []) as unknown as RecipeRow[] };
+}
+
 /** User-owned soft-deleted recipes still within the retention window (see `purge_trashed_rows`). */
 export async function getTrashedRecipes(): Promise<{
   error: string | null;
@@ -284,7 +350,7 @@ export async function getOrCreateRecipe(payload: RecipePayload) {
         .eq("id", existing.id)
         .eq("user_id", userId);
       if (updError) return { error: updError.message, data: null };
-      await syncNutritionIfOwner(existing.id, userId);
+      await persistNutritionAfterSave(existing.id, userId, payload);
     }
     return { error: null, data: { id: existing.id } };
   }
@@ -315,7 +381,7 @@ export async function getOrCreateRecipe(payload: RecipePayload) {
 
   if (error) return { error: error.message, data: null };
   if (isUserOwned) {
-    await syncNutritionIfOwner(inserted.id, userId);
+    await persistNutritionAfterSave(inserted.id, userId, payload);
   }
   return { error: null, data: inserted };
 }

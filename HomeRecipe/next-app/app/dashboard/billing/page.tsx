@@ -6,6 +6,7 @@ import { BillingActions } from "@/components/BillingActions";
 import { CheckoutSuccessPoller } from "@/components/CheckoutSuccessPoller";
 import { PlanCompareCards } from "@/components/PlanCompareCards";
 import "@/app/styling/BillingPage.css";
+import "@/app/styling/mobile/settings-billing-about.css";
 
 type SearchParams = Promise<{ checkout?: string }>;
 
@@ -20,9 +21,12 @@ export default async function BillingPage({
   const profile = await getProfileBilling(userId);
   const params = await searchParams;
 
+  const billingSource = profile?.billing_source ?? null;
   const isPro =
     profile?.plan_tier === "pro" ||
-    isProSubscriptionStatus(profile?.stripe_subscription_status);
+    isProSubscriptionStatus(profile?.stripe_subscription_status) ||
+    Boolean(profile?.apple_entitlement_active);
+  const isApplePro = isPro && billingSource === "apple";
 
   return (
     <div className="billing-page">
@@ -47,7 +51,11 @@ export default async function BillingPage({
           Your plan
         </h2>
         <p className="billing-plan-badge">{isPro ? "Pro" : "Free"}</p>
-        {profile?.stripe_subscription_status ? (
+        {isApplePro ? (
+          <p className="billing-muted">
+            Managed via the App Store / iOS HomeRecipe app
+          </p>
+        ) : profile?.stripe_subscription_status ? (
           <p className="billing-muted">
             Stripe status: {profile.stripe_subscription_status}
           </p>
@@ -62,13 +70,15 @@ export default async function BillingPage({
           What you get
         </h2>
         <PlanCompareCards mode="static" emphasizePro={!isPro} />
-        <p className="billing-muted">
-          Tax is calculated at Checkout by Stripe Managed Payments based on your
-          billing address — we never invent tax rates in the app.
-        </p>
+        {!isApplePro ? (
+          <p className="billing-muted">
+            Tax is calculated at Checkout by Stripe Managed Payments based on
+            your billing address — we never invent tax rates in the app.
+          </p>
+        ) : null}
       </section>
 
-      <BillingActions isPro={isPro} />
+      <BillingActions isPro={isPro} billingSource={billingSource} />
     </div>
   );
 }

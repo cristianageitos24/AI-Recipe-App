@@ -26,11 +26,16 @@ npm run worker:video
 
 The worker polls for video jobs and processes them with:
 - **Download (TikTok URL jobs)** – Uses **yt-dlp** to download the video (must be installed and on PATH). Install: `pip install yt-dlp` or download from [yt-dlp releases](https://github.com/yt-dlp/yt-dlp/releases).
-- **OCR** – Extracts text from video frames (Tesseract, ffmpeg preprocessing)
+- **OCR** – Extracts text from video frames (Tesseract, ffmpeg preprocessing) with duration-scaled frame budgets and smart selection
+- **Vision LLM (optional)** – Color frames → OpenAI vision model for foods/labels (`VISION_LLM_ENABLED`, uses `OPENAI_REASONING_API_KEY`)
 - **Transcription** – Speech-to-text from audio (OpenAI Whisper) → stored in `transcript_text` (uses `OPENAI_AUDIO_TRANSCRIPTION_KEY`)
-- **Recipe extraction** – AI combines OCR + transcript into structured recipe JSON (GPT-4.1 nano) → stored in `extracted_recipe` (uses `OPENAI_REASONING_API_KEY`)
+- **Recipe extraction** – AI combines OCR + vision inventory + transcript into structured recipe JSON (GPT-4.1 nano) → stored in `extracted_recipe` (uses `OPENAI_REASONING_API_KEY`)
 
-It loads **`next-app/.env.local`** only (see `scripts/process-video-jobs.ts`); run the worker from any directory. **`SUPABASE_SECRET_KEY` (service role) is required** — the publishable key cannot update jobs under RLS, so progress and completion would fail silently. Set `OPENAI_AUDIO_TRANSCRIPTION_KEY` and `OPENAI_REASONING_API_KEY` if you want transcription and structured recipe extraction. **Worker behavior** (poll interval, timeouts, max frames, vision blur/duplicate rules, etc.) follows **defaults in the repo** — see **`lib/vision/config.ts`**, **`scripts/process-video-jobs.ts`**, and **`lib/recipe-reasoning.ts`** for the model/schema. You only need env vars for those if you intentionally override a default. See `.env.local.example`. For system dependencies (ffmpeg, Tesseract, yt-dlp), see [VIDEO_UPLOAD_SETUP.md](VIDEO_UPLOAD_SETUP.md).
+It loads **`next-app/.env.local`** only (see `scripts/process-video-jobs.ts`); run the worker from any directory. **`SUPABASE_SECRET_KEY` (service role) is required** — the publishable key cannot update jobs under RLS, so progress and completion would fail silently. Set `OPENAI_AUDIO_TRANSCRIPTION_KEY` and `OPENAI_REASONING_API_KEY` if you want transcription and structured recipe extraction. **Max video length defaults to 4 minutes** (`VIDEO_MAX_DURATION_SECONDS=240`); clips over 2 minutes show a longer-processing hint. **Worker behavior** (poll interval, timeouts, OCR budgets, vision blur/duplicate rules, etc.) follows **defaults in the repo** — see **`lib/vision/config.ts`**, **`lib/vision/frameBudget.ts`**, **`scripts/process-video-jobs.ts`**, and **`lib/recipe-reasoning.ts`**. You only need env vars for those if you intentionally override a default. See `.env.local.example`. For system dependencies (ffmpeg, Tesseract, yt-dlp), see [VIDEO_UPLOAD_SETUP.md](VIDEO_UPLOAD_SETUP.md).
+
+**After changing worker code:** rebuild the Docker image (`docker compose build video-worker && docker compose up -d video-worker`) from the HomeRecipe folder that contains `docker-compose.yml`. Env-only changes need a container restart, not a rebuild.
+
+**Production memory (Railway / similar):** prefer **≥1 GB RAM** for `video-worker`. OCR frames are width-capped (default 960px) so ffmpeg does not OOM on HD TikToks; 512 MB plans often die with `ffmpeg was killed with signal SIGKILL`.
 
 ---
 

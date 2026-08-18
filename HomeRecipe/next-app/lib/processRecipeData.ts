@@ -173,6 +173,9 @@ export function buildVideoRecipePayload(
   options?: {
     sourceUrl?: string | null;
     imageUrl?: string | null;
+    recipe_nutrition?: RecipeNutritionSnapshot | null;
+    recipe_ingredient_lines?: RecipeIngredientLineSnapshot[] | null;
+    servings?: number | null;
   }
 ): RecipePayload {
   const recipe_id = `video-recipe-${jobId}`;
@@ -193,10 +196,22 @@ export function buildVideoRecipePayload(
   const time = Number(edited.cookTimeMinutes);
   const time_in_minutes =
     Number.isFinite(time) && time >= 0 ? time : 0;
+
+  const nut = options?.recipe_nutrition
+    ? {
+        ...options.recipe_nutrition,
+        servings:
+          options.servings ?? options.recipe_nutrition.servings ?? null,
+      }
+    : null;
+  const calories = nut
+    ? Math.round(Number(nut.energy_kcal))
+    : 0;
+
   return {
     recipeID: recipe_id,
     recipe_label: edited.title.trim() || "Untitled Recipe",
-    calories: 0,
+    calories: Number.isFinite(calories) ? calories : 0,
     cuisine_type: null,
     meal_type: null,
     time_in_minutes,
@@ -204,6 +219,13 @@ export function buildVideoRecipePayload(
     steps,
     website_url: options?.sourceUrl?.trim() || null,
     image_url: options?.imageUrl?.trim() || null,
+    ...(nut
+      ? {
+          recipe_nutrition: nut,
+          recipe_ingredient_lines:
+            options?.recipe_ingredient_lines ?? null,
+        }
+      : {}),
   };
 }
 
@@ -338,22 +360,22 @@ export function videoExtractionToDraftRecipeRow(
     {
       sourceUrl: opts.sourceUrl,
       imageUrl: edited.imageUrl?.trim() || opts.thumbnailUrl?.trim() || null,
+      recipe_nutrition: embedded?.recipe_nutrition ?? null,
+      recipe_ingredient_lines: embedded?.recipe_ingredient_lines ?? null,
+      servings: edited.servings,
     }
   );
-  const nut = embedded?.recipe_nutrition
+  const nut = payload.recipe_nutrition
     ? {
-        ...embedded.recipe_nutrition,
-        servings: edited.servings ?? embedded.recipe_nutrition.servings ?? null,
+        ...payload.recipe_nutrition,
+        servings: edited.servings ?? payload.recipe_nutrition.servings ?? null,
       }
     : null;
-  const calories = nut
-    ? Math.round(Number(nut.energy_kcal))
-    : Math.round(Number(payload.calories));
   return {
     id: URL_IMPORT_DRAFT_ROW_ID,
     recipe_id: payload.recipeID,
     recipe_label: payload.recipe_label,
-    calories,
+    calories: payload.calories,
     cuisine_type: payload.cuisine_type,
     meal_type: nut ? null : edited.servings != null ? String(edited.servings) : null,
     time_in_minutes: payload.time_in_minutes,

@@ -14,6 +14,8 @@ import { useEntitlements } from "@/components/EntitlementsProvider";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/CookbookFolderPage.css";
 import "@/app/styling/UpgradePrompt.css";
+import "@/app/styling/mobile/cookbook-folder.css";
+import "@/app/styling/mobile/recipe-cards.css";
 
 const PAGE_SIZE = 24;
 

@@ -33,6 +33,8 @@ import {
 } from "@/lib/processRecipeData";
 import "@/app/styling/RecipeFullView.css";
 import "@/app/styling/UpgradePrompt.css";
+import "@/app/styling/mobile/recipe-fullview.css";
+import "@/app/styling/mobile/recipe-shell.css";
 
 const INGREDIENT_PREVIEW_COUNT = 10;
 
@@ -221,7 +223,15 @@ export function RecipeFullView({
   const showFavorite = !draft && !hideFavoriteAction;
   const cookbookSavePayload = useMemo(() => {
     if (!canSaveRecipeToCookbook(recipeData)) return null;
-    return toRecipePayload(recipeRowToProcessed(recipeData));
+    const base = toRecipePayload(recipeRowToProcessed(recipeData));
+    const snap = pickNutritionSnapshot(recipeData);
+    if (!snap) return base;
+    return {
+      ...base,
+      calories: Math.round(Number(snap.energy_kcal)) || base.calories,
+      recipe_nutrition: snap,
+      recipe_ingredient_lines: recipeData.recipe_ingredient_lines ?? null,
+    };
   }, [recipeData]);
   const showCookbookSave = cookbookSavePayload != null;
 
@@ -510,19 +520,25 @@ export function RecipeFullView({
         </div>
         <div className="recipe-template-stat-card">
           <div className="recipe-template-stat-value">
-            {nutritionSnap ? `${Number(nutritionSnap.protein_g).toFixed(0)}g` : "—"}
+            {nutritionSnap && Number.isFinite(Number(nutritionSnap.protein_g))
+              ? `${Number(nutritionSnap.protein_g).toFixed(0)}g`
+              : "—"}
           </div>
           <div className="recipe-template-stat-label">Protein</div>
         </div>
         <div className="recipe-template-stat-card">
           <div className="recipe-template-stat-value">
-            {nutritionSnap ? `${Number(nutritionSnap.carb_g).toFixed(0)}g` : "—"}
+            {nutritionSnap && Number.isFinite(Number(nutritionSnap.carb_g))
+              ? `${Number(nutritionSnap.carb_g).toFixed(0)}g`
+              : "—"}
           </div>
           <div className="recipe-template-stat-label">Carbs</div>
         </div>
         <div className="recipe-template-stat-card">
           <div className="recipe-template-stat-value">
-            {nutritionSnap ? `${Number(nutritionSnap.fat_g).toFixed(0)}g` : "—"}
+            {nutritionSnap && Number.isFinite(Number(nutritionSnap.fat_g))
+              ? `${Number(nutritionSnap.fat_g).toFixed(0)}g`
+              : "—"}
           </div>
           <div className="recipe-template-stat-label">Fat</div>
         </div>

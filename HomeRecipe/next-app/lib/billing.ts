@@ -12,6 +12,8 @@ import {
   isProSubscriptionStatus,
 } from "@/lib/stripe";
 
+export type BillingSource = "stripe" | "apple" | null;
+
 export type ProfileBilling = {
   id: string;
   email: string;
@@ -20,7 +22,34 @@ export type ProfileBilling = {
   stripe_subscription_status: string | null;
   stripe_price_id: string | null;
   plan_tier: "free" | "pro";
+  billing_source: BillingSource;
+  apple_entitlement_active: boolean;
 };
+
+/** Shared Pro gate: Stripe active/trialing OR Apple entitlement active. */
+export function recomputePlanFields({
+  stripeStatus,
+  appleActive,
+}: {
+  stripeStatus: string | null | undefined;
+  appleActive: boolean;
+}): {
+  plan_tier: "free" | "pro";
+  billing_source: BillingSource;
+} {
+  const stripeActive = isProSubscriptionStatus(stripeStatus);
+  const plan_tier: "free" | "pro" =
+    stripeActive || appleActive ? "pro" : "free";
+
+  let billing_source: BillingSource = null;
+  if (stripeActive) {
+    billing_source = "stripe";
+  } else if (appleActive) {
+    billing_source = "apple";
+  }
+
+  return { plan_tier, billing_source };
+}
 
 export async function getProfileBilling(
   userId: string
@@ -29,7 +58,7 @@ export async function getProfileBilling(
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "id, email, stripe_customer_id, stripe_subscription_id, stripe_subscription_status, stripe_price_id, plan_tier"
+      "id, email, stripe_customer_id, stripe_subscription_id, stripe_subscription_status, stripe_price_id, plan_tier, billing_source, apple_entitlement_active"
     )
     .eq("id", userId)
     .maybeSingle();
@@ -125,15 +154,43 @@ export async function syncProfileFromSubscription(
   clerkUserId?: string | null
 ): Promise<void> {
   const supabase = await createServiceRoleClient();
-  const fields = planTierFromSubscription(subscription);
-  const patch = {
-    stripe_customer_id: customerId,
-    ...fields,
-  };
+  const stripeFields = planTierFromSubscription(subscription);
 
   const resolvedUserId =
     clerkUserId ||
     (await resolveClerkUserIdFromStripeCustomer(customerId));
+
+  // Preserve Apple entitlement when recomputing shared plan_tier / billing_source
+  let appleActive = false;
+  if (resolvedUserId) {
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("apple_entitlement_active")
+      .eq("id", resolvedUserId)
+      .maybeSingle();
+    appleActive = Boolean(existing?.apple_entitlement_active);
+  } else {
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("apple_entitlement_active")
+      .eq("stripe_customer_id", customerId)
+      .maybeSingle();
+    appleActive = Boolean(existing?.apple_entitlement_active);
+  }
+
+  const recomputed = recomputePlanFields({
+    stripeStatus: stripeFields.stripe_subscription_status,
+    appleActive,
+  });
+
+  const patch = {
+    stripe_customer_id: customerId,
+    stripe_subscription_id: stripeFields.stripe_subscription_id,
+    stripe_subscription_status: stripeFields.stripe_subscription_status,
+    stripe_price_id: stripeFields.stripe_price_id,
+    plan_tier: recomputed.plan_tier,
+    billing_source: recomputed.billing_source,
+  };
 
   if (clerkUserId) {
     const { error } = await supabase
@@ -157,13 +214,17 @@ export async function syncProfileFromSubscription(
 
   if (!resolvedUserId) return;
 
-  if (fields.plan_tier === "pro") {
+  if (recomputed.plan_tier === "pro") {
     await clearRecipeExpiry(resolvedUserId);
   } else {
     await stampFreeRecipeExpiry(resolvedUserId);
   }
 }
 
+/**
+ * Stripe cancel / deletion: clear Stripe Pro fields but do not force free
+ * if Apple entitlement is still active.
+ */
 export async function clearProEntitlement(
   customerId: string,
   subscriptionId?: string
@@ -171,10 +232,23 @@ export async function clearProEntitlement(
   const supabase = await createServiceRoleClient();
   const userId = await resolveClerkUserIdFromStripeCustomer(customerId);
 
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("apple_entitlement_active")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle();
+
+  const appleActive = Boolean(existing?.apple_entitlement_active);
+  const recomputed = recomputePlanFields({
+    stripeStatus: "canceled",
+    appleActive,
+  });
+
   const { error } = await supabase
     .from("profiles")
     .update({
-      plan_tier: "free",
+      plan_tier: recomputed.plan_tier,
+      billing_source: recomputed.billing_source,
       stripe_subscription_status: "canceled",
       ...(subscriptionId ? { stripe_subscription_id: subscriptionId } : {}),
     })
@@ -185,7 +259,66 @@ export async function clearProEntitlement(
     throw error;
   }
 
-  if (userId) {
+  if (!userId) return;
+
+  if (recomputed.plan_tier === "pro") {
+    await clearRecipeExpiry(userId);
+  } else {
     await stampFreeRecipeExpiry(userId);
+  }
+}
+
+/**
+ * RevenueCat webhook-safe update by Clerk user id (bypasses RLS).
+ * Preserves all Stripe fields; only flips apple_entitlement_active + recomputed plan.
+ */
+export async function syncProfileFromAppleEntitlement(
+  clerkUserId: string,
+  active: boolean
+): Promise<void> {
+  const supabase = await createServiceRoleClient();
+
+  const { data: existing, error: readError } = await supabase
+    .from("profiles")
+    .select("stripe_subscription_status")
+    .eq("id", clerkUserId)
+    .maybeSingle();
+
+  if (readError) {
+    console.error("syncProfileFromAppleEntitlement (read):", readError.message);
+    throw readError;
+  }
+
+  if (!existing) {
+    console.warn(
+      "syncProfileFromAppleEntitlement: no profile for",
+      clerkUserId
+    );
+    return;
+  }
+
+  const recomputed = recomputePlanFields({
+    stripeStatus: existing.stripe_subscription_status,
+    appleActive: active,
+  });
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      apple_entitlement_active: active,
+      plan_tier: recomputed.plan_tier,
+      billing_source: recomputed.billing_source,
+    })
+    .eq("id", clerkUserId);
+
+  if (error) {
+    console.error("syncProfileFromAppleEntitlement (update):", error.message);
+    throw error;
+  }
+
+  if (recomputed.plan_tier === "pro") {
+    await clearRecipeExpiry(clerkUserId);
+  } else {
+    await stampFreeRecipeExpiry(clerkUserId);
   }
 }

@@ -15,6 +15,12 @@ export type VisionMetricsDbJson = {
   ocr_ms: number;
   would_skip_blur: number;
   would_skip_duplicate: number;
+  vision_llm_enabled?: boolean;
+  vision_llm_frames?: number;
+  vision_llm_ms?: number;
+  vision_llm_ingredient_count?: number;
+  vision_llm_model?: string | null;
+  ocr_budget?: number;
 };
 
 export function visionJobMetricsToDbJson(
@@ -30,5 +36,11 @@ export function visionJobMetricsToDbJson(
     ocr_ms: m.ocrMs,
     would_skip_blur: m.wouldSkipBlur,
     would_skip_duplicate: m.wouldSkipDuplicate,
+    vision_llm_enabled: m.visionLlmEnabled,
+    vision_llm_frames: m.visionLlmFrames,
+    vision_llm_ms: m.visionLlmMs,
+    vision_llm_ingredient_count: m.visionLlmIngredientCount,
+    vision_llm_model: m.visionLlmModel ?? null,
+    ocr_budget: m.ocrBudget,
   };
 }

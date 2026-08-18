@@ -12,6 +12,8 @@ import {
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/CookbookFolderPage.css";
 import "@/app/styling/CookbookPageRecipeCard.css";
+import "@/app/styling/mobile/create-import.css";
+import "@/app/styling/mobile/cookbook-folder.css";
 
 const MAX_MANUAL_IMAGE_BYTES = 8 * 1024 * 1024;
 

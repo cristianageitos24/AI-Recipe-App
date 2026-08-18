@@ -1,0 +1,46 @@
+/* Phone-only recipe cards + filtered library (≤700px). */
+
+@media screen and (max-width: 700px) {
+  .filtered-recipes-canvas {
+    padding: 12px;
+  }
+
+  .filtered-recipes-grid,
+  .cookbook-page-recipe-cards-container {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+    gap: 12px;
+  }
+
+  .image-bttn-container {
+    height: auto !important;
+    aspect-ratio: 3 / 4;
+    min-height: 160px;
+    max-height: 220px;
+  }
+
+  .image-bttn-container .recipe-label {
+    font-size: 13px;
+    padding: 8px 10px;
+    line-height: 1.25;
+  }
+
+  .image-bttn-container .recipe-card-cook-time {
+    font-size: 11px;
+  }
+
+  .filtered-recipes-empty-ctas {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filtered-recipes-secondary-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .liked-recipes-strip .image-bttn-container,
+  .home-liked-row .image-bttn-container {
+    width: 160px;
+    max-width: 70vw;
+  }
+}

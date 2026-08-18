@@ -163,6 +163,19 @@ export async function assertCanExtract(
   return { ok: true };
 }
 
+/** Refund one free-tier extraction for the current UTC month (service role). */
+export async function refundExtractionQuota(userId: string): Promise<boolean> {
+  const svc = await createServiceRoleClient();
+  const { data, error } = await svc.rpc("refund_extraction_quota", {
+    p_user_id: userId,
+  });
+  if (error) {
+    console.error("refund_extraction_quota:", error.message);
+    return false;
+  }
+  return data === true;
+}
+
 export type RecipeAccessRow = {
   user_id?: string | null;
   expires_at?: string | null;

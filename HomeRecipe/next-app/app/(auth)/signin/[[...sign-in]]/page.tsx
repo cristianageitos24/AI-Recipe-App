@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { ClientSignIn } from "@/components/ClientSignIn";
 
 export default function SignInPage() {
@@ -15,6 +16,10 @@ export default function SignInPage() {
       <p className="auth-subtitle">Sign in and let&apos;s start cooking!</p>
 
       <ClientSignIn />
+
+      <p className="auth-legal">
+        <Link href="/privacy">Privacy Policy</Link>
+      </p>
     </div>
   );
 }

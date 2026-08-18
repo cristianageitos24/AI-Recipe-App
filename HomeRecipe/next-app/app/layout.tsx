@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -103,7 +105,11 @@ export default function RootLayout({
   return (
     <ClerkProvider signInUrl="/signin" signUpUrl="/signup" afterSignOutUrl="/">
       <html lang="en" className={creatoDisplay.variable}>
-        <body className="antialiased">{children}</body>
+        <body className="antialiased">
+          {children}
+          <Analytics />
+          <SpeedInsights />
+        </body>
       </html>
     </ClerkProvider>
   );

@@ -5,6 +5,11 @@
 
 import OpenAI from "openai";
 import type { ExtractedRecipe, ExtractedRecipeIngredient } from "./types";
+import { classifyOcrForRecipe } from "./ocr-classify";
+import {
+  formatVisionInventoryForPrompt,
+  type VisionInventoryResult,
+} from "./vision-llm-inventory";
 
 const MODEL = "gpt-4.1-nano";
 const TEMPERATURE = 0.2;
@@ -74,59 +79,52 @@ export type ExtractRecipeFromVideoOptions = {
   apiKey: string;
   /** Optional logger (e.g. worker log); defaults to no-op */
   log?: RecipeReasoningLog;
+  /** Optional multimodal food/label inventory from color frames */
+  visionInventory?: VisionInventoryResult | null;
 };
 
 /**
- * Combine OCR and transcript into a single user message for the model.
- * Splits OCR into ingredient-like vs instruction-like lines heuristically for clearer reasoning.
+ * Combine OCR, optional vision inventory, and transcript for the model.
  */
-function buildUserMessage(ocrText: string, transcriptText: string): string {
+function buildUserMessage(
+  ocrText: string,
+  transcriptText: string,
+  visionInventory?: VisionInventoryResult | null
+): string {
   const hasOcr = ocrText.trim().length > 0;
   const hasTranscript = transcriptText.trim().length > 0;
   const parts: string[] = [];
 
+  const visionBlock = formatVisionInventoryForPrompt(visionInventory ?? null);
+  if (visionBlock) {
+    parts.push(visionBlock);
+  }
+
   if (hasOcr) {
-    const raw = ocrText.trim();
-    const lines = raw.split(/\n/).map((l) => l.trim()).filter(Boolean);
-    const ingredientLike: string[] = [];
-    const instructionLike: string[] = [];
-    const verbStart =
-      /^(add|mix|stir|bake|cook|preheat|combine|place|heat|pour|remove|serve|garnish|sprinkle|whisk|simmer|boil|fry|chop|dice|slice|mince|drain|transfer|bake|broil|roast)\b/i;
-
-    for (const line of lines) {
-      // Unicode fractions (e.g. ½ cup) and informal measures common in on-screen text
-      const looksMeasure =
-        /\b(\d+\/\d+|\d+(\.\d+)?|[\u00BC\u00BD\u00BE\u2150-\u215E])\s*(cup|cups|tbsp|tsp|oz|lb|g|kg|ml|l|clove|cloves)?\b/i.test(
-          line
-        ) ||
-        /\b(\d+(\.\d+)?)\s*(cup|cups|tbsp|tsp|oz|lb|g|kg|ml|l|clove|cloves)\b/i.test(line) ||
-        /\b(a\s+)?pinch(\s+of)?\b/i.test(line) ||
-        /\bdash\b/i.test(line);
-      const looksStep = verbStart.test(line) || line.length > 80;
-      if (looksMeasure && !looksStep) {
-        ingredientLike.push(line);
-      } else if (looksStep) {
-        instructionLike.push(line);
-      } else {
-        ingredientLike.push(line);
-      }
-    }
-
-    if (ingredientLike.length === 0 && instructionLike.length === 0) {
-      parts.push("## Text from video frames (OCR)\n" + raw);
-    } else {
+    const classified = classifyOcrForRecipe(ocrText);
+    if (classified.ingredientCandidates.trim()) {
       parts.push(
         "## Ingredient candidates (from on-screen OCR)\n" +
-          (ingredientLike.length > 0
-            ? ingredientLike.join("\n")
-            : "(none clearly separated)")
+          classified.ingredientCandidates
       );
+    }
+    if (classified.other.trim()) {
       parts.push(
-        "## Instruction candidates (from on-screen OCR)\n" +
-          (instructionLike.length > 0
-            ? instructionLike.join("\n")
-            : "(none clearly separated)")
+        "## Instruction / other OCR lines\n" + classified.other
       );
+    }
+    if (classified.captionNoise.trim()) {
+      parts.push(
+        "## Social caption / promo OCR (NOT ingredients — ignore for ingredient list)\n" +
+          classified.captionNoise
+      );
+    }
+    if (
+      !classified.ingredientCandidates.trim() &&
+      !classified.other.trim() &&
+      !classified.captionNoise.trim()
+    ) {
+      parts.push("## Text from video frames (OCR)\n" + ocrText.trim());
     }
   }
 
@@ -139,8 +137,9 @@ function buildUserMessage(ocrText: string, transcriptText: string): string {
   }
 
   const preamble =
-    "The sections below come from the same cooking video (on-screen OCR plus optional narration transcript). " +
-    "Use them together; OCR lines are roughly in video order but may be incomplete or noisy.";
+    "The sections below come from the same cooking video (OCR, optional vision inventory, optional narration). " +
+    "Prefer ingredient-candidate OCR and vision labels for ingredient names. Prefer transcript for steps. " +
+    "Ignore social caption/promo OCR when building ingredients.";
 
   return preamble + "\n\n" + parts.join("\n\n");
 }
@@ -148,27 +147,30 @@ function buildUserMessage(ocrText: string, transcriptText: string): string {
 const SYSTEM_PROMPT = `You extract a structured recipe from raw text that came from a cooking video.
 
 Sources:
-- OCR: text extracted from video frames (often ingredient lists, titles, on-screen text). Prefer OCR for ingredient names, quantities, and measurements.
-- Transcript: speech-to-text from the video. Prefer transcript for cooking steps, order of operations, and timing.
+- Ingredient-candidate OCR: short on-screen labels and measure lines. Prefer these for ingredient names, quantities, and measurements.
+- Vision inventory (when present): foods clearly labeled or clearly visible in frames. Include those ingredients even without quantities.
+- Transcript: speech-to-text. Prefer for cooking steps, order, and timing.
+- Caption/promo OCR: TikTok chatter — never treat as ingredients.
 
 OCR quality:
-- OCR can contain typos, broken words, or partial lines. Similar frames are filtered upstream, but near-duplicates or repeated phrases may still appear—merge them mentally.
-- On-screen text may flash quickly; ingredient and step lines might be split oddly across OCR lines. Reconstruct sensible ingredient lines and steps.
-- If OCR and transcript disagree on an amount or ingredient name, trust clear on-screen measurements and spellings from OCR for quantities; use transcript for procedure when OCR only shows fragments.
+- OCR can contain typos, broken words, or partial lines. Merge near-duplicates.
+- On-screen text may flash quickly; reconstruct sensible ingredient lines.
+- If OCR and transcript disagree on an amount, trust clear on-screen measurements from OCR; use transcript for procedure.
 
 Rules:
-- Combine both sources intelligently. Do not duplicate information.
+- Combine sources intelligently. Do not duplicate information.
 - Deduplicate ingredients; merge variants (e.g. "2 cups flour" and "flour" → one line with quantity and unit).
 - Normalize units when possible (e.g. tbsp, tsp, cups, g, ml).
-- Order cooking steps chronologically (use transcript order when it is clearer than OCR order).
-- Do not invent or assume information that is not present in the input. Use null for unknown servings, cook_time_minutes, or ingredient quantity/unit/notes when not stated.
+- Order cooking steps chronologically (use transcript order when clearer than OCR).
+- Do not invent spices, pantry staples, or amounts that are not evidenced in OCR, vision labels, or transcript.
+- DO include proteins/produce that are clearly named on screen or listed in the vision inventory even if quantity/unit is null.
 - Title: infer a short recipe title; use "Untitled Recipe" only if nothing suggests a name.
 - Ingredients vs steps:
   - Each ingredient "item" must be ONLY the ingredient name (a noun or short noun phrase), never a sentence or instruction.
-  - Examples of valid items: "paprika", "red onion", "olive oil".
-  - Examples of INVALID items (do NOT output these in ingredients): "add the paprika and stir", "onion sautéed with garlic", "smoked paprika is available at most supermarkets".
+  - Examples of valid items: "paprika", "red onion", "olive oil", "chicken breast".
+  - Examples of INVALID items: "add the paprika and stir", "onion sautéed with garlic", hashtags, @handles, "link in bio".
   - Put all actions, preparation, and order of operations in "steps".
-  - Use ingredient "notes" only for very short descriptors like "diced" or "optional", never for verbs or instructions.
+  - Use ingredient "notes" only for very short descriptors like "diced" or "optional".
 - Return only valid JSON that matches the exact schema provided.`;
 
 /**
@@ -344,12 +346,16 @@ export async function extractRecipeFromVideo(
   transcriptText: string | null,
   options: ExtractRecipeFromVideoOptions
 ): Promise<ExtractedRecipe | null> {
-  const { apiKey, log: logFn = () => {} } = options;
+  const { apiKey, log: logFn = () => {}, visionInventory } = options;
   const transcript = transcriptText ?? "";
-  const userContent = buildUserMessage(ocrText, transcript);
+  const userContent = buildUserMessage(ocrText, transcript, visionInventory);
 
-  if (!ocrText.trim() && !transcript.trim()) {
-    logFn("Recipe reasoning skipped: no OCR or transcript content");
+  if (
+    !ocrText.trim() &&
+    !transcript.trim() &&
+    !(visionInventory && visionInventory.ingredients.length > 0)
+  ) {
+    logFn("Recipe reasoning skipped: no OCR, transcript, or vision inventory");
     return null;
   }
 

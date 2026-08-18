@@ -17,6 +17,9 @@ import { invalidateFolderPageData, readFolderPageData } from "@/lib/folder-page-
 import { buildManualRecipePayload } from "@/lib/processRecipeData";
 import type { RecipeRow } from "@/lib/types";
 import "@/app/styling/CookbookFolderPage.css";
+import "@/app/styling/mobile/cookbook-folder.css";
+import "@/app/styling/mobile/recipe-cards.css";
+import "@/app/styling/mobile/create-import.css";
 
 const cookbookHeroCovers = [
   "/images/food pictures/Recipes by Taylor Kiser.jpg",

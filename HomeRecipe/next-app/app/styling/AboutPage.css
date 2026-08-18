@@ -3,6 +3,10 @@
   max-width: 40rem;
 }
 
+.dashboard-about-section {
+  margin-bottom: var(--space-6, 24px);
+}
+
 .dashboard-about-title {
   font-family: var(--font-body);
   font-size: 1.5rem;

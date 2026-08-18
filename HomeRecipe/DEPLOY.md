@@ -86,6 +86,7 @@ General pattern (exact clicks differ per product):
    - **No public HTTP port required** — the worker only talks **outbound** to Supabase and OpenAI.
    - Set **all worker env vars** in the dashboard (not `env_file` — that is for local Compose only).
    - Use a plan that allows a **long-running process** (not serverless-only with zero long-running workers).
+   - **Memory:** give the video-worker **≥1 GB RAM** (2 GB preferred). ffmpeg + OpenCV + Node on HD TikToks can OOM at 512 MB (`ffmpeg was killed with signal SIGKILL`). OCR frames are width-capped (`VIDEO_OCR_FRAME_MAX_WIDTH`, default `960`) to stay memory-safe on 1 GB.
 
 4. **Vercel (Next.js)**  
    - Set **`RECIPE_URL_IMPORT_API_URL`** to service A’s **HTTPS base URL**.

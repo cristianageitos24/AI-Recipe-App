@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import type { BillingSource } from "@/lib/billing";
 
 type Props = {
   isPro: boolean;
+  billingSource?: BillingSource;
 };
 
-export function BillingActions({ isPro }: Props) {
+export function BillingActions({ isPro, billingSource = null }: Props) {
   const [loading, setLoading] = useState<"month" | "year" | "portal" | null>(
     null
   );
@@ -50,6 +52,8 @@ export function BillingActions({ isPro }: Props) {
     }
   }
 
+  const isApplePro = isPro && billingSource === "apple";
+
   return (
     <div className="billing-actions">
       {error ? (
@@ -58,7 +62,12 @@ export function BillingActions({ isPro }: Props) {
         </p>
       ) : null}
 
-      {isPro ? (
+      {isApplePro ? (
+        <p className="billing-muted">
+          Managed via the App Store / iOS HomeRecipe app. Cancel or change your
+          plan in Settings → Apple ID → Subscriptions on your device.
+        </p>
+      ) : isPro ? (
         <button
           type="button"
           className="billing-btn billing-btn-secondary"
