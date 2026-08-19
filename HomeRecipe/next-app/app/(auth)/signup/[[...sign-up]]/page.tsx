@@ -1,17 +1,27 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ClientSignUp } from "@/components/ClientSignUp";
+import { noIndexRobots, SITE_LOGO_PATH } from "@/lib/site";
+
+export const metadata: Metadata = {
+  title: "Create account",
+  description: "Create a HomeRecipe account to save recipes and plan meals.",
+  robots: noIndexRobots(),
+};
 
 export default function SignUpPage() {
   return (
     <div className="auth-card">
-      <Image
-        src="/images/homerecipelogo1.png"
-        alt="HomeRecipe"
-        width={40}
-        height={50}
-        className="auth-logo"
-      />
+      <Link href="/" aria-label="HomeRecipe home">
+        <Image
+          src={SITE_LOGO_PATH}
+          alt="HomeRecipe"
+          width={40}
+          height={50}
+          className="auth-logo"
+        />
+      </Link>
       <h1 className="auth-title">HomeRecipe</h1>
       <p className="auth-subtitle">Let&apos;s get started!</p>
 

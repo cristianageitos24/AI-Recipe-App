@@ -1,28 +1,44 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { SITE_EMAIL, SITE_LOGO_PATH, sitePath } from "@/lib/site";
 import "@/app/styling/LegalPage.css";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy · HomeRecipe",
+  title: "Privacy Policy",
   description:
     "How HomeRecipe collects, uses, and shares information for the website and iOS app.",
   alternates: {
-    canonical: "https://homerecipe.co/privacy",
+    canonical: sitePath("/privacy"),
+  },
+  openGraph: {
+    title: "Privacy Policy",
+    description:
+      "How HomeRecipe collects, uses, and shares information for the website and iOS app.",
+    url: sitePath("/privacy"),
+    siteName: "HomeRecipe",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Privacy Policy · HomeRecipe",
+    description:
+      "How HomeRecipe collects, uses, and shares information for the website and iOS app.",
   },
 };
 
 const LAST_UPDATED = "August 8, 2026";
-const CONTACT_EMAIL = "cristian@ageitosdigital.com";
+const CONTACT_EMAIL = SITE_EMAIL;
 
 export default function PrivacyPage() {
   return (
     <main className="legal-page">
       <div className="legal-page-inner">
         <header className="legal-brand">
-          <Link href="/signin" className="legal-brand-row">
+          <Link href="/" className="legal-brand-row">
             <Image
-              src="/images/homerecipelogo1.png"
+              src={SITE_LOGO_PATH}
               alt=""
               width={36}
               height={45}

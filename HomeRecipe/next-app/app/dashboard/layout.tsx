@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { requireAuthUserIdOrRedirect } from "@/lib/auth";
 import { DashboardShell } from "@/components/DashboardShell";
 import { DashboardNav } from "@/components/DashboardNav";
@@ -5,10 +6,16 @@ import { EnsureProfileOnMount } from "@/components/EnsureProfileOnMount";
 import { RouteTransition } from "@/components/RouteTransition";
 import { EntitlementsProvider } from "@/components/EntitlementsProvider";
 import { getMyEntitlements } from "@/app/actions/entitlements";
+import { noIndexRobots } from "@/lib/site";
 import "@/app/styling/Nav.css";
 import "@/app/styling/UpgradePrompt.css";
 import "@/app/styling/mobile/dashboard-shell.css";
 import "@/app/styling/mobile/modals.css";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  robots: noIndexRobots(),
+};
 
 export default async function DashboardLayout({
   children,

@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import AuthCarousel from "@/components/AuthCarousel";
+import { noIndexRobots } from "@/lib/site";
 import "@/app/styling/LoginSignForm.css";
+
+export const metadata: Metadata = {
+  robots: noIndexRobots(),
+};
 
 export default function AuthLayout({
   children,
