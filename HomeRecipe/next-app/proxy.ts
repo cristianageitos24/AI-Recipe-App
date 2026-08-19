@@ -8,9 +8,13 @@ const isAuthRoute = createRouteMatcher(["/signin(.*)", "/signup(.*)"]);
 export default clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl?.pathname ?? "/";
 
-  // redirect root to /signin before any auth protection runs
+  // Signed-in visitors skip the public homepage; Googlebot is signed out.
   if (pathname === "/") {
-    return NextResponse.redirect(new URL("/signin", req.url));
+    const { userId } = await auth();
+    if (userId) {
+      return NextResponse.redirect(new URL("/dashboard/home", req.url));
+    }
+    return NextResponse.next();
   }
 
   // If user is authenticated and on signin/signup, redirect to dashboard home
