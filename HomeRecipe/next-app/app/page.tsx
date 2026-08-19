@@ -133,9 +133,12 @@ export default function HomePage() {
       <main>
         <section className="landing-inner landing-hero">
           <div>
-            <p className="landing-kicker">Web and iOS</p>
+            <p className="landing-kicker">
+              <span>Web and iOS</span>
+            </p>
             <h1 className="landing-hero-title">
-              Simple and tasty recipes, saved in one place.
+              Simple and tasty recipes, saved in{" "}
+              <span className="landing-hero-accent">one place.</span>
             </h1>
             <p className="landing-hero-lede">
               {SITE_DESCRIPTION} Import from a webpage or a cooking video,
@@ -178,13 +181,15 @@ export default function HomePage() {
           <div className="landing-feature-grid">
             {FEATURES.map((feature) => (
               <article key={feature.title} className="landing-feature">
-                <Image
-                  src={feature.icon}
-                  alt=""
-                  width={28}
-                  height={28}
-                  className="landing-feature-icon"
-                />
+                <span className="landing-feature-icon-wrap">
+                  <Image
+                    src={feature.icon}
+                    alt=""
+                    width={28}
+                    height={28}
+                    className="landing-feature-icon"
+                  />
+                </span>
                 <h3>{feature.title}</h3>
                 <p>{feature.body}</p>
               </article>
