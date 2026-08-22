@@ -26,6 +26,11 @@
   gap: var(--space-4);
 }
 
+.auth-card > a {
+  text-decoration: none;
+  line-height: 0;
+}
+
 .auth-page .auth-right {
   display: flex;
   align-items: center;
