@@ -552,6 +552,64 @@
   margin: 0 0 var(--space-2);
 }
 
+/* Delete account — destructive, so it reads apart from the other panels. */
+.settings-panel--danger {
+  border-color: color-mix(in srgb, var(--error-fg) 30%, var(--gray-300));
+}
+
+.settings-panel-icon--danger {
+  background: var(--error-bg);
+  color: var(--error-fg);
+}
+
+.settings-btn--danger {
+  background: var(--error-fg);
+  color: #fff;
+  border-color: var(--error-fg);
+}
+
+.settings-btn--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--error-fg) 85%, #000);
+  border-color: color-mix(in srgb, var(--error-fg) 85%, #000);
+  color: #fff;
+}
+
+.settings-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.settings-danger-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.settings-danger-lede,
+.settings-danger-warning {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.settings-danger-lede {
+  color: var(--gray-700);
+}
+
+.settings-danger-warning {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--error-bg);
+  color: var(--error-fg);
+}
+
+.settings-danger-warning a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 @media (max-width: 640px) {
   .dashboard-settings {
     padding: var(--space-5) var(--space-4) var(--space-10);
