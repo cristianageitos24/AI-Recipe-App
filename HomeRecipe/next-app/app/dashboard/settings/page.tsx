@@ -6,10 +6,12 @@ import { getMyEntitlements } from "@/app/actions/entitlements";
 import { getMyProfile } from "@/app/actions/profiles";
 import { FREE_RECIPE_TTL_DAYS } from "@/lib/entitlements";
 import { TRASH_RETENTION_DAYS } from "@/lib/trash-retention";
+import { getProfileBilling } from "@/lib/billing";
 import { ProPill } from "@/components/ProPill";
 import { OpenAccountButton } from "./OpenAccountButton";
 import { ProfileSection } from "./ProfileSection";
 import { TrashRestoreSection } from "./TrashRestoreSection";
+import { DeleteAccountSection } from "./DeleteAccountSection";
 import "@/app/styling/SettingsPage.css";
 import "@/app/styling/mobile/settings-billing-about.css";
 
@@ -49,6 +51,16 @@ function PrivacyIcon() {
   );
 }
 
+function DangerIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M3 6h18" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </svg>
+  );
+}
+
 function ChevronIcon() {
   return (
     <svg className="settings-row-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -58,14 +70,15 @@ function ChevronIcon() {
 }
 
 export default async function SettingsPage() {
-  await requireAuthUserIdOrRedirect();
+  const userId = await requireAuthUserIdOrRedirect();
 
-  const [foldersRes, recipesRes, entitlementsRes, profileRes] =
+  const [foldersRes, recipesRes, entitlementsRes, profileRes, billing] =
     await Promise.all([
       getTrashedFolders(),
       getTrashedRecipes(),
       getMyEntitlements(),
       getMyProfile(),
+      getProfileBilling(userId),
     ]);
 
   const listError =
@@ -75,6 +88,10 @@ export default async function SettingsPage() {
   const used = entitlements?.extractionsUsed ?? 0;
   const limit = entitlements?.extractionsLimit ?? 3;
   const usagePct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+
+  const hasAppleSubscription =
+    Boolean(billing?.apple_entitlement_active) ||
+    billing?.billing_source === "apple";
 
   const profileEmail = profileRes.clerkEmail;
   const initialDisplayName =
@@ -223,13 +240,20 @@ export default async function SettingsPage() {
                 Items in Trash are permanently deleted after {TRASH_RETENTION_DAYS} days.
                 {!isPro
                   ? ` Free recipes expire after ${FREE_RECIPE_TTL_DAYS} days and move to Trash automatically.`
-                  : null}{" "}
-                This page does not delete your Clerk account.
+                  : null}
               </p>
             </div>
           </div>
           <Link href="/privacy" className="settings-row-link">
             <span>Privacy Policy</span>
+            <ChevronIcon />
+          </Link>
+          <Link href="/terms" className="settings-row-link">
+            <span>Terms of Use</span>
+            <ChevronIcon />
+          </Link>
+          <Link href="/support" className="settings-row-link">
+            <span>Support &amp; contact</span>
             <ChevronIcon />
           </Link>
         </section>
@@ -239,6 +263,27 @@ export default async function SettingsPage() {
           initialRecipes={recipesRes.data}
           listError={listError}
         />
+
+        <section
+          className="settings-panel settings-panel--danger"
+          aria-labelledby="settings-danger-heading"
+        >
+          <div className="settings-panel-head">
+            <span className="settings-panel-icon settings-panel-icon--danger">
+              <DangerIcon />
+            </span>
+            <div>
+              <h2 id="settings-danger-heading" className="dashboard-settings-h2">
+                Delete account
+              </h2>
+              <p className="settings-panel-desc">
+                Permanently delete your HomeRecipe account and everything in it,
+                on the web and in the iOS app. This cannot be undone.
+              </p>
+            </div>
+          </div>
+          <DeleteAccountSection hasAppleSubscription={hasAppleSubscription} />
+        </section>
       </div>
     </div>
   );

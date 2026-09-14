@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   },
 };
 
-const LAST_UPDATED = "August 8, 2026";
+const LAST_UPDATED = "September 13, 2026";
 const CONTACT_EMAIL = SITE_EMAIL;
 
 export default function PrivacyPage() {
@@ -308,7 +308,8 @@ export default function PrivacyPage() {
           <ul>
             <li>
               Account and profile data are kept while your account remains
-              active.
+              active, and are erased when you delete your account (see{" "}
+              <a href="#rights">Your choices and rights</a>).
             </li>
             <li>
               Free-tier user recipes generally expire after{" "}
@@ -369,13 +370,24 @@ export default function PrivacyPage() {
               permanent deletion).
             </li>
             <li>
-              <strong>Account deletion:</strong> the in-app Settings page does
-              not by itself delete your Clerk account. To delete your account and
-              associated personal data, use Clerk account controls where
-              available and/or email us at{" "}
-              <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. We will
-              help delete or de-identify account data we control, subject to
-              legal retention needs (for example billing records).
+              <strong>Account deletion:</strong> you can permanently delete your
+              account yourself — in the iOS app from{" "}
+              <strong>Account → Delete account</strong>, or on the website from{" "}
+              <strong>Settings → Delete account</strong>. Deletion is immediate
+              and permanent. It removes your profile, the recipes you created,
+              cookbooks, favorites, meal calendar entries, grocery lists,
+              uploaded cover images and videos, your extraction usage records,
+              your RevenueCat subscriber record, and your Clerk sign-in account.
+              We retain only what we are required to keep, such as billing and
+              tax records held by Stripe or Apple. If you subscribe through the
+              App Store, deleting your account does not cancel that subscription
+              — cancel it in{" "}
+              <a href="https://apps.apple.com/account/subscriptions">
+                your Apple subscription settings
+              </a>{" "}
+              as well. You can also email{" "}
+              <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> if you
+              would rather we handle it for you.
             </li>
             <li>
               <strong>Marketing:</strong> we do not run an in-product marketing
@@ -430,6 +442,8 @@ export default function PrivacyPage() {
 
         <footer className="legal-footer">
           <span>© {new Date().getFullYear()} HomeRecipe</span>
+          <Link href="/terms">Terms of Use</Link>
+          <Link href="/support">Support</Link>
           <Link href="/signin">Sign in</Link>
           <Link href="/signup">Create account</Link>
         </footer>
